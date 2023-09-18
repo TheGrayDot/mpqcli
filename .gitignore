@@ -1,3 +1,8 @@
+# Custom additions
+/StormLib
+/bin
+/test
+
 # Prerequisites
 *.d
 
