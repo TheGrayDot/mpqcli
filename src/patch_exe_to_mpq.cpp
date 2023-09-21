@@ -30,13 +30,13 @@ int main(int argc, char* argv[]) {
     const std::string searchString = "MPQ";
 
     // Read the file in 512-byte chunks
-    const int chunkSize = 512;
-    char buffer[chunkSize];
+    const int segmentSize = 512;
+    char buffer[segmentSize];
     std::streampos offset = 0;
 
     while (file) {
         // Read a chunk of data
-        file.read(buffer, chunkSize);
+        file.read(buffer, segmentSize);
 
         // Get the number of bytes read
         const std::streamsize bytesRead = file.gcount();
@@ -44,12 +44,10 @@ int main(int argc, char* argv[]) {
         // Search for the string within the chunk
         std::string chunk(buffer, bytesRead);
         const size_t foundPos = chunk.find(searchString);
-        if (foundPos != std::string::npos) {
-            // Calculate the offset
-            offset += foundPos;
 
+        if (foundPos == 0) {
             std::cout << "[*] MPQ header found at offset: " << offset << std::endl;
-            break; // Stop searching after the first instance is found
+            break;
         }
 
         // Update the offset
@@ -66,7 +64,7 @@ int main(int argc, char* argv[]) {
     std::string fileContents((std::istreambuf_iterator<char>(file)),
                               std::istreambuf_iterator<char>());
 
-    // Modify the content by erasing everything before the found string
+    // Modify the content by erasing everything before the string
     fileContents.erase(0, offset);
 
     file.close();
