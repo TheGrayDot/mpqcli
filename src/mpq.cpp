@@ -87,6 +87,26 @@ char* ReadOneFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSiz
     return fileContent;
 }
 
+void PrintMpqInfo(HANDLE hArchive) {
+    std::string fileName = GetMpqFileName(hArchive);
+    std::cout << "[+] File name: " << fileName << std::endl;
+
+    int32_t archiveSize = GetMpqArchiveSize(hArchive);
+    std::cout << "[+] Archive size: " << archiveSize << std::endl;
+
+    int64_t headerOffset = GetMpqArchiveHeaderOffset(hArchive);
+    std::cout << "[+] Header offset: " << headerOffset << std::endl;
+
+    int64_t headerSize = GetMpqArchiveHeaderSize(hArchive);
+    std::cout << "[+] Header size: " << headerSize << std::endl;
+
+    int32_t numberOfFiles = GetMpqArchiveFileCount(hArchive);
+    std::cout << "[+] File count: " << numberOfFiles << std::endl;
+
+    int32_t signatureType = GetMpqArchiveSignatureType(hArchive);
+    std::cout << "[+] Signature type: " << signatureType << std::endl;
+}
+
 std::string GetMpqFileName(HANDLE hArchive) {
     char fileName[4096];  // Max path length in Linux, Windows is 256
     if (!SFileGetFileInfo(hArchive, SFileMpqFileName, &fileName, sizeof(fileName), NULL)) {
@@ -105,11 +125,38 @@ int32_t GetMpqArchiveSize(HANDLE hArchive) {
     return archiveSize;
 }
 
-int64_t GetMpqArchiveOffset(HANDLE hArchive) {
+int64_t GetMpqArchiveHeaderOffset(HANDLE hArchive) {
     int64_t headerOffset;
     if (!SFileGetFileInfo(hArchive, SFileMpqHeaderOffset, &headerOffset, sizeof(headerOffset), NULL)) {
         std::cerr << "[+] Failed: SFileMpqHeaderOffset" << std::endl;
         return -1;
     }
     return headerOffset;
+}
+
+int64_t GetMpqArchiveHeaderSize(HANDLE hArchive) {
+    int64_t headerSize;
+    if (!SFileGetFileInfo(hArchive, SFileMpqHeaderSize, &headerSize, sizeof(headerSize), NULL)) {
+        std::cerr << "[+] Failed: SFileMpqHeaderSize" << std::endl;
+        return -1;
+    }
+    return headerSize;
+}
+
+int32_t GetMpqArchiveSignatureType(HANDLE hArchive) {
+    int32_t signatureType;
+    if (!SFileGetFileInfo(hArchive, SFileMpqSignatures, &signatureType, sizeof(signatureType), NULL)) {
+        std::cerr << "[+] Failed: SFileMpqSignatures" << std::endl;
+        return -1;
+    }
+    return signatureType;
+}
+
+int32_t GetMpqArchiveFileCount(HANDLE hArchive) {
+    int32_t numberOfFiles;
+    if (!SFileGetFileInfo(hArchive, SFileMpqNumberOfFiles, &numberOfFiles, sizeof(numberOfFiles), NULL)) {
+        std::cerr << "[+] Failed: SFileMpqNumberOfFiles" << std::endl;
+        return -1;
+    }
+    return numberOfFiles;
 }

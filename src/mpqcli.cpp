@@ -5,7 +5,6 @@
 #include <StormLib.h>
 
 #include "mpq.h"
-#include "info.h"
 #include "verify.h"
 #include "patch.h"
 
@@ -68,11 +67,7 @@ int main(int argc, char **argv) {
     if (app.got_subcommand(info)){
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
-
-        if (!GetInfo(hArchive)) {
-            std::cerr << "[+] Failed..." << std::endl;
-            return -1;
-        }
+        PrintMpqInfo(hArchive);
     }
 
     // Handle subcommand: Extract

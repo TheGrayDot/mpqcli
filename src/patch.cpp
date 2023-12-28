@@ -14,7 +14,7 @@ int ExtractMpqFromExe(HANDLE hArchive) {
     std::string fileName = GetMpqFileName(hArchive);
     std::cout << "[+] Archive name: " << fileName << std::endl;
 
-    int64_t archiveOffset = GetMpqArchiveOffset(hArchive);
+    int64_t archiveOffset = GetMpqArchiveHeaderOffset(hArchive);
     std::cout << "[+] Archive offset: " << archiveOffset << std::endl;
     
     int32_t archiveSize = GetMpqArchiveSize(hArchive);
