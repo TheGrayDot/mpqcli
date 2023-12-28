@@ -9,6 +9,9 @@ build_mpqcli:
 	cmake ..; \
 	make
 
+run_mpqcli_about:
+	./build/bin/mpqcli about
+
 run_mpqcli_info:
 	./build/bin/mpqcli info $(MPQ_FILE)
 

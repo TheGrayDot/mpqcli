@@ -19,6 +19,9 @@ int main(int argc, char **argv) {
     bool searchExtract = false;
     bool patchExtract = false;
 
+    // Subcommand: About
+    CLI::App *about = app.add_subcommand("about", "Prints info about the program");
+
     // Subcommand: Info
     CLI::App *info = app.add_subcommand("info", "Prints info about the MPQ file");
     info->add_option("target", target, "Target MPQ file")
@@ -63,6 +66,15 @@ int main(int argc, char **argv) {
 
     CLI11_PARSE(app, argc, argv);
 
+    // Handle subcommand: About
+    if (app.got_subcommand(about)){
+        std::cout << "mpqcli" << std::endl;
+        std::cout << "\nLibraries used:" << std::endl;
+        std::cout << "StormLib - MIT (https://github.com/ladislav-zezula/StormLib)" << std::endl;
+        std::cout << "CLI11 - BSD (https://github.com/CLIUtils/CLI11)" << std::endl;
+        std::cout << "filesystem - MIT (https://github.com/gulrak/filesystem)" << std::endl;
+    }
+
     // Handle subcommand: Info
     if (app.got_subcommand(info)){
         HANDLE hArchive;
@@ -88,8 +100,8 @@ int main(int argc, char **argv) {
     }
 
     // Handle subcommand: Create
-    if (app.got_subcommand(extract)) {
-        std::cout << "Not yet implemented... Exiting" << std::endl;
+    if (app.got_subcommand(create)) {
+        std::cout << "[+] Not yet implemented... Exiting" << std::endl;
         return 0;
     }
 

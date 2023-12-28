@@ -26,7 +26,7 @@ include_directories(
     "${MPQCLI_SOURCE_DIR}/include/"
 )
 
-add_executable(mpqcli src/mpqcli.cpp src/verify.cpp src/mpq.cpp src/patch.cpp src/helpers.cpp)
+add_executable(mpqcli src/main.cpp src/verify.cpp src/mpq.cpp src/patch.cpp src/helpers.cpp)
 
 target_link_libraries(mpqcli storm)
 
