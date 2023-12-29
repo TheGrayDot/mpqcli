@@ -17,7 +17,8 @@ int main(int argc, char **argv) {
     std::string searchString = "";
     bool searchInsensitive = false;
     bool searchExtract = false;
-    bool patchExtract = false;
+    bool patchExtractMpq = false;
+    bool patchExtractBin = false;
 
     // Subcommand: About
     CLI::App *about = app.add_subcommand("about", "Prints info about the program");
@@ -62,7 +63,8 @@ int main(int argc, char **argv) {
     patch->add_option("target", target, "Target file")
         ->required()
         ->check(CLI::ExistingFile);
-    patch->add_flag("-e,--extract", patchExtract, "Extract MPQ file from EXE patch");
+    patch->add_flag("-e,--extract", patchExtractMpq, "Extract MPQ file from EXE patch");
+    patch->add_flag("-b,--bin", patchExtractBin, "Extract BIN file from EXE patch");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -123,8 +125,11 @@ int main(int argc, char **argv) {
     if (app.got_subcommand(patch)) {
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
-        if (patchExtract) {
+        if (patchExtractMpq) {
             ExtractMpqFromExe(hArchive);
+        }
+        if (patchExtractBin) {
+            ExtractBinFromExe(hArchive);
         }
     }
 
