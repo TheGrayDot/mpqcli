@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstdint>
 
-#include <CLI11.hpp>
+#include <CLI/CLI.hpp>
 #include <StormLib.h>
 
 #include "mpq.h"
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 
     // Subcommand: Create
     CLI::App *create = app.add_subcommand("create", "Create MPQ file from target directory");
-    extract->add_option("target", target, "Target directory")
+    create->add_option("target", target, "Target directory")
         ->required()
         ->check(CLI::ExistingDirectory);
     
