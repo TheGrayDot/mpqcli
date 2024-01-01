@@ -1,32 +1,14 @@
 #include <iostream>
-#include <sys/stat.h>
 #include <fstream>
-#include <string>
 #include <vector>
 
 #include <StormLib.h>
+#include <ghc/filesystem.hpp>
 
 #include "helpers.h"
 #include "mpq.h"
 
-std::string replaceFileExtension(const std::string& fileName, const std::string& newExtension) {
-    size_t lastDotPos = fileName.find_last_of('.');
-    if (lastDotPos != std::string::npos) {
-        return fileName.substr(0, lastDotPos) + newExtension;
-    }
-    return fileName + newExtension;
-}
-
-void CreateDirectoryIfNotExists(const std::string& path) {
-    struct stat info;
-    if (stat(path.c_str(), &info) != 0) {
-        if (mkdir(path.c_str(), 0777) != 0) {
-            std::cerr << "Failed to create directory: " << path << std::endl;
-        }
-    }
-}
-
-int ExtractMpqFromExe(HANDLE hArchive) {
+int ExtractMpqAndBinFromExe(HANDLE hArchive, bool extractMpq, bool extractBin) {
     std::string fileName = GetMpqFileName(hArchive);
     std::cout << "[+] Archive name: " << fileName << std::endl;
 
@@ -43,42 +25,30 @@ int ExtractMpqFromExe(HANDLE hArchive) {
         return 1;
     }
 
-    // Create filename for MPQ output (EXE file with MPQ extension)
-    std::string outputMpqFilePath = replaceFileExtension(fileName, ".mpq");
-    std::cout << "[+] outputMpqFilePath: " << outputMpqFilePath << std::endl;
-    std::ifstream file_mpq(fileName, std::ios::binary);
-    std::ofstream output_mpq(outputMpqFilePath, std::ios::binary);
-    file_mpq.seekg(archiveOffset, std::ios::beg);
-    std::vector<char> buffer(archiveSize);
-    file_mpq.read(buffer.data(), buffer.size());
-    output_mpq.write(buffer.data(), buffer.size());
+    const ghc::filesystem::path outputPath = ghc::filesystem::canonical(fileName);
+    std::cout << "[+] Output path: " << outputPath << std::endl;
 
-    return 0;
-}
-
-int ExtractBinFromExe(HANDLE hArchive) {
-    std::string fileName = GetMpqFileName(hArchive);
-    std::cout << "[+] Archive name: " << fileName << std::endl;
-
-    int64_t archiveOffset = GetMpqArchiveHeaderOffset(hArchive);
-    std::cout << "[+] Archive offset: " << archiveOffset << std::endl;
-    
-    // Check the segment is aligned to 512 bytes
-    // MPQ archives embedded in an exe must be sector (512) aligned
-    if (archiveOffset % 512 != 0) {
-        std::cerr << "[+] Error: Archive offset not aligned to 512 bytes" << std::endl;
-        return 1;
+    if (extractBin) {
+        std::string outputBinFile = outputPath.parent_path() / outputPath.stem();
+        outputBinFile = outputBinFile + ".bin";
+        std::ifstream file_bin(fileName, std::ios::binary);
+        std::ofstream output_bin(outputBinFile, std::ios::binary);
+        file_bin.seekg(0, std::ios::beg);
+        std::vector<char> buffer_bin(archiveOffset);
+        file_bin.read(buffer_bin.data(), buffer_bin.size());
+        output_bin.write(buffer_bin.data(), buffer_bin.size());
     }
-
-    // Create filename for BIN output (EXE file with BIN extension)
-    std::string outputBinFilePath = replaceFileExtension(fileName, ".bin");
-    std::cout << "[+] outputBinFilePath: " << outputBinFilePath << std::endl;
-    std::ifstream file_bin(fileName, std::ios::binary);
-    std::ofstream output_bin(outputBinFilePath, std::ios::binary);
-    file_bin.seekg(0, std::ios::beg);
-    std::vector<char> buffer_bin(archiveOffset);
-    file_bin.read(buffer_bin.data(), buffer_bin.size());
-    output_bin.write(buffer_bin.data(), buffer_bin.size());
+ 
+    if (extractMpq) {
+        std::string outputMpqFile = outputPath.parent_path() / outputPath.stem();
+        outputMpqFile = outputMpqFile + ".mpq";
+        std::ifstream file_mpq(fileName, std::ios::binary);
+        std::ofstream output_mpq(outputMpqFile, std::ios::binary);
+        file_mpq.seekg(archiveOffset, std::ios::beg);
+        std::vector<char> buffer(archiveSize);
+        file_mpq.read(buffer.data(), buffer.size());
+        output_mpq.write(buffer.data(), buffer.size());
+    }
 
     return 0;
 }

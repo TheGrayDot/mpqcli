@@ -55,8 +55,8 @@ int main(int argc, char **argv) {
     patch->add_option("target", target, "Target file")
         ->required()
         ->check(CLI::ExistingFile);
-    patch->add_flag("-e,--extract", patchExtractMpq, "Extract MPQ file from EXE patch");
-    patch->add_flag("-b,--bin", patchExtractBin, "Extract BIN file from EXE patch");
+    patch->add_flag("-m,--mpq", patchExtractMpq, "Extract MPQ file from EXE patch (default false)");
+    patch->add_flag("-b,--bin", patchExtractBin, "Extract BIN file from EXE patch (default false)");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -115,12 +115,7 @@ int main(int argc, char **argv) {
     if (app.got_subcommand(patch)) {
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
-        if (patchExtractMpq) {
-            ExtractMpqFromExe(hArchive);
-        }
-        if (patchExtractBin) {
-            ExtractBinFromExe(hArchive);
-        }
+        ExtractMpqAndBinFromExe(hArchive, patchExtractMpq, patchExtractBin);
     }
 
     return 0;
