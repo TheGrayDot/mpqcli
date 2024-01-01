@@ -3,20 +3,16 @@
 
 #include <CLI/CLI.hpp>
 #include <StormLib.h>
+#include <ghc/filesystem.hpp>
 
 #include "mpq.h"
-#include "verify.h"
-#include "patch.h"
-
+#include "helpers.h"
 
 int main(int argc, char **argv) {
     CLI::App app{"A command line tool to read, extract, search, create and verify MPQ file using the StormLib library"};
 
     std::string target = "default";
-    std::string outputDirectory = "default";
-    std::string searchString = "";
-    bool searchInsensitive = false;
-    bool searchExtract = false;
+    std::string output = "default";
     bool patchExtractMpq = false;
     bool patchExtractBin = false;
 
@@ -34,7 +30,7 @@ int main(int argc, char **argv) {
     extract->add_option("target", target, "Target MPQ file")
         ->required()
         ->check(CLI::ExistingFile);
-    extract->add_option("-o,--output", outputDirectory, "Output directory");
+    extract->add_option("-o,--output", output, "Output directory");
 
     // Subcommand: Create
     CLI::App *create = app.add_subcommand("create", "Create MPQ file from target directory");
@@ -42,15 +38,11 @@ int main(int argc, char **argv) {
         ->required()
         ->check(CLI::ExistingDirectory);
     
-    // Subcommand: Search
-    CLI::App *search = app.add_subcommand("search", "Search files from the MPQ file");
-    search->add_option("target", target, "Target MPQ file")
+    // Subcommand: List
+    CLI::App *list = app.add_subcommand("list", "List files from the MPQ file");
+    list->add_option("target", target, "Target MPQ file")
         ->required()
         ->check(CLI::ExistingFile);
-    search->add_option("-s,--search", searchString, "Search string");
-    search->add_flag("-c,--case-insensitive", searchInsensitive, "Case insensitive search");
-    search->add_flag("-e,--extract", searchExtract, "Extract any search results");
-    search->add_option("-o,--output", outputDirectory, "Output directory");
 
     // Subcommand: Verify
     CLI::App *verify = app.add_subcommand("verify", "Verify the MPQ file");
@@ -86,19 +78,17 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Extract
     if (app.got_subcommand(extract)) {
-        // If no output directory specified, user MPQ path without extension
-        // If output directory specified, create it in pwd
-        if (outputDirectory == "default") {
-            outputDirectory = target;
-            size_t lastDotPos = outputDirectory.rfind('.');
-            if (lastDotPos != std::string::npos) {
-                outputDirectory = outputDirectory.substr(0, lastDotPos);
-            }
+        // If no output directory specified, use MPQ path without extension
+        // If output directory specified, create it if it doesn't exist
+        if (output == "default") {
+            const ghc::filesystem::path outputPath = ghc::filesystem::canonical(target);
+            output = outputPath.parent_path() / outputPath.stem();
         }
+        ghc::filesystem::create_directory(output);
 
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
-        ExtractFiles(hArchive, outputDirectory);
+        ExtractFiles(hArchive, output);
     }
 
     // Handle subcommand: Create
@@ -109,12 +99,12 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Verify
     if (app.got_subcommand(verify)) {
-        HANDLE hArchive;
-        OpenMpqArchive(target, &hArchive);
+        std::cout << "[+] Not yet implemented... Exiting" << std::endl;
+        return 0;
     }
 
-    // Handle subcommand: Search
-    if (app.got_subcommand(search)) {
+    // Handle subcommand: List
+    if (app.got_subcommand(list)) {
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
         ListFiles(hArchive);

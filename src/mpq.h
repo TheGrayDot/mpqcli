@@ -16,4 +16,7 @@ int64_t GetMpqArchiveHeaderSize(HANDLE hArchive);
 int32_t GetMpqArchiveSignatureType(HANDLE hArchive);
 int32_t GetMpqArchiveFileCount(HANDLE hArchive);
 
+int VerifyArchive(HANDLE hHandle);
+int VerifyMpqSignature(HANDLE hHandle);
+
 #endif

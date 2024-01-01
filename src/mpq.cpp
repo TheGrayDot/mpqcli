@@ -16,7 +16,7 @@ int OpenMpqArchive(const std::string &filename, HANDLE *hArchive) {
 }
 
 int ExtractFiles(HANDLE hArchive, const std::string& output) {
-    CreateDirectoryIfNotExists(output);
+    // CreateDirectoryIfNotExists(output);
 
     SFILE_FIND_DATA findData;
     HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, NULL);

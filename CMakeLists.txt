@@ -44,7 +44,7 @@ add_subdirectory(extern/StormLib)
 add_subdirectory(extern/CLI11)
 add_subdirectory(extern/filesystem)
 
-add_executable(mpqcli src/main.cpp src/verify.cpp src/mpq.cpp src/patch.cpp src/helpers.cpp)
+add_executable(mpqcli src/main.cpp src/mpq.cpp src/helpers.cpp)
 
 target_link_libraries(mpqcli storm)
 target_link_libraries(mpqcli CLI11::CLI11)
