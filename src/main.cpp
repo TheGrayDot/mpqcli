@@ -1,12 +1,14 @@
 #include <iostream>
 #include <cstdint>
+#include <filesystem>
 
 #include <CLI/CLI.hpp>
 #include <StormLib.h>
-#include <ghc/filesystem.hpp>
 
 #include "mpq.h"
 #include "helpers.h"
+
+namespace fs = std::filesystem;
 
 int main(int argc, char **argv) {
     CLI::App app{"A command line tool to read, extract, search, create and verify MPQ file using the StormLib library"};
@@ -81,10 +83,10 @@ int main(int argc, char **argv) {
         // If no output directory specified, use MPQ path without extension
         // If output directory specified, create it if it doesn't exist
         if (output == "default") {
-            const ghc::filesystem::path outputPath = ghc::filesystem::canonical(target);
+            const fs::path outputPath = fs::canonical(target);
             output = outputPath.parent_path() / outputPath.stem();
         }
-        ghc::filesystem::create_directory(output);
+        fs::create_directory(output);
 
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
@@ -99,7 +101,11 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Verify
     if (app.got_subcommand(verify)) {
-        std::cout << "[+] Not yet implemented... Exiting" << std::endl;
+        HANDLE hArchive;
+        OpenMpqArchive(target, &hArchive);
+        int signatureType = GetMpqArchiveSignatureType(hArchive);
+        std::cout << "[+] Signature type: " << signatureType << std::endl;
+        VerifyMpqSignature(hArchive);
         return 0;
     }
 

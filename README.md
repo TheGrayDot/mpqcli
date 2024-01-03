@@ -2,15 +2,16 @@
 
 ![Project Status Badge](https://img.shields.io/badge/Status-Active%20development-red)
 
-![C++ Standard Version](https://img.shields.io/badge/Version-11-blue.svg?style=flat&logo=c%2B%2B)
+![C++ Standard Version](https://img.shields.io/badge/Version-17-blue.svg?style=flat&logo=c%2B%2B)
 
 A command line tool to read, extract, search, create and verify MPQ file using the StormLib library
 
 ## Requirements
 
 - cmake
-- C++ 11 compiler
+- C++ 17 compiler
 - StormLib (provided as Git submodule)
+- CLI11 (provided as GitSubmodule)
 
 ## Quickstart
 

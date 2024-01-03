@@ -16,8 +16,6 @@ int OpenMpqArchive(const std::string &filename, HANDLE *hArchive) {
 }
 
 int ExtractFiles(HANDLE hArchive, const std::string& output) {
-    // CreateDirectoryIfNotExists(output);
-
     SFILE_FIND_DATA findData;
     HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, NULL);
     if (findHandle == NULL) {
@@ -161,31 +159,7 @@ int32_t GetMpqArchiveFileCount(HANDLE hArchive) {
     return numberOfFiles;
 }
 
-int VerifyArchive(HANDLE hArchive)
-{
-    int32_t signatureType;
-
-    if (!SFileGetFileInfo(hArchive, SFileMpqSignatures, &signatureType, sizeof(signatureType), NULL)) {
-        std::cerr << "[+] Failed: SFileMpqSignatures" << std::endl;
-        return -1;
-    }
-
-    if (signatureType == SIGNATURE_TYPE_WEAK) {
-        std::cout << "[+] Signature type: Weak" << std::endl;
-    } 
-    else if (signatureType == SIGNATURE_TYPE_STRONG) {
-        std::cout << "[+] Signature type: Strong" << std::endl;
-        return 0;
-    } 
-    else {
-        std::cout << "[+] Signature type: None" << std::endl;
-        return 1;
-    }
-    return 0;
-}
-
-int VerifyMpqSignature(HANDLE hArchive)
-{
+int VerifyMpqSignature(HANDLE hArchive) {
     std::cout << "VerifyMpqSignature" << std::endl;
 
     const char *szFileName = "(signature)";

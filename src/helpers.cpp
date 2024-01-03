@@ -1,12 +1,14 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <filesystem>
 
 #include <StormLib.h>
-#include <ghc/filesystem.hpp>
 
 #include "helpers.h"
 #include "mpq.h"
+
+namespace fs = std::filesystem;
 
 int ExtractMpqAndBinFromExe(HANDLE hArchive, bool extractMpq, bool extractBin) {
     std::string fileName = GetMpqFileName(hArchive);
@@ -25,7 +27,7 @@ int ExtractMpqAndBinFromExe(HANDLE hArchive, bool extractMpq, bool extractBin) {
         return 1;
     }
 
-    const ghc::filesystem::path outputPath = ghc::filesystem::canonical(fileName);
+    const fs::path outputPath = fs::canonical(fileName);
     std::cout << "[+] Output path: " << outputPath << std::endl;
 
     if (extractBin) {
