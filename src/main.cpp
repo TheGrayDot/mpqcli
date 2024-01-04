@@ -15,7 +15,6 @@ int main(int argc, char **argv) {
 
     std::string target = "default";
     std::string output = "default";
-    bool patchExtractMpq = false;
     bool patchExtractBin = false;
 
     // Subcommand: About
@@ -57,7 +56,6 @@ int main(int argc, char **argv) {
     patch->add_option("target", target, "Target file")
         ->required()
         ->check(CLI::ExistingFile);
-    patch->add_flag("-m,--mpq", patchExtractMpq, "Extract MPQ file from EXE patch (default false)");
     patch->add_flag("-b,--bin", patchExtractBin, "Extract BIN file from EXE patch (default false)");
 
     CLI11_PARSE(app, argc, argv);
@@ -68,7 +66,6 @@ int main(int argc, char **argv) {
         std::cout << "\nLibraries used:" << std::endl;
         std::cout << "StormLib - MIT (https://github.com/ladislav-zezula/StormLib)" << std::endl;
         std::cout << "CLI11 - BSD (https://github.com/CLIUtils/CLI11)" << std::endl;
-        std::cout << "filesystem - MIT (https://github.com/gulrak/filesystem)" << std::endl;
     }
 
     // Handle subcommand: Info
@@ -104,9 +101,24 @@ int main(int argc, char **argv) {
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
         int signatureType = GetMpqArchiveSignatureType(hArchive);
-        std::cout << "[+] Signature type: " << signatureType << std::endl;
-        VerifyMpqSignature(hArchive);
-        return 0;
+
+        std::string signatureName;
+        switch (signatureType) {
+            case 1:
+                signatureName = "weak";
+                break;
+            case 2:
+                signatureName = "strong";
+                break;
+            default:
+                signatureName = "none";
+        }
+
+        std::string signatureNameFormatted = " (" + signatureName + ")";
+        std::cout << "[+] Signature type: " << signatureType << signatureNameFormatted << std::endl;
+
+        PrintMpqSignature(hArchive, signatureType);
+        return signatureType;
     }
 
     // Handle subcommand: List
@@ -121,7 +133,7 @@ int main(int argc, char **argv) {
     if (app.got_subcommand(patch)) {
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
-        ExtractMpqAndBinFromExe(hArchive, patchExtractMpq, patchExtractBin);
+        ExtractMpqAndBinFromExe(hArchive, patchExtractBin);
     }
 
     return 0;

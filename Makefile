@@ -1,8 +1,7 @@
-build:
-	mkdir -p build; \
+build_mpqcli:
 	cd build; \
 	cmake ..; \
 	make
 
-clean:
+clean_mpqcli:
 	rm -rf build

@@ -14,8 +14,9 @@ int32_t GetMpqArchiveSize(HANDLE hArchive);
 int64_t GetMpqArchiveHeaderOffset(HANDLE hArchive);
 int64_t GetMpqArchiveHeaderSize(HANDLE hArchive);
 int32_t GetMpqArchiveSignatureType(HANDLE hArchive);
+std::vector<char>  GetMpqArchiveStrongSignature(HANDLE hArchive);
 int32_t GetMpqArchiveFileCount(HANDLE hArchive);
 
-int VerifyMpqSignature(HANDLE hHandle);
+int PrintMpqSignature(HANDLE hHandle, int signatureType);
 
 #endif
