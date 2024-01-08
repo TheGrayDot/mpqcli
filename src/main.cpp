@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
     std::string target = "default";
     std::string output = "default";
     bool patchExtractBin = false;
+    std::string extractFileName = "default";
 
     // Subcommand: About
     CLI::App *about = app.add_subcommand("about", "Prints info about the program");
@@ -32,6 +33,7 @@ int main(int argc, char **argv) {
         ->required()
         ->check(CLI::ExistingFile);
     extract->add_option("-o,--output", output, "Output directory");
+    extract->add_option("-f,--file", extractFileName, "Target file to extract");
 
     // Subcommand: Create
     CLI::App *create = app.add_subcommand("create", "Create MPQ file from target directory");
@@ -87,7 +89,11 @@ int main(int argc, char **argv) {
 
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
-        ExtractFiles(hArchive, output);
+        if (extractFileName != "default") {
+            ExtractFile(hArchive, output, extractFileName);
+        } else {
+            ExtractFiles(hArchive, output);
+        }
     }
 
     // Handle subcommand: Create

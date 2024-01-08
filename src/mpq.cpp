@@ -1,17 +1,11 @@
 #include <iostream>
-#include <cstdint>
-#include <iomanip>
 #include <filesystem>
 #include <fstream>
-#include <vector>
 #include <algorithm>
-#include <iterator>
-#include <cstring>
 
 #include <StormLib.h>
 
 #include "mpq.h"
-#include "helpers.h"
 
 namespace fs = std::filesystem;
 
@@ -45,6 +39,44 @@ int ExtractFiles(HANDLE hArchive, const std::string& output) {
     return 0;
 }
 
+int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName) {
+    const char *szFileName = fileName.c_str();
+    if (!SFileHasFile(hArchive, szFileName)) {
+        std::cerr << "[+] Failed: File doesn't exist" << std::endl;
+        return -1;
+    }
+
+    HANDLE hFile;
+    if (!SFileOpenFileEx(hArchive, szFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
+        std::cerr << "[+] Failed: File cannot be opened" << std::endl;
+        return -1;
+    }
+
+    // Change forward slashes on non-Windows systems
+    fs::path fileNamePath(fileName);
+    std::string fileNameString;
+    #ifndef _WIN32
+        fileNameString = fileNamePath.string();
+        std::replace(fileNameString.begin(), fileNameString.end(), '\\', '/');
+    #else
+        fileNameString = fileNamePath.string();
+    #endif
+
+    fs::path outputPath = fs::canonical(output);
+    std::string outputFilePath = outputPath / fileNameString;
+    std::filesystem::create_directories(fs::path(outputFilePath).parent_path());
+
+    if (SFileExtractFile(hArchive, szFileName, outputFilePath.c_str(), 0)) {
+        std::cout << "[+] Extracted: " << szFileName << std::endl;
+    } else {
+        int32_t error = GetLastError();
+        std::cerr << "[+] Failed: " << "(" << error << ") " << szFileName << std::endl;
+        return error;
+    }
+ 
+    return 0;
+}
+
 int ListFiles(HANDLE hArchive) {
     // Find the first file in MPQ archive to iterate from
     SFILE_FIND_DATA findData;
@@ -63,7 +95,7 @@ int ListFiles(HANDLE hArchive) {
     return 1;
 }
 
-char* ReadOneFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) {
+char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) {
     if (!SFileHasFile(hArchive, szFileName)) {
         std::cerr << "[+] Failed: File doesn't exist" << std::endl;
         return NULL;
@@ -240,7 +272,7 @@ int PrintMpqSignature(HANDLE hArchive, int signatureType) {
         std::cout << "[+] Attempting weak signature extraction..." << std::endl;
         const char *szFileName = "(signature)";
         unsigned int fileSize;
-        char* fileContent = ReadOneFile(hArchive, szFileName, &fileSize);
+        char* fileContent = ReadFile(hArchive, szFileName, &fileSize);
         signatureContent.resize(fileSize);
         std::copy(fileContent, fileContent + fileSize, signatureContent.begin());
     } else {
