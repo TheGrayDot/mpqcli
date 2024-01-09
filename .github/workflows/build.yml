@@ -6,8 +6,25 @@ on:
       - "*"
 
 jobs:
-  build_linux:
-    runs-on: ubuntu-latest
+  # build_linux:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Check out repository code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
+
+  #     - name: Run cmake
+  #       run: cmake -Bbuild
+
+  #     - name: Compile project
+  #       run: make
+
+  #     - name: Check mpqcli version
+  #       run: ./build/bin/mpqcli version
+
+  build_windows:
+    runs-on: windows-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
