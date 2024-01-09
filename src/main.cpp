@@ -7,6 +7,7 @@
 
 #include "mpq.h"
 #include "helpers.h"
+#include "mpqcli.h"
 
 namespace fs = std::filesystem;
 
@@ -18,8 +19,8 @@ int main(int argc, char **argv) {
     bool patchExtractBin = false;
     std::string extractFileName = "default";
 
-    // Subcommand: About
-    CLI::App *about = app.add_subcommand("about", "Prints info about the program");
+    // Subcommand: Version
+    CLI::App *version = app.add_subcommand("version", "Prints program version");
 
     // Subcommand: Info
     CLI::App *info = app.add_subcommand("info", "Prints info about the MPQ file");
@@ -62,12 +63,9 @@ int main(int argc, char **argv) {
 
     CLI11_PARSE(app, argc, argv);
 
-    // Handle subcommand: About
-    if (app.got_subcommand(about)){
-        std::cout << "mpqcli" << std::endl;
-        std::cout << "\nLibraries used:" << std::endl;
-        std::cout << "StormLib - MIT (https://github.com/ladislav-zezula/StormLib)" << std::endl;
-        std::cout << "CLI11 - BSD (https://github.com/CLIUtils/CLI11)" << std::endl;
+    // Handle subcommand: Version
+    if (app.got_subcommand(version)){
+        std::cout << MPQCLI_VERSION << "-" << GIT_COMMIT_HASH << std::endl;
     }
 
     // Handle subcommand: Info
