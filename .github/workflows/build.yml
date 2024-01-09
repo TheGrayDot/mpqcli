@@ -6,25 +6,8 @@ on:
       - "*"
 
 jobs:
-  # build_linux:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check out repository code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: true
-
-  #     - name: Run cmake
-  #       run: cmake -Bbuild
-
-  #     - name: Compile project
-  #       run: make
-
-  #     - name: Check mpqcli version
-  #       run: ./build/bin/mpqcli version
-
-  build_windows:
-    runs-on: windows-latest
+  build_linux:
+    runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -32,13 +15,7 @@ jobs:
           submodules: true
 
       - name: Run cmake
-        run: cmake -Bbuild -G"NMake Makefiles"
-      
-      - name: Dir build
-        run: dir build
-      
-      - name: Display CMakeCache.txt
-        run: type build/CMakeCache.txt
+        run: cmake -Bbuild
 
       - name: Compile project
         run: make
