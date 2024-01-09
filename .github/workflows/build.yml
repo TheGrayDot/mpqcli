@@ -12,11 +12,14 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
 
-      - name: Check source
-        run: pwd; ls -lisa
+      - name: Create build directory
+        run: mkdir build; cd build
 
-      - name: Check cmake version
-        run: cmake --version
+      - name: Run cmake
+        run: cmake ..
 
-      - name: Check gcc version
-        run: gcc --version
+      - name: Compile
+        run: make
+
+      - name: Check build
+        run: ./bin/mpqcli --version
