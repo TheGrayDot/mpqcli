@@ -11,15 +11,14 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
-
-      - name: Create build directory
-        run: mkdir build; cd build
+        with:
+          submodules: true
 
       - name: Run cmake
-        run: cmake ..
+        run: cmake -Bbuild
 
       - name: Compile
         run: make
 
       - name: Check build
-        run: ./bin/mpqcli --version
+        run: ./build/bin/mpqcli --version
