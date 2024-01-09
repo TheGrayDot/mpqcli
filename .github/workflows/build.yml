@@ -32,7 +32,7 @@ jobs:
           submodules: true
 
       - name: Run cmake
-        run: cmake -Bbuild
+        run: cmake -Bbuild -G"NMake Makefiles"
       
       - name: Dir build
         run: dir build
