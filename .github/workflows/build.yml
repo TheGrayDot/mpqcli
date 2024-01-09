@@ -33,6 +33,12 @@ jobs:
 
       - name: Run cmake
         run: cmake -Bbuild
+      
+      - name: Dir build
+        run: dir build
+      
+      - name: Display CMakeCache.txt
+        run: type build/CMakeCache.txt
 
       - name: Compile project
         run: make
