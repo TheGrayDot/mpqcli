@@ -1,0 +1,22 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  build_linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Check source
+        run: pwd; ls -lisa
+
+      - name: Check cmake version
+        run: cmake --version
+
+      - name: Check gcc version
+        run: gcc --version
