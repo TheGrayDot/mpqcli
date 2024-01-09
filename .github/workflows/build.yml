@@ -17,8 +17,8 @@ jobs:
       - name: Run cmake
         run: cmake -Bbuild
 
-      - name: Compile
+      - name: Compile project
         run: make
 
-      - name: Check build
-        run: ./build/bin/mpqcli --version
+      - name: Check mpqcli version
+        run: ./build/bin/mpqcli version
