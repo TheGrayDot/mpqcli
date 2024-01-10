@@ -62,11 +62,12 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
         fileNameString = fileNamePath.string();
     #endif
 
-    fs::path outputPath = fs::canonical(output);
-    std::string outputFilePath = outputPath / fileNameString;
-    std::filesystem::create_directories(fs::path(outputFilePath).parent_path());
+    fs::path outputPathAbsolut = fs::canonical(output);
+    fs::path outputPath = outputPathAbsolut.parent_path() / outputPathAbsolut.stem();
+    std::string outputFileString{outputPath.u8string()};
+    std::filesystem::create_directories(fs::path(outputFileString).parent_path());
 
-    if (SFileExtractFile(hArchive, szFileName, outputFilePath.c_str(), 0)) {
+    if (SFileExtractFile(hArchive, szFileName, outputFileString.c_str(), 0)) {
         std::cout << "[+] Extracted: " << szFileName << std::endl;
     } else {
         int32_t error = GetLastError();
@@ -110,7 +111,7 @@ char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) 
     *fileSize = SFileGetFileSize(hFile, NULL);
 
     char* fileContent = new char[*fileSize + 1];
-    unsigned int dwBytes;
+    DWORD dwBytes;
     if (!SFileReadFile(hFile, fileContent, *fileSize, &dwBytes, NULL)) {
         std::cerr << "[+] Failed: Cannot read file contents..." << std::endl;
         int32_t error = GetLastError();
@@ -286,8 +287,8 @@ int PrintMpqSignature(HANDLE hArchive, int signatureType) {
             int64_t archiveOffset = GetMpqArchiveHeaderOffset(hArchive);
             std::uintmax_t fileSize = fs::file_size(archivePath);
 
-            int signatureStart = archiveOffset + archiveSize;
-            int signatureLength = fileSize - archiveOffset - archiveSize;
+            int64_t signatureStart = archiveOffset + archiveSize;
+            int64_t signatureLength = fileSize - archiveOffset - archiveSize;
 
             std::ifstream file_mpq(archivePath, std::ios::binary);
             file_mpq.seekg(archiveOffset + archiveSize, std::ios::beg);
