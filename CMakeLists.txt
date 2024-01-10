@@ -32,7 +32,7 @@ Did you forget to execute the following commands?
    git submodule update")
 endif()
 
-set(STORM_USE_BUNDLED_LIBRARIES ON CACHE BOOL "Build using bundled libraries")
+set(STORM_USE_BUNDLED_LIBRARIES ON CACHE BOOL "Build using bundled libraries" FORCE)
 add_subdirectory(extern/StormLib)
 
 # Handle CLI11 dependency
