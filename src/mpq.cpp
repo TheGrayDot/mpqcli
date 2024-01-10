@@ -62,12 +62,14 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
         fileNameString = fileNamePath.string();
     #endif
 
-    fs::path outputPathAbsolut = fs::canonical(output);
-    fs::path outputPath = outputPathAbsolut.parent_path() / outputPathAbsolut.stem();
-    std::string outputFileString{outputPath.u8string()};
-    std::filesystem::create_directories(fs::path(outputFileString).parent_path());
+    fs::path outputPathAbsolute = fs::canonical(output);
+    fs::path outputPathBase = outputPathAbsolute.parent_path() / outputPathAbsolute.filename();
+    std::filesystem::create_directories(fs::path(outputPathBase).parent_path());
 
-    if (SFileExtractFile(hArchive, szFileName, outputFileString.c_str(), 0)) {
+    fs::path outputFilePathName = outputPathBase / szFileName;
+    std::string outputFileName{outputFilePathName.u8string()};
+
+    if (SFileExtractFile(hArchive, szFileName, outputFileName.c_str(), 0)) {
         std::cout << "[+] Extracted: " << szFileName << std::endl;
     } else {
         int32_t error = GetLastError();
