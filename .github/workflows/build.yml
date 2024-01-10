@@ -35,7 +35,7 @@ jobs:
         run: cmake -B build
 
       - name: Compile project
-        run: cmake --build build
+        run: cmake --build build --config "Release"
 
       - name: Check mpqcli version
-        run: .\build\bin\mpqcli version
+        run: .\build\bin\Release\mpqcli version
