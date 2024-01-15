@@ -167,7 +167,7 @@ TMPQHeader GetMpqHeader(HANDLE hArchive) {
         std::cerr << "[+] Failed: " << "(" << error << ") " << std::endl;
         return header;
     }
-    // USHORT wFormatVersion
+
     unsigned short formatVersion = header.wFormatVersion;
     std::cout << "[+] Format version: " << formatVersion << std::endl;
     return header;
@@ -288,8 +288,6 @@ int PrintMpqSignature(HANDLE hArchive, int signatureType) {
             int32_t archiveSize = GetMpqArchiveSize(hArchive);
             int64_t archiveOffset = GetMpqArchiveHeaderOffset(hArchive);
             std::uintmax_t fileSize = fs::file_size(archivePath);
-
-            int64_t signatureStart = archiveOffset + archiveSize;
             int64_t signatureLength = fileSize - archiveOffset - archiveSize;
 
             std::ifstream file_mpq(archivePath, std::ios::binary);

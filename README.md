@@ -1,8 +1,6 @@
 # mpqcli
 
-![Project Status Badge](https://img.shields.io/badge/Status-Alpha-red)
-
-![C++ Standard Version](https://img.shields.io/badge/Version-17-blue.svg?style=flat&logo=c%2B%2B)
+![Build Status](https://img.shields.io/github/actions/workflow/status/TheGrayDot/mpqcli/build.yml?branch=main&style=flat)
 
 A command line tool to read, extract, search, create and verify MPQ files using the StormLib library
 
@@ -10,7 +8,7 @@ A command line tool to read, extract, search, create and verify MPQ files using 
 
 **This is a command line tool, designed for automation**. For example, run one command to create an MPQ file from a directory of files. If you require an MPQ tool with a graphical interface (GUI) - I would recommend using [Ladik's MPQ Editor](http://www.zezula.net/en/mpq/download.html).
 
-**This project is for original World of Warcraft MPQ archives**. This means is has been primarily authored for MPQ files used in the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3) and WoTLK (3.3.5). It has only been tested and for MPQ versions 1 and 2, and only tested on WoW MPQ archives/patches. No testing has been performed on other MPQ versions or archives.
+**This project is for original World of Warcraft MPQ archives**. This means is has been primarily authored for MPQ files used in the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3) and WoTLK (3.3.5). It has only been tested on WoW MPQ archives/patches which use MPQ versions 1 or 2. No testing has been performed on other MPQ versions or archives from other games.
 
 ## Download
 
@@ -29,9 +27,9 @@ TODO.
 
 ```
 git clone --recursive https://github.com/TheGrayDot/mpqcli.git
-cd mpqcli && mkdir build && cd build
-cmake ..
-make
+cd mpqcli
+cmake -B build
+cmake --build build
 ```
 
 The `mpqcli` binary will be available in: `./build/bin/mpqcli`
@@ -83,7 +81,7 @@ Pretty simple, list files in an MPQ archive. Useful to "pipe" to other tools, su
 mpqcli list <target_mpq_file>
 ```
 
-### Search and extract files
+### Search and extract files on Linux
 
 The `mpqcli` tool has no native search feature - instead it is designed to be integrated with other, extenal operating system tools. For example, `mpqcli list` can be "piped" to `grep` in Linux or `Select-String` in Windows Powershell to perform searching.
 
@@ -91,6 +89,14 @@ The following command lists all files in an MPQ archive, and each filename is fi
 
 ```
 mpqcli list <target_mpq_file> | grep ".exe" | xargs -I@ mpqcli extract -f "@" <target_mpq_file>
+```
+
+### Search and extract files on Windows
+
+The following command lists all files in an MPQ archive, and each filename is filtered using `grep` - selecting files with `exe` in their name, which is then passed back to `mpqcli extract`. The result: search and extract all `exe` files.
+
+```
+mpqcli.exe list <target_mpq_file> | Select-String -Pattern ".exe" | ForEach-Object { mpqcli.exe extract -f $_ <target_mpq_file> }
 ```
 
 ### Create archive from a target directory
