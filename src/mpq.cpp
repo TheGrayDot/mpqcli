@@ -62,11 +62,14 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
         fileNameString = fileNamePath.string();
     #endif
 
-    fs::path outputPath = fs::canonical(output);
-    std::string outputFilePath = outputPath / fileNameString;
-    std::filesystem::create_directories(fs::path(outputFilePath).parent_path());
+    fs::path outputPathAbsolute = fs::canonical(output);
+    fs::path outputPathBase = outputPathAbsolute.parent_path() / outputPathAbsolute.filename();
+    std::filesystem::create_directories(fs::path(outputPathBase).parent_path());
 
-    if (SFileExtractFile(hArchive, szFileName, outputFilePath.c_str(), 0)) {
+    fs::path outputFilePathName = outputPathBase / szFileName;
+    std::string outputFileName{outputFilePathName.u8string()};
+
+    if (SFileExtractFile(hArchive, szFileName, outputFileName.c_str(), 0)) {
         std::cout << "[+] Extracted: " << szFileName << std::endl;
     } else {
         int32_t error = GetLastError();
@@ -110,7 +113,7 @@ char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) 
     *fileSize = SFileGetFileSize(hFile, NULL);
 
     char* fileContent = new char[*fileSize + 1];
-    unsigned int dwBytes;
+    DWORD dwBytes;
     if (!SFileReadFile(hFile, fileContent, *fileSize, &dwBytes, NULL)) {
         std::cerr << "[+] Failed: Cannot read file contents..." << std::endl;
         int32_t error = GetLastError();
@@ -164,7 +167,7 @@ TMPQHeader GetMpqHeader(HANDLE hArchive) {
         std::cerr << "[+] Failed: " << "(" << error << ") " << std::endl;
         return header;
     }
-    // USHORT wFormatVersion
+
     unsigned short formatVersion = header.wFormatVersion;
     std::cout << "[+] Format version: " << formatVersion << std::endl;
     return header;
@@ -285,9 +288,7 @@ int PrintMpqSignature(HANDLE hArchive, int signatureType) {
             int32_t archiveSize = GetMpqArchiveSize(hArchive);
             int64_t archiveOffset = GetMpqArchiveHeaderOffset(hArchive);
             std::uintmax_t fileSize = fs::file_size(archivePath);
-
-            int signatureStart = archiveOffset + archiveSize;
-            int signatureLength = fileSize - archiveOffset - archiveSize;
+            int64_t signatureLength = fileSize - archiveOffset - archiveSize;
 
             std::ifstream file_mpq(archivePath, std::ios::binary);
             file_mpq.seekg(archiveOffset + archiveSize, std::ios::beg);

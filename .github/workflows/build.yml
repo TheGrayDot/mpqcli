@@ -15,10 +15,27 @@ jobs:
           submodules: true
 
       - name: Run cmake
-        run: cmake -Bbuild
+        run: cmake -B build
 
       - name: Compile project
-        run: make
+        run: cmake --build build
 
       - name: Check mpqcli version
         run: ./build/bin/mpqcli version
+
+  build_windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Run cmake
+        run: cmake -B build
+
+      - name: Compile project
+        run: cmake --build build --config "Release"
+
+      - name: Check mpqcli version
+        run: .\build\bin\Release\mpqcli version

@@ -1,7 +1,6 @@
 build_mpqcli:
-	cd build; \
-	cmake ..; \
-	make
+	cmake -B build; \
+	cmake --build build
 
 clean_mpqcli:
 	rm -rf build

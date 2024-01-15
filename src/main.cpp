@@ -80,8 +80,10 @@ int main(int argc, char **argv) {
         // If no output directory specified, use MPQ path without extension
         // If output directory specified, create it if it doesn't exist
         if (output == "default") {
-            const fs::path outputPath = fs::canonical(target);
-            output = outputPath.parent_path() / outputPath.stem();
+            fs::path outputPathAbsolute = fs::canonical(target);
+            fs::path outputPath = outputPathAbsolute.parent_path() / outputPathAbsolute.stem();
+            std::string outputString{outputPath.u8string()};
+            output = outputString;
         }
         fs::create_directory(output);
 

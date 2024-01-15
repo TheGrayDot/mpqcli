@@ -41,7 +41,8 @@ int ExtractMpqAndBinFromExe(HANDLE hArchive, bool extractBin) {
     }
 
     if (extractBin) {
-        std::string outputBinFile = archivePath.parent_path() / archivePath.stem();
+        fs::path outputBinFilePath = archivePath.parent_path() / archivePath.stem();
+        std::string outputBinFile{outputBinFilePath.u8string()};
         outputBinFile = outputBinFile + ".bin";
         std::cout << "[+] Output location: " << outputBinFile << std::endl;
         std::ifstream file_bin(archiveName, std::ios::binary);
@@ -52,7 +53,8 @@ int ExtractMpqAndBinFromExe(HANDLE hArchive, bool extractBin) {
         output_bin.write(buffer_bin.data(), buffer_bin.size());
     }
  
-    std::string outputMpqFile = archivePath.parent_path() / archivePath.stem();
+    fs::path outputMpqFilePath = archivePath.parent_path() / archivePath.stem();
+    std::string outputMpqFile{outputMpqFilePath.u8string()};
     outputMpqFile = outputMpqFile + ".mpq";
     std::cout << "[+] Output location: " << outputMpqFile << std::endl;
     std::ifstream file_mpq(archiveName, std::ios::binary);
