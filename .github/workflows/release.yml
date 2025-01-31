@@ -4,7 +4,7 @@ on:
   workflow_call
 
 jobs:
-  build_linux:
+  release_linux:
     runs-on: ubuntu-latest
     steps:
       - name: Download Linux binary

@@ -1,12 +1,14 @@
----
-name: Push
+name: Tag and Release
 
 on:
-  push
+  push:
+    tags:
+      - "v*.*.*"
 
 jobs:
   build:
     uses: ./.github/workflows/build.yml
   release:
     uses: ./.github/workflows/release.yml
+    needs: build
     secrets: inherit 
