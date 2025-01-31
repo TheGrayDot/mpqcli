@@ -3,6 +3,9 @@ name: Release
 on:
   workflow_call
 
+permissions:
+  contents: write
+
 jobs:
   release_linux:
     runs-on: ubuntu-latest
