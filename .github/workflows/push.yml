@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    uses: ./.github/actions/build.yml
+    uses: ./.github/workflows/build.yml
   release:
-    uses: ./.github/actions/release.yml
+    uses: ./.github/workflows/release.yml
     secrets: inherit 
