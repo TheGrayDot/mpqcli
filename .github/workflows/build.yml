@@ -1,9 +1,7 @@
 name: Build
 
 on:
-  push:
-    branches:
-      - "*"
+  workflow_call
 
 jobs:
   build_linux:
@@ -23,19 +21,12 @@ jobs:
       - name: Check mpqcli version
         run: ./build/bin/mpqcli version
 
-  build_windows:
-    runs-on: windows-latest
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4
+      - name: Copy mpqcli binary
+        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-linux
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
-          submodules: true
-
-      - name: Run cmake
-        run: cmake -B build
-
-      - name: Compile project
-        run: cmake --build build --config "Release"
-
-      - name: Check mpqcli version
-        run: .\build\bin\Release\mpqcli version
+          name: mpqcli-linux
+          path: ./build/bin/mpqcli-linux
+          retention-days: 1
