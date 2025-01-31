@@ -1,6 +1,7 @@
 #ifndef MPQ_H
 #define MPQ_H
 
+#include <vector>
 #include <StormLib.h>
 
 int OpenMpqArchive(const std::string &filename, HANDLE *hArchive);
