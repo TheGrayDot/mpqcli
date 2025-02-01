@@ -12,7 +12,14 @@ A command line tool to read, extract, search, create and verify MPQ files using 
 
 ## Download
 
-TODO.
+Download latest release on Linux:
+
+```
+TAG=$(curl -s https://api.github.com/repos/TheGrayDot/mpqcli/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
+curl -L -o mpqcli-linux https://github.com/TheGrayDot/mpqcli/releases/download/$TAG/mpqcli-linux
+chmod u+x mpqcli-linux
+./mpqcli-linux --help
+```
 
 ## Building
 
@@ -132,3 +139,7 @@ mpqcli patch -b <target_exe_file>
 ### StormLib
 
 This project requires the [StormLib](https://github.com/ladislav-zezula/StormLib) library. Many thanks to [Ladislav Zezula](https://github.com/ladislav-zezula) for authoring such a good library and releasing the code under an open source licence. The StormLib library has a number of requirements. However, the build method specifies using the libraries bundled with StormLib.
+
+### CLI11
+
+This project also uses the [CLI11](https://github.com/CLIUtils/CLI11) command line parser for C++11. It provides a simple and easy to use/implement CLI arguments.
