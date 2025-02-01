@@ -1,6 +1,6 @@
 # mpqcli
 
-![Build Status](https://img.shields.io/github/actions/workflow/status/TheGrayDot/mpqcli/build.yml?branch=main&style=flat)
+![Build Status](https://img.shields.io/github/actions/workflow/status/TheGrayDot/mpqcli/tag.yml?style=flat) ![Release](https://img.shields.io/github/v/release/TheGrayDot/mpqcli?style=flat) ![Downloads](https://img.shields.io/github/downloads/TheGrayDot/mpqcli/total?style=flat)
 
 A command line tool to read, extract, search, create and verify MPQ files using the StormLib library
 
