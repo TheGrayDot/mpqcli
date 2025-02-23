@@ -48,7 +48,7 @@ The `mpqcli` program has the follwoing subcommands:
 - `version`: Print the tool version number
 - `info`: Print info about a target MPQ archive
 - `extract`: Extract one/all files from a target MPQ archive
-- `create`: Create an MPQ archive from a target directory (not implemented))
+- `create`: Create an MPQ archive from a target directory
 - `add`: Add a file to an existing MPQ archive (not implemented)
 - `list`: List files in a target MPQ archive
 - `verify`: Verify a target MPQ archive
@@ -108,15 +108,22 @@ mpqcli.exe list <target_mpq_file> | Select-String -Pattern ".exe" | ForEach-Obje
 
 ### Create archive from a target directory
 
-The `create` subcommand has not yet been added.
+Create an MPQ file from a target directory. Automatically adds `(listfile)` to the archive, and will skip this file if it exists in the target directory.
+
+```
+mpqcli create <target_directory>
+```
+
+Support for creating an MPQ archive version 1 or version 2 by using the `-v` or `--version` argument.
+
+```
+mpqcli create -v 1 <target_directory>
+mpqcli create --version 2 <target_directory>
+```
 
 ### Add a file to an existing archive
 
 The `add` subcommand has not yet been added.
-
-### Verify Archive
-
-TODO.
 
 ### Extract an MPQ archive from a self-executable patch
 
