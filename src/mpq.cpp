@@ -80,6 +80,113 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
     return 0;
 }
 
+int CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
+    // Determine MPQ archive version we are creating
+    int32_t targetMpqVersion = MPQ_CREATE_ARCHIVE_V1;
+    if (mpqVersion == 1) {
+        targetMpqVersion = MPQ_CREATE_ARCHIVE_V1;
+    } else if (mpqVersion == 2) {
+        targetMpqVersion = MPQ_CREATE_ARCHIVE_V2;
+    } else {
+        std::cerr << "[+] Invalid MPQ version specified. Exiting..." << std::endl;
+        return -1;
+    };
+
+    // Create new file path for MPQ
+    fs::path inputPath = fs::canonical(inputTargetDirectory);
+    std::cout << "[+] Input path: " << inputPath << std::endl;
+    std::string outputPath = inputPath.u8string() + ".mpq";
+
+    // Check if file already exists
+    if (fs::exists(outputPath)) {
+        std::cerr << "[+] File already exists: " << outputPath << " Exiting..." << std::endl;
+        return -1;
+    }
+
+    // Count number of files that we want to add
+    int32_t fileCount = 0;
+    for (const auto &entry : fs::recursive_directory_iterator(inputPath)) {
+        if (fs::is_regular_file(entry.path())) {
+            fileCount++;
+        }
+    }
+    // Add 2 more for listfile and attributes
+    fileCount = fileCount + 3;
+    
+    HANDLE hMpq;
+    bool result = SFileCreateArchive(
+        outputPath.c_str(),
+        targetMpqVersion,
+        fileCount,
+        &hMpq
+    );
+    
+    if (!result) {
+        std::cerr << "[+] Failed to create MPQ archive." << std::endl;
+        int32_t error = GetLastError();
+        std::cout << "[+] Error: " << error << std::endl;
+        return -1;
+    }
+
+    // Add all files in input directory to MPQ archive
+    for (const auto &entry : fs::recursive_directory_iterator(inputPath)) {
+        // Turn directory entry to filesystem object
+        fs::path entryPath = entry.path();
+
+        // Skip non-regular files
+        if (!fs::is_regular_file(entryPath)) {
+            continue;
+        }
+
+        std::cout << "[+] Adding file: " << entryPath << std::endl;
+
+        // Full path to file in input directory
+        // Relative path (the path inside the MPQ archive)
+        fs::path relativePath = fs::relative(entry.path(), inputPath);
+        // Change backslashes to forward slashes on non-Windows systems
+        #ifndef _WIN32
+            std::string archiveFileName = relativePath.string();
+            std::replace(archiveFileName.begin(), archiveFileName.end(), '/', '\\');
+        #else
+            std::string archiveFileName = relativePath.string();
+        #endif
+
+        if (archiveFileName == ATTRIBUTES_NAME ||
+            archiveFileName == SIGNATURE_NAME ||
+            archiveFileName == LISTFILE_NAME) {
+            std::cout << "[!] Skipping system file: " << entryPath << std::endl;
+            continue;
+        }
+
+        const char *c_str_archiveFileName = archiveFileName.c_str();
+        DWORD dwFlags = MPQ_FILE_COMPRESS | MPQ_FILE_ENCRYPTED;
+        DWORD dwCompression = MPQ_COMPRESSION_ZLIB;
+
+        bool result = SFileAddFileEx(
+            hMpq,
+            entryPath.u8string().c_str(),
+            c_str_archiveFileName,
+            dwFlags,
+            dwCompression,
+            MPQ_COMPRESSION_NEXT_SAME
+        );
+
+        if (!result) {
+            int32_t error = GetLastError();
+            std::cerr << "[!] Error: " << error << " (" << strerror(error) << ") " << archiveFileName << std::endl;
+
+            if (error == 17) {
+                std::cerr << "[!] Error: File already exists in archive: " << archiveFileName << std::endl;
+                continue;
+            }
+            std::cerr << "[!] Error: " << error << " Failed to add file to archive: " << archiveFileName << std::endl;
+        }
+    }
+
+    SFileCloseArchive(hMpq);
+    return 0;
+}
+
 int ListFiles(HANDLE hArchive) {
     // Find the first file in MPQ archive to iterate from
     SFILE_FIND_DATA findData;

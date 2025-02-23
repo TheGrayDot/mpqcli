@@ -7,6 +7,7 @@
 int OpenMpqArchive(const std::string &filename, HANDLE *hArchive);
 int ExtractFiles(HANDLE hArchive, const std::string& output);
 int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName);
+int CreateMpqArchive(std::string inputPath, int32_t mpqVersion);
 int ListFiles(HANDLE hHandle);
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize);
 

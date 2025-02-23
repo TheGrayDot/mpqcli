@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
     std::string output = "default";
     bool patchExtractBin = false;
     std::string extractFileName = "default";
+    int32_t mpqVersion = 1;
 
     // Subcommand: Version
     CLI::App *version = app.add_subcommand("version", "Prints program version");
@@ -41,7 +42,9 @@ int main(int argc, char **argv) {
     create->add_option("target", target, "Target directory")
         ->required()
         ->check(CLI::ExistingDirectory);
-    
+    create->add_option("-v,--version", mpqVersion, "MPQ version (default 1)")
+        ->check(CLI::Range(1, 2));
+
     // Subcommand: List
     CLI::App *list = app.add_subcommand("list", "List files from the MPQ file");
     list->add_option("target", target, "Target MPQ file")
@@ -98,8 +101,7 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Create
     if (app.got_subcommand(create)) {
-        std::cout << "[+] Not yet implemented... Exiting" << std::endl;
-        return 0;
+        CreateMpqArchive(target, mpqVersion);
     }
 
     // Handle subcommand: Verify
