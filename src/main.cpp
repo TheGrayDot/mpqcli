@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
 
     std::string target = "default";
     std::string output = "default";
+    bool keepFolderStructure = false;
     bool patchExtractBin = false;
     std::string extractFileName = "default";
     int32_t mpqVersion = 1;
@@ -36,6 +37,7 @@ int main(int argc, char **argv) {
         ->check(CLI::ExistingFile);
     extract->add_option("-o,--output", output, "Output directory");
     extract->add_option("-f,--file", extractFileName, "Target file to extract");
+    extract->add_flag("-k,--keep", keepFolderStructure, "Keep folder structure (default false)");
 
     // Subcommand: Create
     CLI::App *create = app.add_subcommand("create", "Create MPQ file from target directory");
@@ -93,7 +95,7 @@ int main(int argc, char **argv) {
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
         if (extractFileName != "default") {
-            ExtractFile(hArchive, output, extractFileName);
+            ExtractFile(hArchive, output, extractFileName, keepFolderStructure);
         } else {
             ExtractFiles(hArchive, output);
         }

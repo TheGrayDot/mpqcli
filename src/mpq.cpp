@@ -6,6 +6,7 @@
 #include <StormLib.h>
 
 #include "mpq.h"
+#include "helpers.h"
 
 namespace fs = std::filesystem;
 
@@ -27,19 +28,23 @@ int ExtractFiles(HANDLE hArchive, const std::string& output) {
     }
 
     do {
-        std::string outputFileName = output + "/" + findData.cFileName;
-        if (SFileExtractFile(hArchive, findData.cFileName, outputFileName.c_str(), 0)) {
-            std::cout << "[+] Extracted: " << findData.cFileName << std::endl;
-        } else {
-            int32_t error = GetLastError();
-            std::cerr << "[+] Failed: " << "(" << error << ") " << findData.cFileName << std::endl;
+        int32_t result = ExtractFile(
+            hArchive,
+            output,
+            findData.cFileName,
+            true  // Keep folder structure
+        );
+        if (result != 0) {
+            return result;
         }
-    } while (SFileFindNextFile(findHandle, &findData));
+    } while (SFileFindNextFile(
+        findHandle,
+        &findData));
 
     return 0;
 }
 
-int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName) {
+int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure) {
     const char *szFileName = fileName.c_str();
     if (!SFileHasFile(hArchive, szFileName)) {
         std::cerr << "[+] Failed: File doesn't exist" << std::endl;
@@ -54,23 +59,26 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
 
     // Change forward slashes on non-Windows systems
     fs::path fileNamePath(fileName);
-    std::string fileNameString;
-    #ifndef _WIN32
-        fileNameString = fileNamePath.string();
-        std::replace(fileNameString.begin(), fileNameString.end(), '\\', '/');
-    #else
-        fileNameString = fileNamePath.string();
-    #endif
+    std::string fileNameString = NormalizeFilePath(fileNamePath);
 
+    // Remove folder structure if keepFolderStructure is false
+    if (!keepFolderStructure) {
+        fileNamePath = fs::path(fileNameString);
+        fileNameString = fileNamePath.filename();
+    }
+
+    // Create output directory
     fs::path outputPathAbsolute = fs::canonical(output);
     fs::path outputPathBase = outputPathAbsolute.parent_path() / outputPathAbsolute.filename();
     std::filesystem::create_directories(fs::path(outputPathBase).parent_path());
 
-    fs::path outputFilePathName = outputPathBase / szFileName;
+    // Ensure sub-directories for folder-nested files exist
+    fs::path outputFilePathName = outputPathBase / fileNameString;
     std::string outputFileName{outputFilePathName.u8string()};
+    std::filesystem::create_directories(outputFilePathName.parent_path());
 
     if (SFileExtractFile(hArchive, szFileName, outputFileName.c_str(), 0)) {
-        std::cout << "[+] Extracted: " << szFileName << std::endl;
+        std::cout << "[+] Extracted: " << fileNameString << std::endl;
     } else {
         int32_t error = GetLastError();
         std::cerr << "[+] Failed: " << "(" << error << ") " << szFileName << std::endl;
@@ -143,13 +151,7 @@ int CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
         // Full path to file in input directory
         // Relative path (the path inside the MPQ archive)
         fs::path relativePath = fs::relative(entry.path(), inputPath);
-        // Change backslashes to forward slashes on non-Windows systems
-        #ifndef _WIN32
-            std::string archiveFileName = relativePath.string();
-            std::replace(archiveFileName.begin(), archiveFileName.end(), '/', '\\');
-        #else
-            std::string archiveFileName = relativePath.string();
-        #endif
+        std::string archiveFileName = NormalizeFilePath(relativePath);
 
         if (archiveFileName == ATTRIBUTES_NAME ||
             archiveFileName == SIGNATURE_NAME ||

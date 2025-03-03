@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <filesystem>
+#include <algorithm>
 
 #include <StormLib.h>
 
@@ -9,6 +10,18 @@
 #include "mpq.h"
 
 namespace fs = std::filesystem;
+
+
+std::string NormalizeFilePath(const fs::path &path) {
+    std::string filePath = path.u8string();
+    #ifndef _WIN32
+        std::replace(filePath.begin(), filePath.end(), '\\', '/');
+        return filePath;
+    #else
+        return filePath;
+    #endif
+}
+
 
 int ExtractMpqAndBinFromExe(HANDLE hArchive, bool extractBin) {
     // Fetch details from MPQ archive metadata
