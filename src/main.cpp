@@ -19,6 +19,7 @@ int main(int argc, char **argv) {
     bool keepFolderStructure = false;
     bool patchExtractBin = false;
     std::string extractFileName = "default";
+    std::string listfileName = "";
     int32_t mpqVersion = 1;
 
     // Subcommand: Version
@@ -38,6 +39,9 @@ int main(int argc, char **argv) {
     extract->add_option("-o,--output", output, "Output directory");
     extract->add_option("-f,--file", extractFileName, "Target file to extract");
     extract->add_flag("-k,--keep", keepFolderStructure, "Keep folder structure (default false)");
+    extract->add_option("-l,--listfile", listfileName, "File listing content of MPQ")
+        ->check(CLI::ExistingFile);
+
 
     // Subcommand: Create
     CLI::App *create = app.add_subcommand("create", "Create MPQ file from target directory");
@@ -51,6 +55,8 @@ int main(int argc, char **argv) {
     CLI::App *list = app.add_subcommand("list", "List files from the MPQ file");
     list->add_option("target", target, "Target MPQ file")
         ->required()
+        ->check(CLI::ExistingFile);
+    list->add_option("-l,--listfile", listfileName, "File listing content of MPQ")
         ->check(CLI::ExistingFile);
 
     // Subcommand: Verify
@@ -97,7 +103,7 @@ int main(int argc, char **argv) {
         if (extractFileName != "default") {
             ExtractFile(hArchive, output, extractFileName, keepFolderStructure);
         } else {
-            ExtractFiles(hArchive, output);
+            ExtractFiles(hArchive, output, listfileName);
         }
     }
 
@@ -135,7 +141,7 @@ int main(int argc, char **argv) {
     if (app.got_subcommand(list)) {
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
-        ListFiles(hArchive);
+        ListFiles(hArchive, listfileName);
         return 1;
     }
 

@@ -5,10 +5,10 @@
 #include <StormLib.h>
 
 int OpenMpqArchive(const std::string &filename, HANDLE *hArchive);
-int ExtractFiles(HANDLE hArchive, const std::string& output);
+int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string &listfileName);
 int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure);
 int CreateMpqArchive(std::string inputPath, int32_t mpqVersion);
-int ListFiles(HANDLE hHandle);
+int ListFiles(HANDLE hHandle, const std::string &listfileName);
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize);
 
 void PrintMpqInfo(HANDLE hArchive);
