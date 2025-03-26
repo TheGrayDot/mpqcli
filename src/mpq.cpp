@@ -18,9 +18,10 @@ int OpenMpqArchive(const std::string &filename, HANDLE *hArchive) {
     return 1;
 }
 
-int ExtractFiles(HANDLE hArchive, const std::string& output) {
+int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& listfileName) {
     SFILE_FIND_DATA findData;
-    HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, NULL);
+    const char *listfile = listfileName.empty() ? NULL : listfileName.c_str();
+    HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, listfile);
     if (findHandle == NULL) {
         std::cerr << "[+] Failed to find first file in MPQ archive." << std::endl;
         SFileCloseArchive(hArchive);
@@ -84,7 +85,7 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
         std::cerr << "[+] Failed: " << "(" << error << ") " << szFileName << std::endl;
         return error;
     }
- 
+
     return 0;
 }
 
@@ -120,7 +121,7 @@ int CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
     }
     // Add 2 more for listfile and attributes
     fileCount = fileCount + 3;
-    
+
     HANDLE hMpq;
     bool result = SFileCreateArchive(
         outputPath.c_str(),
@@ -128,7 +129,7 @@ int CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
         fileCount,
         &hMpq
     );
-    
+
     if (!result) {
         std::cerr << "[+] Failed to create MPQ archive." << std::endl;
         int32_t error = GetLastError();
@@ -189,10 +190,11 @@ int CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
     return 0;
 }
 
-int ListFiles(HANDLE hArchive) {
+int ListFiles(HANDLE hArchive, const std::string& listfileName) {
     // Find the first file in MPQ archive to iterate from
     SFILE_FIND_DATA findData;
-    HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, NULL);
+    const char *listfile = listfileName.empty() ? NULL : listfileName.c_str();
+    HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, listfile);
     if (findHandle == NULL) {
         std::cerr << "[+] Failed to find first file in MPQ archive." << std::endl;
         SFileCloseArchive(hArchive);

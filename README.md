@@ -2,7 +2,7 @@
 
 ![Build Status](https://img.shields.io/github/actions/workflow/status/TheGrayDot/mpqcli/tag.yml?style=flat) ![Release](https://img.shields.io/github/v/release/TheGrayDot/mpqcli?style=flat) ![Downloads](https://img.shields.io/github/downloads/TheGrayDot/mpqcli/total?style=flat)
 
-A command line tool to read, extract, search, create and verify MPQ files using the StormLib library
+A command line tool to read, extract, search, create and verify MPQ files using the [StormLib library](https://github.com/ladislav-zezula/StormLib).
 
 ## Overview
 
@@ -72,6 +72,14 @@ Extract files to a specific target directory - which will be created if it doesn
 mpqcli extract -o /path/to/target/directory <target_mpq_file>
 ```
 
+### Extract all files with an external listfile
+
+Older MPQ archives do not contain (complete) file paths of their content. By providing an external listfile that lists the content of the MPQ archive, the extracted files will have the correct names and paths. Listfiles can be downloaded on [Ladislav Zezula's site](http://www.zezula.net/en/mpq/download.html).
+
+```
+mpqcli extract -l /path/to/listfile <target_mpq_file>
+```
+
 ### Extract one specific file
 
 Extract a single file using the `-f` option. If the target file in the MPQ archive is nested (in a directory) you need to include the full path. Similar to examples above, you can use the `-o` argument to specify the output directory.
@@ -86,6 +94,14 @@ Pretty simple, list files in an MPQ archive. Useful to "pipe" to other tools, su
 
 ```
 mpqcli list <target_mpq_file>
+```
+
+### List all files with an external listfile
+
+Older MPQ archives do not contain (complete) file paths of their content. By providing an external listfile that lists the content of the MPQ archive, the listed files will have the correct paths. Listfiles can be downloaded on [Ladislav Zezula's site](http://www.zezula.net/en/mpq/download.html).
+
+```
+mpqcli list -l /path/to/listfile <target_mpq_file>
 ```
 
 ### Search and extract files on Linux
