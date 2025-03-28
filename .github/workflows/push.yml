@@ -1,0 +1,11 @@
+name: Tag and Release
+
+on:
+  push
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
