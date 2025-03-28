@@ -109,7 +109,9 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Create
     if (app.got_subcommand(create)) {
-        CreateMpqArchive(target, mpqVersion);
+        HANDLE hArvhive = CreateMpqArchive(target, mpqVersion);
+        AddFiles(hArvhive, target);
+        CloseMpqArchive(hArvhive);
     }
 
     // Handle subcommand: Verify

@@ -1,6 +1,7 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
+#include <string>
 #include <filesystem>
 
 namespace fs = std::filesystem;

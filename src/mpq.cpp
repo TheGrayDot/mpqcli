@@ -18,6 +18,14 @@ int OpenMpqArchive(const std::string &filename, HANDLE *hArchive) {
     return 1;
 }
 
+int CloseMpqArchive(HANDLE hArchive) {
+    if (!SFileCloseArchive(hArchive)) {
+        std::cerr << "[+] Failed to close MPQ archive." << std::endl;
+        return -1;
+    }
+    return 0;
+}
+
 int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& listfileName) {
     SFILE_FIND_DATA findData;
     const char *listfile = listfileName.empty() ? NULL : listfileName.c_str();
@@ -89,7 +97,7 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
     return 0;
 }
 
-int CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
+HANDLE CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
     // Determine MPQ archive version we are creating
     int32_t targetMpqVersion = MPQ_CREATE_ARCHIVE_V1;
     if (mpqVersion == 1) {
@@ -98,7 +106,7 @@ int CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
         targetMpqVersion = MPQ_CREATE_ARCHIVE_V2;
     } else {
         std::cerr << "[+] Invalid MPQ version specified. Exiting..." << std::endl;
-        return -1;
+        return NULL;
     };
 
     // Create new file path for MPQ
@@ -109,7 +117,7 @@ int CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
     // Check if file already exists
     if (fs::exists(outputPath)) {
         std::cerr << "[+] File already exists: " << outputPath << " Exiting..." << std::endl;
-        return -1;
+        return NULL;
     }
 
     // Count number of files that we want to add
@@ -120,7 +128,7 @@ int CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
         }
     }
     // Add 2 more for listfile and attributes
-    fileCount = fileCount + 3;
+    fileCount = fileCount + 2;
 
     HANDLE hMpq;
     bool result = SFileCreateArchive(
@@ -134,59 +142,73 @@ int CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
         std::cerr << "[+] Failed to create MPQ archive." << std::endl;
         int32_t error = GetLastError();
         std::cout << "[+] Error: " << error << std::endl;
+        return NULL;
+    }
+
+    return hMpq;
+}
+
+int AddFiles(HANDLE hArvhive, const std::string& inputPath) {
+    for (const auto &entry : fs::recursive_directory_iterator(inputPath)) {
+        if (fs::is_regular_file(entry.path())) {
+            AddFile(hArvhive, entry.path().u8string());
+        }
+    }
+    return 0;
+}
+
+int AddFile(HANDLE hArchive, const std::string& inputFile) {
+    // Return if file doesn't exist on disk
+    if (!fs::exists(inputFile)) {
+        std::cerr << "[!] File doesn't exist on disk: " << inputFile << std::endl;
         return -1;
     }
 
-    // Add all files in input directory to MPQ archive
-    for (const auto &entry : fs::recursive_directory_iterator(inputPath)) {
-        // Turn directory entry to filesystem object
-        fs::path entryPath = entry.path();
+    // Normalise path
+    fs::path inputFilePath = fs::relative(inputFile);
+    std::string archiveFileName = NormalizeFilePath(inputFilePath.u8string());
+    std::cout << "[+] Adding file: " << archiveFileName << std::endl;
 
-        // Skip non-regular files
-        if (!fs::is_regular_file(entryPath)) {
-            continue;
-        }
-
-        std::cout << "[+] Adding file: " << entryPath << std::endl;
-
-        // Full path to file in input directory
-        // Relative path (the path inside the MPQ archive)
-        fs::path relativePath = fs::relative(entry.path(), inputPath);
-        std::string archiveFileName = NormalizeFilePath(relativePath);
-
-        if (archiveFileName == ATTRIBUTES_NAME ||
-            archiveFileName == SIGNATURE_NAME ||
-            archiveFileName == LISTFILE_NAME) {
-            std::cout << "[!] Skipping system file: " << entryPath << std::endl;
-            continue;
-        }
-
-        const char *c_str_archiveFileName = archiveFileName.c_str();
-        DWORD dwFlags = MPQ_FILE_COMPRESS | MPQ_FILE_ENCRYPTED;
-        DWORD dwCompression = MPQ_COMPRESSION_ZLIB;
-
-        bool result = SFileAddFileEx(
-            hMpq,
-            entryPath.u8string().c_str(),
-            c_str_archiveFileName,
-            dwFlags,
-            dwCompression,
-            MPQ_COMPRESSION_NEXT_SAME
-        );
-
-        if (!result) {
-            int32_t error = GetLastError();
-            std::cerr << "[!] Error: " << error << " (" << strerror(error) << ") " << archiveFileName << std::endl;
-
-            if (error == 17) {
-                std::cerr << "[!] Error: File already exists in archive: " << archiveFileName << std::endl;
-                continue;
-            }
-            std::cerr << "[!] Error: " << error << " Failed to add file to archive: " << archiveFileName << std::endl;
-        }
+    // Check if file exists in MPQ archive
+    bool hasFile = SFileHasFile(hArchive, archiveFileName.c_str());
+    if (hasFile) {
+        std::cerr << "[!] File already exists in MPQ archive: " << archiveFileName << " Skipping..." << std::endl;
+        return -1;
     }
 
-    SFileCloseArchive(hMpq);
+    // Set file attributes in MPQ archive (compression and encryption)
+    DWORD dwFlags = MPQ_FILE_COMPRESS | MPQ_FILE_ENCRYPTED;
+    DWORD dwCompression = MPQ_COMPRESSION_ZLIB;
+
+    bool addedFile = SFileAddFileEx(
+        hArchive,
+        inputFile.c_str(),
+        archiveFileName.c_str(),
+        dwFlags,
+        dwCompression,
+        MPQ_COMPRESSION_NEXT_SAME
+    );
+
+    if (!addedFile) {
+        int32_t error = GetLastError();
+        std::cerr << "[!] Error: " << error << " Failed to add: " << archiveFileName << std::endl;
+        return -1;
+    }
+
+    return 0;
+}
+
+int RemoveFile(HANDLE hArchive, const std::string& fileName) {
+    if (!SFileHasFile(hArchive, fileName.c_str())) {
+        std::cerr << "[+] Failed: File doesn't exist" << std::endl;
+        return -1;
+    }
+
+    if (!SFileRemoveFile(hArchive, fileName.c_str(), 0)) {
+        std::cerr << "[+] Failed: File cannot be removed" << std::endl;
+        return -1;
+    }
+
     return 0;
 }
 
