@@ -4,6 +4,8 @@
 
 A command line tool to read, extract, search, create and verify MPQ files using the [StormLib library](https://github.com/ladislav-zezula/StormLib).
 
+> ⚠️ **Warning:** This project is under development and may contain bugs. Use at your own risk.
+
 ## Overview
 
 **This is a command line tool, designed for automation**. For example, run one command to create an MPQ file from a directory of files. If you require an MPQ tool with a graphical interface (GUI) - I would recommend using [Ladik's MPQ Editor](http://www.zezula.net/en/mpq/download.html).
