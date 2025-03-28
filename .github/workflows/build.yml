@@ -5,7 +5,7 @@ on:
 
 jobs:
   build_linux:
-    runs-on: ubuntu-22.04
+    runs-on: windows-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -22,11 +22,11 @@ jobs:
         run: ./build/bin/mpqcli version
 
       - name: Copy mpqcli binary
-        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-linux
+        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-windows
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: mpqcli-linux
-          path: ./build/bin/mpqcli-linux
+          path: ./build/bin/mpqcli-windows
           retention-days: 1
