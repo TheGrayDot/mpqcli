@@ -54,6 +54,8 @@ configure_file(src/mpqcli.h.in mpqcli.h)
 # Create application binary release
 add_executable(mpqcli src/main.cpp src/mpq.cpp src/helpers.cpp)
 
+target_include_directories(mpqcli PRIVATE "${CMAKE_SOURCE_DIR}/extern/StormLib/src")
+
 # Detect if we are using MSVC
 if (MSVC)
     # Determine the library name based on build type and configuration
