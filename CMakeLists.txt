@@ -79,5 +79,5 @@ else()
 endif()
 
 # target_link_libraries(mpqcli storm)
-target_link_libraries(mpqcli CLI11::CLI11)
+target_link_libraries(mpqcli PRIVATE CLI11::CLI11)
 target_include_directories(mpqcli PUBLIC "${PROJECT_BINARY_DIR}")
