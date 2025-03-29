@@ -53,6 +53,31 @@ configure_file(src/mpqcli.h.in mpqcli.h)
 
 # Create application binary release
 add_executable(mpqcli src/main.cpp src/mpq.cpp src/helpers.cpp)
-target_link_libraries(mpqcli storm)
+
+# Detect if we are using MSVC
+if (MSVC)
+    # Determine the library name based on build type and configuration
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        if (CMAKE_CXX_FLAGS MATCHES "/D_UNICODE")
+            set(STORMLIB_LIB_NAME "StormLibDUD.lib") # Debug Unicode CRT-DLL version
+        else()
+            set(STORMLIB_LIB_NAME "StormLibDAD.lib") # Debug Ansi CRT-DLL version
+        endif()
+    else() # Release build
+        if (CMAKE_CXX_FLAGS MATCHES "/D_UNICODE")
+            set(STORMLIB_LIB_NAME "StormLibRUD.lib") # Release Unicode CRT-DLL version
+        else()
+            set(STORMLIB_LIB_NAME "StormLibRAD.lib") # Release Ansi CRT-DLL version
+        endif()
+    endif()
+
+    # Add the library to the target
+    target_link_libraries(mpqcli PRIVATE ${STORMLIB_LIB_NAME})
+else()
+    # For non-MSVC compilers, link the standard StormLib library
+    target_link_libraries(mpqcli PRIVATE storm)
+endif()
+
+# target_link_libraries(mpqcli storm)
 target_link_libraries(mpqcli CLI11::CLI11)
 target_include_directories(mpqcli PUBLIC "${PROJECT_BINARY_DIR}")
