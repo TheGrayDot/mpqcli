@@ -22,10 +22,10 @@ jobs:
         run: dir build\bin
 
       - name: Check mpqcli version
-        run: build/bin/mpqcli.exe version
+        run: build/bin/Release/mpqcli.exe version
 
       - name: Copy mpqcli binary
-        run: cp build/bin/mpqcli build/bin/mpqcli-windows
+        run: cp build/bin/Release/mpqcli.exe build/bin/mpqcli-windows.exe
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
