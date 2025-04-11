@@ -18,6 +18,9 @@ jobs:
       - name: Compile project
         run: cmake --build build
 
+      - name: List files in build bin
+        run: dir build\bin
+
       - name: Check mpqcli version
         run: build/bin/mpqcli.exe version
 
