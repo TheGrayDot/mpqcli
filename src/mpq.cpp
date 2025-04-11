@@ -73,7 +73,7 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
     // Remove folder structure if keepFolderStructure is false
     if (!keepFolderStructure) {
         fileNamePath = fs::path(fileNameString);
-        fileNameString = fileNamePath.filename();
+        fileNameString = fileNamePath.filename().u8string();
     }
 
     // Create output directory

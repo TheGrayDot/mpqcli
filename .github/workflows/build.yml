@@ -30,3 +30,30 @@ jobs:
           name: mpqcli-linux
           path: ./build/bin/mpqcli-linux
           retention-days: 1
+
+  build_windows:
+    runs-on: windows-2019
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Run cmake
+        run: cmake -B build
+
+      - name: Compile project
+        run: cmake --build build --config Release
+
+      - name: Check mpqcli version
+        run: build/bin/Release/mpqcli.exe version
+
+      - name: Copy mpqcli binary
+        run: cp build/bin/Release/mpqcli.exe build/bin/mpqcli-windows.exe
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpqcli-windows.exe
+          path: build/bin/mpqcli-windows.exe
+          retention-days: 1
