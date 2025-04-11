@@ -5,7 +5,35 @@ on:
 
 jobs:
   build_linux:
-    runs-on: windows-latest
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Run cmake
+        run: cmake -B build
+
+      - name: Compile project
+        run: cmake --build build
+
+      - name: Check mpqcli version
+        run: ./build/bin/mpqcli version
+
+      - name: Copy mpqcli binary
+        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-linux
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpqcli-linux
+          path: ./build/bin/mpqcli-linux
+          retention-days: 1
+
+
+  build_windows:
+    runs-on: windows-2019
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
