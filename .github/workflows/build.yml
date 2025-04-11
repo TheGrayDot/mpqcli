@@ -16,7 +16,7 @@ jobs:
         run: cmake -B build
 
       - name: Compile project
-        run: cmake --build build
+        run: cmake --build build --config Release
 
       - name: List files in build bin
         run: dir build\bin
