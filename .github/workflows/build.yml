@@ -19,14 +19,14 @@ jobs:
         run: cmake --build build
 
       - name: Check mpqcli version
-        run: ./build/bin/mpqcli version
+        run: build/bin/mpqcli.exe version
 
       - name: Copy mpqcli binary
-        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-windows
+        run: cp build/bin/mpqcli build/bin/mpqcli-windows
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mpqcli-linux
-          path: ./build/bin/mpqcli-windows
+          name: mpqcli-windows.exe
+          path: build/bin/mpqcli-windows.exe
           retention-days: 1
