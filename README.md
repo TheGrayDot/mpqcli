@@ -4,7 +4,7 @@
 
 A command line tool to read, extract, search, create and verify MPQ files using the [StormLib library](https://github.com/ladislav-zezula/StormLib).
 
-> ⚠️ **Warning:** This project is under development and may contain bugs. Use at your own risk.
+> ⚠️ **Warning:** This project is under development and will change functionality between released versions and may contain bugs. Use at your own risk.
 
 ## Overview
 
@@ -14,13 +14,23 @@ A command line tool to read, extract, search, create and verify MPQ files using 
 
 ## Download
 
+Check the [latest release with binaries](https://github.com/TheGrayDot/mpqcli/releases).
+
 Download latest release on Linux:
 
 ```
 TAG=$(curl -s https://api.github.com/repos/TheGrayDot/mpqcli/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
 curl -L -o mpqcli-linux https://github.com/TheGrayDot/mpqcli/releases/download/$TAG/mpqcli-linux
 chmod u+x mpqcli-linux
-./mpqcli-linux --help
+./mpqcli-linux version
+```
+
+Download the latest release on Windows:
+
+```
+$TAG = (Invoke-RestMethod -Uri "https://api.github.com/repos/TheGrayDot/mpqcli/releases/latest").tag_name
+Invoke-WebRequest -Uri "https://github.com/TheGrayDot/mpqcli/releases/download/$TAG/mpqcli-windows.exe" -OutFile "mpqcli-windows.exe"
+.\mpqcli-windows.exe version
 ```
 
 ## Building

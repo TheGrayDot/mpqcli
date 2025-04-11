@@ -31,7 +31,6 @@ jobs:
           path: ./build/bin/mpqcli-linux
           retention-days: 1
 
-
   build_windows:
     runs-on: windows-2019
     steps:
@@ -45,9 +44,6 @@ jobs:
 
       - name: Compile project
         run: cmake --build build --config Release
-
-      - name: List files in build bin
-        run: dir build\bin
 
       - name: Check mpqcli version
         run: build/bin/Release/mpqcli.exe version
