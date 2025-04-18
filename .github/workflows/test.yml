@@ -25,8 +25,8 @@ jobs:
           name: mpqcli-linux
           path: build/bin
 
-      - name: List build/bin directory
-        run: ls -la build/bin
+      - name: Rename binary to "mpqcli"
+        run: mv build/bin/mpqcli-linux build/bin/mpqcli
 
       - name: Make binary executable
         run: chmod +x ./build/bin/mpqcli-linux
@@ -38,9 +38,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
-
-      - name: List working directory
-        run: ls -la
 
       - name: Install dependencies
         run: |
