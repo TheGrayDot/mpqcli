@@ -6,7 +6,8 @@ from pathlib import Path
 @pytest.fixture(scope="session")
 def binary_path():
     if os.getenv("GITHUB_ACTIONS") == "true":
-        binary = Path("mpqcli")
+        script_dir = Path(__file__).parent
+        binary = script_dir.parent / "mpqcli"
     else:
         script_dir = Path(__file__).parent
         binary = script_dir.parent / "build" / "bin" / "mpqcli"
