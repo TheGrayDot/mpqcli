@@ -16,11 +16,17 @@ jobs:
         with:
           submodules: false
 
+      - name: Print working directory
+        run: pwd
+
       - name: Download Linux binary
         uses: actions/download-artifact@v4
         with:
           name: mpqcli-linux
           path: build/bin
+
+      - name: List build/bin directory
+        run: ls -la build/bin
 
       - name: Make binary executable
         run: chmod +x ./build/bin/mpqcli-linux
@@ -33,6 +39,9 @@ jobs:
         with:
           python-version: 3.11
 
+      - name: List working directory
+        run: ls -la
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -40,4 +49,4 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest test
+          python3 -m pytest test
