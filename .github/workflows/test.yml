@@ -3,6 +3,9 @@ name: Test
 on:
   workflow_call
 
+permissions:
+  contents: write
+
 jobs:
   test_linux:
     runs-on: ubuntu-22.04
