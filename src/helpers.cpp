@@ -23,6 +23,24 @@ std::string NormalizeFilePath(const fs::path &path) {
 }
 
 
+std::string WindowsifyFilePath(const fs::path &path) {
+    std::string filePath = path.u8string();
+    std::replace(filePath.begin(), filePath.end(), '/', '\\');
+    return filePath;
+}
+
+
+int CountFilesInDirectory(const std::string &directory) {
+    int fileCount = 0;
+    for (const auto &entry : fs::directory_iterator(directory)) {
+        if (fs::is_regular_file(entry.path())) {
+            ++fileCount;
+        }
+    }
+    return fileCount;
+}
+
+
 int ExtractMpqAndBinFromExe(HANDLE hArchive, bool extractBin) {
     // Fetch details from MPQ archive metadata
     std::string archiveName = GetMpqFileName(hArchive);
