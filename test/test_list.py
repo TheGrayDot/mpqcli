@@ -6,8 +6,8 @@ def test_list(binary_path):
     test_file = script_dir / "data" / "mpq_with_output_v1.mpq"
 
     expected_output = {
-        "data\\files\\cats.txt",
-        "data\\files\\dogs.txt",
+        "test\\data\\files\\cats.txt",
+        "test\\data\\files\\dogs.txt",
         "(listfile)",
     }
 

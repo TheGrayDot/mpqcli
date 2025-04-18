@@ -4,13 +4,16 @@ on:
   workflow_call
 
 jobs:
-  build_linux:
+  test_linux:
     runs-on: ubuntu-22.04
     steps:
       - name: Download Linux binary
         uses: actions/download-artifact@v4
         with:
           name: mpqcli-linux
+
+      - name: Make binary executable
+        run: chmod +x ./mpqcli-linux
 
       - name: Check mpqcli version
         run: ./mpqcli-linux version
@@ -24,3 +27,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r test/requirements.txt
+
+      - name: Run tests
+        run: |
+          python -m pytest test
