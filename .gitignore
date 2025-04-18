@@ -1,3 +1,6 @@
+# CUSTOM
+/test/data
+
 # C++
 # Prerequisites
 *.d
@@ -34,7 +37,7 @@
 
 /build
 
-# Python
+# PYTHON
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
