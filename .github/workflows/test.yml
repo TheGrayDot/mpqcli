@@ -20,6 +20,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: mpqcli-linux
+          path: build/bin
 
       - name: Make binary executable
         run: chmod +x ./mpqcli-linux

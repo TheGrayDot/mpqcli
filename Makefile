@@ -18,9 +18,8 @@ build_clean:
 	rm -rf build
 
 test_mpqcli:
-	cd test; \
-	. ./venv/bin/activate && \
-	python3 -m pytest -s
+	. ./test/venv/bin/activate && \
+	python3 -m pytest test -s
 
 test_clean:
 	rm -rf test/data
