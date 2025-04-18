@@ -23,10 +23,10 @@ jobs:
           path: build/bin
 
       - name: Make binary executable
-        run: chmod +x ./mpqcli-linux
+        run: chmod +x ./build/bin/mpqcli-linux
 
       - name: Check mpqcli version
-        run: ./mpqcli-linux version
+        run: ./build/bin/mpqcli-linux version
 
       - name: Setup python
         uses: actions/setup-python@v4
