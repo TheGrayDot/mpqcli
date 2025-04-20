@@ -1,4 +1,4 @@
-import os
+import platform
 from pathlib import Path
 
 import pytest
@@ -7,7 +7,11 @@ import pytest
 @pytest.fixture(scope="session")
 def binary_path():
     script_dir = Path(__file__).parent
-    binary = script_dir.parent / "build" / "bin" / "mpqcli"
+
+    if platform.system() == "Windows":
+        binary = script_dir.parent / "build" / "bin" / "mpqcli.exe"
+    else:
+        binary = script_dir.parent / "build" / "bin" / "mpqcli"
 
     if not binary.exists():
         pytest.fail(f"Binary not found at {binary}")
