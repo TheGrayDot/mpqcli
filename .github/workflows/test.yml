@@ -61,7 +61,7 @@ jobs:
           path: build/bin/Release
 
       - name: Rename binary to "mpqcli"
-        run: mv build/bin/mpqcli-windows.exe build/bin/mpqcli.exe
+        run: mv build/bin/Release/mpqcli-windows.exe build/bin/mpqcli.exe
 
       - name: Check mpqcli version
         run: ./build/bin/mpqcli.exe version
