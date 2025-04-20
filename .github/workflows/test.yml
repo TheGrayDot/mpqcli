@@ -16,9 +16,6 @@ jobs:
         with:
           submodules: false
 
-      - name: Print working directory
-        run: pwd
-
       - name: Download Linux binary
         uses: actions/download-artifact@v4
         with:
@@ -33,6 +30,41 @@ jobs:
 
       - name: Check mpqcli version
         run: ./build/bin/mpqcli version
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r test/requirements.txt
+
+      - name: Run tests
+        run: |
+          python3 -m pytest test
+
+  test_windows:
+    runs-on: windows-2019
+    steps:
+      # Only need repo content to install test/requirements.txt
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Download Windows binary
+        uses: actions/download-artifact@v4
+        with:
+          name: mpqcli-windows
+          path: build/bin/Release
+
+      - name: Rename binary to "mpqcli"
+        run: mv build/bin/mpqcli-windows.exe build/bin/mpqcli.exe
+
+      - name: Check mpqcli version
+        run: ./build/bin/mpqcli.exe version
 
       - name: Setup python
         uses: actions/setup-python@v4
