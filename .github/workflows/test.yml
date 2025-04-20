@@ -57,7 +57,7 @@ jobs:
       - name: Download Windows binary
         uses: actions/download-artifact@v4
         with:
-          name: mpqcli-windows
+          name: mpqcli-windows.exe
           path: build/bin/Release
 
       - name: Rename binary to "mpqcli"
@@ -78,4 +78,4 @@ jobs:
 
       - name: Run tests
         run: |
-          python3 -m pytest test
+          python -m pytest test
