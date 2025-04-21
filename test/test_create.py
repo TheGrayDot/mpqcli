@@ -2,6 +2,27 @@ import subprocess
 from pathlib import Path
 
 
+def test_create_mpq_target_does_not_exist(binary_path, test_files):
+    """
+    Test MPQ file creation with a non-existent target.
+
+    This test checks:
+    - If the application exits correctly when the target does not exist.
+    """
+    _ = test_files
+    script_dir = Path(__file__).parent
+    target_dir = script_dir / "does" / "not" / "exist"
+
+    result = subprocess.run(
+        [str(binary_path), "create", "-v", "1", str(target_dir)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert result.returncode == 105, f"mpqcli failed with error: {result.stderr}"
+
+
 def test_create_mpq_versions(binary_path, test_files):
     """
     Test MPQ archive creation with different MPQ versions.
