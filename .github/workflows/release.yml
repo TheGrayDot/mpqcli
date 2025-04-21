@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 jobs:
-  release_linux:
+  release_all:
     runs-on: ubuntu-latest
     steps:
       - name: Download Linux binary

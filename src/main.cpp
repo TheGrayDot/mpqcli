@@ -26,6 +26,9 @@ int main(int argc, char **argv) {
     // Subcommand: Version
     CLI::App *version = app.add_subcommand("version", "Prints program version");
 
+    // Subcommand: About
+    CLI::App *about = app.add_subcommand("about", "Prints program information");
+
     // Subcommand: Info
     CLI::App *info = app.add_subcommand("info", "Prints info about the MPQ file");
     info->add_option("target", target, "Target MPQ file")
@@ -81,6 +84,18 @@ int main(int argc, char **argv) {
     if (app.got_subcommand(version)){
         std::cout << MPQCLI_VERSION << "-" << GIT_COMMIT_HASH << std::endl;
     }
+
+    // Handle subcommand: About
+    if (app.got_subcommand(about)){
+        std::cout << "Name: mpqcli" << std::endl;
+        std::cout << "Version: " << MPQCLI_VERSION << "-" << GIT_COMMIT_HASH << std::endl;
+        std::cout << "Author: Thomas Laurenson" << std::endl;
+        std::cout << "License: MIT" << std::endl;
+        std::cout << "GitHub: https://github.com/TheGrayDot/mpqcli" << std::endl;
+        std::cout << "Dependencies:" << std::endl;
+        std::cout << " - StormLib (https://github.com/ladislav-zezula/StormLib)" << std::endl;
+        std::cout << " - CLI11 (https://github.com/CLIUtils/CLI11)" << std::endl;
+    };
 
     // Handle subcommand: Info
     if (app.got_subcommand(info)){
