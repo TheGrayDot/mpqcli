@@ -11,7 +11,12 @@ permissions:
 jobs:
   build:
     uses: ./.github/workflows/build.yml
+  test:
+    uses: ./.github/workflows/test.yml
+    needs: build
   release:
     uses: ./.github/workflows/release.yml
-    needs: build
+    needs: 
+      - build
+      - test
     secrets: inherit 

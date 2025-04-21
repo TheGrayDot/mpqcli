@@ -97,7 +97,7 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
     return 0;
 }
 
-HANDLE CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
+HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_t mpqVersion) {
     // Determine MPQ archive version we are creating
     int32_t targetMpqVersion = MPQ_CREATE_ARCHIVE_V1;
     if (mpqVersion == 1) {
@@ -109,30 +109,15 @@ HANDLE CreateMpqArchive(std::string inputTargetDirectory, int32_t mpqVersion) {
         return NULL;
     };
 
-    // Create new file path for MPQ
-    fs::path inputPath = fs::canonical(inputTargetDirectory);
-    std::cout << "[+] Input path: " << inputPath << std::endl;
-    std::string outputPath = inputPath.u8string() + ".mpq";
-
     // Check if file already exists
-    if (fs::exists(outputPath)) {
-        std::cerr << "[+] File already exists: " << outputPath << " Exiting..." << std::endl;
+    if (fs::exists(outputArchiveName)) {
+        std::cerr << "[+] File already exists: " << outputArchiveName << " Exiting..." << std::endl;
         return NULL;
     }
 
-    // Count number of files that we want to add
-    int32_t fileCount = 0;
-    for (const auto &entry : fs::recursive_directory_iterator(inputPath)) {
-        if (fs::is_regular_file(entry.path())) {
-            fileCount++;
-        }
-    }
-    // Add 2 more for listfile and attributes
-    fileCount = fileCount + 2;
-
     HANDLE hMpq;
     bool result = SFileCreateArchive(
-        outputPath.c_str(),
+        outputArchiveName.c_str(),
         targetMpqVersion,
         fileCount,
         &hMpq
@@ -164,9 +149,9 @@ int AddFile(HANDLE hArchive, const std::string& inputFile) {
         return -1;
     }
 
-    // Normalise path
+    // Normalise path for MPQ
     fs::path inputFilePath = fs::relative(inputFile);
-    std::string archiveFileName = NormalizeFilePath(inputFilePath.u8string());
+    std::string archiveFileName = WindowsifyFilePath(inputFilePath.u8string());
     std::cout << "[+] Adding file: " << archiveFileName << std::endl;
 
     // Check if file exists in MPQ archive
@@ -263,22 +248,22 @@ char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) 
 
 void PrintMpqInfo(HANDLE hArchive) {
     std::string fileName = GetMpqFileName(hArchive);
-    std::cout << "[+] File name: " << fileName << std::endl;
+    std::cout << "File name: " << fileName << std::endl;
 
     int32_t archiveSize = GetMpqArchiveSize(hArchive);
-    std::cout << "[+] Archive size: " << archiveSize << std::endl;
+    std::cout << "Archive size: " << archiveSize << std::endl;
 
     int64_t headerOffset = GetMpqArchiveHeaderOffset(hArchive);
-    std::cout << "[+] Header offset: " << headerOffset << std::endl;
+    std::cout << "Header offset: " << headerOffset << std::endl;
 
     int64_t headerSize = GetMpqArchiveHeaderSize(hArchive);
-    std::cout << "[+] Header size: " << headerSize << std::endl;
+    std::cout << "Header size: " << headerSize << std::endl;
 
     int32_t numberOfFiles = GetMpqArchiveFileCount(hArchive);
-    std::cout << "[+] File count: " << numberOfFiles << std::endl;
+    std::cout << "File count: " << numberOfFiles << std::endl;
 
     int32_t signatureType = GetMpqArchiveSignatureType(hArchive);
-    std::cout << "[+] Signature type: " << signatureType << std::endl;
+    std::cout << "Signature type: " << signatureType << std::endl;
 }
 
 std::string GetMpqFileName(HANDLE hArchive) {

@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
     std::string extractFileName = "default";
     std::string listfileName = "";
     int32_t mpqVersion = 1;
+    std::string baseFolder = "";
 
     // Subcommand: Version
     CLI::App *version = app.add_subcommand("version", "Prints program version");
@@ -48,6 +49,8 @@ int main(int argc, char **argv) {
     create->add_option("target", target, "Target directory")
         ->required()
         ->check(CLI::ExistingDirectory);
+    create->add_option("-o,--output", output, "Output file");
+    create->add_option("-b,--base", baseFolder, "Base folder to use for file names");
     create->add_option("-v,--version", mpqVersion, "MPQ version (default 1)")
         ->check(CLI::Range(1, 2));
 
@@ -109,9 +112,30 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Create
     if (app.got_subcommand(create)) {
-        HANDLE hArvhive = CreateMpqArchive(target, mpqVersion);
-        AddFiles(hArvhive, target);
-        CloseMpqArchive(hArvhive);
+        fs::path outputFilePath;
+        if (output != "default") {
+            outputFilePath = fs::absolute(output);
+        } else {
+            outputFilePath = fs::path(target);
+            outputFilePath.replace_extension(".mpq");
+        }
+        std::string outputFile = outputFilePath.u8string();
+        
+        std::cout << "[+] Output file: " << outputFile << std::endl;
+
+        // Determine number of files we are going to add
+        int32_t fileCount = CountFilesInDirectory(target);
+        fileCount += 2;  // Add 2 for listfile and attributes
+    
+        // Create the MPQ archive and add files
+        HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, mpqVersion);
+        if (hArchive) {
+            AddFiles(hArchive, target);
+            CloseMpqArchive(hArchive);
+        } else {
+            std::cerr << "[!] Failed to create MPQ archive." << std::endl;
+            return 1;
+        }
     }
 
     // Handle subcommand: Verify
@@ -136,7 +160,6 @@ int main(int argc, char **argv) {
         std::cout << "[+] Signature type: " << signatureType << signatureNameFormatted << std::endl;
 
         PrintMpqSignature(hArchive, signatureType);
-        return signatureType;
     }
 
     // Handle subcommand: List
@@ -144,7 +167,6 @@ int main(int argc, char **argv) {
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
         ListFiles(hArchive, listfileName);
-        return 1;
     }
 
     // Handle subcommand: Patch

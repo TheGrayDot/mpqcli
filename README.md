@@ -2,9 +2,9 @@
 
 ![Build Status](https://img.shields.io/github/actions/workflow/status/TheGrayDot/mpqcli/tag.yml?style=flat) ![Release](https://img.shields.io/github/v/release/TheGrayDot/mpqcli?style=flat) ![Downloads](https://img.shields.io/github/downloads/TheGrayDot/mpqcli/total?style=flat)
 
-A command line tool to read, extract, search, create and verify MPQ files using the [StormLib library](https://github.com/ladislav-zezula/StormLib).
+A command line tool to create, add, remove, list, extract, patch, and verify MPQ files using the [StormLib library](https://github.com/ladislav-zezula/StormLib).
 
-> ⚠️ **Warning:** This project is under development and will change functionality between released versions and may contain bugs. Use at your own risk.
+> ⚠️ **Warning:** This project is under active development and will change functionality between released versions until version 1.0.0.
 
 ## Overview
 
@@ -42,7 +42,7 @@ Invoke-WebRequest -Uri "https://github.com/TheGrayDot/mpqcli/releases/download/$
 - StormLib (provided as Git submodule)
 - CLI11 (provided as GitSubmodule)
 
-### Quickstart
+### Quickstart Linux
 
 ```
 git clone --recursive https://github.com/TheGrayDot/mpqcli.git
@@ -53,18 +53,29 @@ cmake --build build
 
 The `mpqcli` binary will be available in: `./build/bin/mpqcli`
 
+### Quickstart Windows
+
+```
+git clone --recursive https://github.com/TheGrayDot/mpqcli.git
+cd mpqcli
+cmake -B build
+cmake --build build --config Release
+```
+
+The `mpqcli.exe` binary will be available in: `./build/bin/mpqcli.exe`
+
 ## Subcommands
 
 The `mpqcli` program has the follwoing subcommands:
 
 - `version`: Print the tool version number
-- `info`: Print info about a target MPQ archive
-- `extract`: Extract one/all files from a target MPQ archive
 - `create`: Create an MPQ archive from a target directory
 - `add`: Add a file to an existing MPQ archive (not implemented)
+- `remove`: Remove a file from an existing MPQ archive (not implemented)
 - `list`: List files in a target MPQ archive
-- `verify`: Verify a target MPQ archive
-- `patch`: Functionality to handle self-executable patch files
+- `extract`: Extract one/all files from a target MPQ archive
+- `patch`: Functionality to patch files (not implemented)
+- `verify`: Verify a target MPQ archive signature
 
 ## Example Commands
 
