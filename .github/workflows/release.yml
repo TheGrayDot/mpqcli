@@ -49,8 +49,7 @@ jobs:
       - name: Extract version from CMakeLists.txt
         id: extract_version
         run: |
-          VERSION=$(awk '/project\(MPQCLI VERSION/ {print $3}' CMakeLists.txt)
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          VERSION=0.4.1 >> $GITHUB_ENV
 
       - name: Tag Docker image with version
         run: |
