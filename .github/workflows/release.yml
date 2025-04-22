@@ -50,8 +50,10 @@ jobs:
       - name: Tag Docker image with version
         run: |
           docker tag mpqcli ghcr.io/thegraydot/mpqcli:${{ env.VERSION }}
+          docker tag mpqcli ghcr.io/thegraydot/mpqcli:latest
 
       - name: Push Docker image to GitHub Container Registry
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker push ghcr.io/thegraydot/mpqcli:${{ env.VERSION }}
+          docker push ghcr.io/thegraydot/mpqcli:latest

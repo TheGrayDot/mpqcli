@@ -16,6 +16,8 @@ A command line tool to create, add, remove, list, extract, patch, and verify MPQ
 
 ## Download
 
+### Precompiled Binaries
+
 Check the [latest release with binaries](https://github.com/TheGrayDot/mpqcli/releases).
 
 Download latest release on Linux:
@@ -33,6 +35,28 @@ Download the latest release on Windows:
 $TAG = (Invoke-RestMethod -Uri "https://api.github.com/repos/TheGrayDot/mpqcli/releases/latest").tag_name
 Invoke-WebRequest -Uri "https://github.com/TheGrayDot/mpqcli/releases/download/$TAG/mpqcli-windows.exe" -OutFile "mpqcli-windows.exe"
 .\mpqcli-windows.exe version
+```
+
+### Docker Image
+
+The Docker image for `mpqcli` is hosted on [GitHub Container Registry (GHCR)](https://ghcr.io). It provides a lightweight and portable way to use `mpqcli` without needing to build or install it manually.
+
+To download the latest version of the `mpqcli` Docker image, run:
+
+```
+docker pull ghcr.io/thegraydot/mpqcli:latest
+```
+
+You can run mpqcli commands directly using the Docker container. For example:
+
+```
+docker run --rm ghcr.io/thegraydot/mpqcli:latest version
+```
+
+To use local files with the container, mount a directory from your host system:
+
+```
+docker run --rm -v $(pwd):/data ghcr.io/thegraydot/mpqcli:latest list /data/example.mpq
 ```
 
 ## Building
