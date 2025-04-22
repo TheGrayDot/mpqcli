@@ -49,7 +49,11 @@ jobs:
       - name: Extract version from CMakeLists.txt
         id: extract_version
         run: |
-          VERSION=0.4.1 >> $GITHUB_ENV
+          echo VERSION=0.4.1 >> $GITHUB_ENV
+
+      - name: Debug version extraction
+        run: |
+          echo "Extracted version: ${{ env.VERSION }}"
 
       - name: Tag Docker image with version
         run: |
