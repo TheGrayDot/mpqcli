@@ -4,7 +4,61 @@ on:
   workflow_call
 
 jobs:
-  build_linux:
+  # build_linux:
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - name: Check out repository code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
+
+  #     - name: Run cmake
+  #       run: cmake -B build
+
+  #     - name: Compile project
+  #       run: cmake --build build
+
+  #     - name: Check mpqcli version
+  #       run: ./build/bin/mpqcli version
+
+  #     - name: Copy mpqcli binary
+  #       run: cp ./build/bin/mpqcli ./build/bin/mpqcli-linux
+
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: mpqcli-linux
+  #         path: ./build/bin/mpqcli-linux
+  #         retention-days: 1
+
+  # build_windows:
+  #   runs-on: windows-2019
+  #   steps:
+  #     - name: Check out repository code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
+
+  #     - name: Run cmake
+  #       run: cmake -B build
+
+  #     - name: Compile project
+  #       run: cmake --build build --config Release
+
+  #     - name: Check mpqcli version
+  #       run: build/bin/Release/mpqcli.exe version
+
+  #     - name: Copy mpqcli binary
+  #       run: cp build/bin/Release/mpqcli.exe build/bin/mpqcli-windows.exe
+
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: mpqcli-windows.exe
+  #         path: build/bin/mpqcli-windows.exe
+  #         retention-days: 1
+
+  build_docker:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
@@ -12,48 +66,17 @@ jobs:
         with:
           submodules: true
 
-      - name: Run cmake
-        run: cmake -B build
+      - name: Build Docker image
+        run: |
+          docker build -t mpqcli .
 
-      - name: Compile project
-        run: cmake --build build
+      - name: Save Docker image as a tar file
+        run: |
+          docker save mpqcli-docker -o mpqcli-docker.tar
 
-      - name: Check mpqcli version
-        run: ./build/bin/mpqcli version
-
-      - name: Copy mpqcli binary
-        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-linux
-
-      - name: Upload Artifact
+      - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mpqcli-linux
-          path: ./build/bin/mpqcli-linux
-          retention-days: 1
-
-  build_windows:
-    runs-on: windows-2019
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Run cmake
-        run: cmake -B build
-
-      - name: Compile project
-        run: cmake --build build --config Release
-
-      - name: Check mpqcli version
-        run: build/bin/Release/mpqcli.exe version
-
-      - name: Copy mpqcli binary
-        run: cp build/bin/Release/mpqcli.exe build/bin/mpqcli-windows.exe
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mpqcli-windows.exe
-          path: build/bin/mpqcli-windows.exe
+          name: mpqcli-docker.tar
+          path: mpqcli-docker.tar
           retention-days: 1

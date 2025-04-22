@@ -19,4 +19,4 @@ jobs:
     needs: 
       - build
       - test
-    secrets: inherit 
+    secrets: inherit
