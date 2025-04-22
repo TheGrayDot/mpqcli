@@ -57,3 +57,26 @@ jobs:
           name: mpqcli-windows.exe
           path: build/bin/mpqcli-windows.exe
           retention-days: 1
+
+  build_docker:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Build Docker image
+        run: |
+          docker build -t mpqcli .
+
+      - name: Save Docker image as a tar file
+        run: |
+          docker save mpqcli -o mpqcli-docker.tar
+
+      - name: Upload Docker image as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpqcli-docker
+          path: mpqcli-docker.tar
+          retention-days: 1
