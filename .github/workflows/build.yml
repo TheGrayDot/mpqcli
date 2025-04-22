@@ -72,11 +72,11 @@ jobs:
 
       - name: Save Docker image as a tar file
         run: |
-          docker save mpqcli-docker -o mpqcli-docker.tar
+          docker save mpqcli -o mpqcli-docker.tar
 
       - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mpqcli-docker.tar
+          name: mpqcli-docker
           path: mpqcli-docker.tar
           retention-days: 1
