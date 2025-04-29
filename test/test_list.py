@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 
+
 def test_list(binary_path):
     script_dir = Path(__file__).parent
     test_file = script_dir / "data" / "mpq_with_output_v1.mpq"
