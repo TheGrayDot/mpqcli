@@ -46,21 +46,24 @@ int ExtractMpqAndBinFromExe(HANDLE hArchive, bool extractBin) {
     std::string archiveName = GetMpqFileName(hArchive);
     const fs::path archivePath = fs::canonical(archiveName);
     std::cout << "[+] Archive name: " << archiveName << std::endl;
-    int64_t archiveOffset = GetMpqArchiveHeaderOffset(hArchive);
+    int64_t archiveOffset = GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderOffset);
     std::cout << "[+] Archive offset: " << archiveOffset << std::endl;
-    int32_t archiveSize = GetMpqArchiveSize(hArchive);
+    int32_t archiveSize = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqArchiveSize);   
     std::cout << "[+] Archive size: " << archiveSize << std::endl;
+    std::uintmax_t fileSize = fs::file_size(archivePath);
+    std::cout << "[+] File size: " << fileSize << std::endl;
 
     // Determine if the file is padded (at end of file)
     // MPQ files with padding at end of file may have strong signature
-    std::uintmax_t fileSize = fs::file_size(archivePath);
     int32_t paddingSize = fileSize - archiveOffset - archiveSize;
+    std::cout << "[+] Padding size: " << paddingSize << std::endl;
+
     int32_t extractSize;
     if (paddingSize > 0) {
         std::cout << "[+] Archive appears to be padded..." << std::endl;
         extractSize = fileSize - archiveOffset;
     } else {
-        extractSize = archiveSize;
+        extractSize = fileSize;
     }
     std::cout << "[+] Extract size: " << extractSize << std::endl;
 

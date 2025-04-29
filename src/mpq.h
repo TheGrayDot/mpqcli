@@ -17,13 +17,19 @@ char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize);
 
 void PrintMpqInfo(HANDLE hArchive);
 std::string GetMpqFileName(HANDLE hArchive);
-int32_t GetMpqArchiveSize(HANDLE hArchive);
-int64_t GetMpqArchiveHeaderOffset(HANDLE hArchive);
-int64_t GetMpqArchiveHeaderSize(HANDLE hArchive);
-int32_t GetMpqArchiveSignatureType(HANDLE hArchive);
-std::vector<char>  GetMpqArchiveStrongSignature(HANDLE hArchive);
-int32_t GetMpqArchiveFileCount(HANDLE hArchive);
+uint16_t GetMpqFormatVersion(HANDLE hArchive);
 
 int PrintMpqSignature(HANDLE hHandle, int signatureType);
+
+template <typename T>
+T GetMpqArchiveInfo(HANDLE hArchive, SFileInfoClass infoClass) {
+    T value{};
+    if (!SFileGetFileInfo(hArchive, infoClass, &value, sizeof(T), NULL)) {
+        int32_t error = GetLastError();
+        std::cerr << "[+] Failed to retrieve info (Error: " << error << ")" << std::endl;
+        return T{}; // Return default value for the type
+    }
+    return value;
+}
 
 #endif
