@@ -117,7 +117,10 @@ int main(int argc, char **argv) {
     // Handle subcommand: Info
     if (app.got_subcommand(info)){
         HANDLE hArchive;
-        OpenMpqArchive(target, &hArchive);
+        if (!OpenMpqArchive(target, &hArchive)) {
+            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
+            return 1;
+        }
         PrintMpqInfo(hArchive);
     }
 
@@ -151,12 +154,12 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Add
     if (app.got_subcommand(add)) {
-        std::cout << "[!] Not yet implemented..." << std::endl;
+        std::cout << "[!] add not implemented..." << std::endl;
     }
 
     // Handle subcommand: Remove
     if (app.got_subcommand(remove)) {
-        std::cout << "[!] Not yet implemented..." << std::endl;
+        std::cout << "[!] remove not implemented..." << std::endl;
     }
 
     // Handle subcommand: Extract
@@ -189,33 +192,12 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Patch
     if (app.got_subcommand(patch)) {
-        HANDLE hArchive;
-        OpenMpqArchive(target, &hArchive);
-        ExtractMpqAndBinFromExe(hArchive, patchExtractBin);
+        std::cout << "[!] patch not implemented..." << std::endl;
     }
 
     // Handle subcommand: Verify
     if (app.got_subcommand(verify)) {
-        HANDLE hArchive;
-        OpenMpqArchive(target, &hArchive);
-        int signatureType = GetMpqArchiveSignatureType(hArchive);
-
-        std::string signatureName;
-        switch (signatureType) {
-            case 1:
-                signatureName = "weak";
-                break;
-            case 2:
-                signatureName = "strong";
-                break;
-            default:
-                signatureName = "none";
-        }
-
-        std::string signatureNameFormatted = " (" + signatureName + ")";
-        std::cout << "[+] Signature type: " << signatureType << signatureNameFormatted << std::endl;
-
-        PrintMpqSignature(hArchive, signatureType);
+        std::cout << "[!] verify not implemented..." << std::endl;
     }
 
     return 0;
