@@ -16,10 +16,7 @@ int ListFiles(HANDLE hHandle, const std::string &listfileName);
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize);
 
 void PrintMpqInfo(HANDLE hArchive);
-std::string GetMpqFileName(HANDLE hArchive);
 uint16_t GetMpqFormatVersion(HANDLE hArchive);
-
-int PrintMpqSignature(HANDLE hHandle, int signatureType);
 
 template <typename T>
 T GetMpqArchiveInfo(HANDLE hArchive, SFileInfoClass infoClass) {
