@@ -9,6 +9,7 @@ def test_list(binary_path):
     expected_output = {
         "test\\data\\files\\cats.txt",
         "test\\data\\files\\dogs.txt",
+        "test\\data\\files\\bytes",
         "(listfile)",
     }
 

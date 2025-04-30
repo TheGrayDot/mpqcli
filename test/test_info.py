@@ -15,10 +15,10 @@ def test_info_v1(binary_path):
 
     expected_output = {
         "Format version: 1",
-        "Archive size: 329",
+        "Archive size: 370",
         "Header offset: 0",
         "Header size: 32",
-        "File count: 3",
+        "File count: 4",
         "Signature type: None",
     }
 
@@ -32,4 +32,5 @@ def test_info_v1(binary_path):
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
 
     output_lines = set(result.stdout.splitlines())
+
     assert output_lines == expected_output, f"Unexpected output: {output_lines}"
