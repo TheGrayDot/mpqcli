@@ -1,5 +1,6 @@
 import platform
 from pathlib import Path
+import shutil
 
 import pytest
 
@@ -19,7 +20,7 @@ def binary_path():
     return binary
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def test_files():
     script_dir = Path(__file__).parent
 
@@ -45,3 +46,5 @@ def test_files():
         created_files.append(file_path)
 
     yield created_files
+
+    shutil.rmtree(data_dir)

@@ -14,19 +14,9 @@ int AddFile(HANDLE hArchive, const std::string& inputFile);
 int RemoveFile(HANDLE hArchive, const std::string& fileName);
 int ListFiles(HANDLE hHandle, const std::string &listfileName);
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize);
-
-void PrintMpqInfo(HANDLE hArchive);
-uint16_t GetMpqFormatVersion(HANDLE hArchive);
+void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty);
 
 template <typename T>
-T GetMpqArchiveInfo(HANDLE hArchive, SFileInfoClass infoClass) {
-    T value{};
-    if (!SFileGetFileInfo(hArchive, infoClass, &value, sizeof(T), NULL)) {
-        int32_t error = GetLastError();
-        std::cerr << "[+] Failed to retrieve info (Error: " << error << ")" << std::endl;
-        return T{}; // Return default value for the type
-    }
-    return value;
-}
+T GetMpqArchiveInfo(HANDLE hArchive, SFileInfoClass infoClass);
 
 #endif

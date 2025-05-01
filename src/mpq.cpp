@@ -2,6 +2,8 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <map>
+#include <functional>
 
 #include <StormLib.h>
 
@@ -246,29 +248,81 @@ char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) 
     return fileContent;
 }
 
-void PrintMpqInfo(HANDLE hArchive) {
-    TMPQHeader header = GetMpqArchiveInfo<TMPQHeader>(hArchive, SFileMpqHeader);
-    uint16_t formatVersion = header.wFormatVersion + 1;  // Add +1 because StormLib starts at 0
-    std::cout << "Format version: " << formatVersion << std::endl;
+void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty) {
+    // Map of property names to their corresponding actions
+    std::map<std::string, std::function<void(bool)>> propertyActions = {
+        {"format-version", [&](bool printName) {
+            TMPQHeader header = GetMpqArchiveInfo<TMPQHeader>(hArchive, SFileMpqHeader);
+            uint16_t formatVersion = header.wFormatVersion + 1;  // Add +1 because StormLib starts at 0
+            if (printName) {
+                std::cout << "Format version: ";
+            }
+            std::cout << formatVersion << std::endl;
+        }},
+        {"header-offset", [&](bool printName) {
+            int64_t headerOffset = GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderOffset);
+            if (printName) {
+                std::cout << "Header offset: ";
+            }
+            std::cout << headerOffset << std::endl;
+        }},
+        {"header-size", [&](bool printName) {
+            int64_t headerSize = GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderSize);
+            if (printName) {
+                std::cout << "Header size: ";
+            }
+            std::cout << headerSize << std::endl;
+        }},
+        {"archive-size", [&](bool printName) {
+            int32_t archiveSize = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqArchiveSize);
+            if (printName) {
+                std::cout << "Archive size: ";
+            }
+            std::cout << archiveSize << std::endl;
+        }},
+        {"file-count", [&](bool printName) {
+            int32_t numberOfFiles = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
+            if (printName) {
+                std::cout << "File count: ";
+            }
+            std::cout << numberOfFiles << std::endl;
+        }},
+        {"signature-type", [&](bool printName) {
+            int32_t signatureType = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqSignatures);
+            if (printName) {
+                std::cout << "Signature type: ";
+            }
+            if (signatureType == SIGNATURE_TYPE_NONE) {
+                std::cout << "None" << std::endl;
+            } else if (signatureType == SIGNATURE_TYPE_WEAK) {
+                std::cout << "Weak" << std::endl;
+            } else if (signatureType == SIGNATURE_TYPE_STRONG) {
+                std::cout << "Strong" << std::endl;
+            }
+        }}
+    };
 
-    int32_t archiveSize = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqArchiveSize);
-    std::cout << "Archive size: " << archiveSize << std::endl;
-
-    int64_t headerOffset = GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderOffset);
-    std::cout << "Header offset: " << headerOffset << std::endl;
-
-    int64_t headerSize = GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderSize);
-    std::cout << "Header size: " << headerSize << std::endl;
-
-    int32_t numberOfFiles = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
-    std::cout << "File count: " << numberOfFiles << std::endl;
-
-    int32_t signatureType = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqSignatures);
-    if (signatureType == SIGNATURE_TYPE_NONE) {
-        std::cout << "Signature type: None" << std::endl;
-    } else if (signatureType == SIGNATURE_TYPE_WEAK) {
-        std::cout << "Signature type: Weak" << std::endl;
-    } else if (signatureType == SIGNATURE_TYPE_STRONG) {
-        std::cout << "Signature type: Strong" << std::endl;
+    // If infoProperty is empty, print all properties with their names (key)
+    // Otherwise, print only the property value
+    if (infoProperty.empty()) {
+        for (const auto& [key, action] : propertyActions) {
+            action(true);  // Print property name and value
+        }
+    } else {
+        auto it = propertyActions.find(infoProperty);
+        if (it != propertyActions.end()) {
+            it->second(false);  // Print only the value
+        }
     }
+}
+
+template <typename T>
+T GetMpqArchiveInfo(HANDLE hArchive, SFileInfoClass infoClass) {
+    T value{};
+    if (!SFileGetFileInfo(hArchive, infoClass, &value, sizeof(T), NULL)) {
+        int32_t error = GetLastError();
+        std::cerr << "[+] Failed to retrieve info (Error: " << error << ")" << std::endl;
+        return T{}; // Return default value for the type
+    }
+    return value;
 }

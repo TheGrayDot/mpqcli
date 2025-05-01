@@ -23,6 +23,16 @@ int main(int argc, char **argv) {
     std::string listfileName = "";
     int32_t mpqVersion = 1;
     std::string baseFolder = "";
+    std::string infoProperty = "";
+
+    std::set<std::string> validInfoProperties = {
+        "format-version",
+        "header-offset",
+        "header-size",
+        "archive-size",
+        "file-count",
+        "signature-type"
+    };
 
     // Subcommand: Version
     CLI::App *version = app.add_subcommand("version", "Prints program version");
@@ -35,6 +45,8 @@ int main(int argc, char **argv) {
     info->add_option("target", target, "Target MPQ file")
         ->required()
         ->check(CLI::ExistingFile);
+    info->add_option("-p,--property", infoProperty, "Print a specific property value only")
+        ->check(CLI::IsMember(validInfoProperties));
 
     // Subcommand: Create
     CLI::App *create = app.add_subcommand("create", "Create MPQ file from target directory");
@@ -121,7 +133,7 @@ int main(int argc, char **argv) {
             std::cerr << "[!] Failed to open MPQ archive." << std::endl;
             return 1;
         }
-        PrintMpqInfo(hArchive);
+        PrintMpqInfo(hArchive, infoProperty);
     }
 
     // Handle subcommand: Create
@@ -175,7 +187,11 @@ int main(int argc, char **argv) {
         fs::create_directory(output);
 
         HANDLE hArchive;
-        OpenMpqArchive(target, &hArchive);
+        if (!OpenMpqArchive(target, &hArchive)) {
+            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
+            return 1;
+        }
+
         if (extractFileName != "default") {
             ExtractFile(hArchive, output, extractFileName, keepFolderStructure);
         } else {
