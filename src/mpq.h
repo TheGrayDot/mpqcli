@@ -14,16 +14,9 @@ int AddFile(HANDLE hArchive, const std::string& inputFile);
 int RemoveFile(HANDLE hArchive, const std::string& fileName);
 int ListFiles(HANDLE hHandle, const std::string &listfileName);
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize);
+void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty);
 
-void PrintMpqInfo(HANDLE hArchive);
-std::string GetMpqFileName(HANDLE hArchive);
-int32_t GetMpqArchiveSize(HANDLE hArchive);
-int64_t GetMpqArchiveHeaderOffset(HANDLE hArchive);
-int64_t GetMpqArchiveHeaderSize(HANDLE hArchive);
-int32_t GetMpqArchiveSignatureType(HANDLE hArchive);
-std::vector<char>  GetMpqArchiveStrongSignature(HANDLE hArchive);
-int32_t GetMpqArchiveFileCount(HANDLE hArchive);
-
-int PrintMpqSignature(HANDLE hHandle, int signatureType);
+template <typename T>
+T GetMpqArchiveInfo(HANDLE hArchive, SFileInfoClass infoClass);
 
 #endif

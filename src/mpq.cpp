@@ -2,6 +2,8 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <map>
+#include <functional>
 
 #include <StormLib.h>
 
@@ -13,7 +15,7 @@ namespace fs = std::filesystem;
 int OpenMpqArchive(const std::string &filename, HANDLE *hArchive) {
     if (!SFileOpenArchive(filename.c_str(), 0, MPQ_OPEN_READ_ONLY, hArchive)) {
         std::cerr << "[+] Failed to open: " << filename << std::endl;
-        return -1;
+        return 0;
     }
     return 1;
 }
@@ -21,9 +23,9 @@ int OpenMpqArchive(const std::string &filename, HANDLE *hArchive) {
 int CloseMpqArchive(HANDLE hArchive) {
     if (!SFileCloseArchive(hArchive)) {
         std::cerr << "[+] Failed to close MPQ archive." << std::endl;
-        return -1;
+        return 0;
     }
-    return 0;
+    return 1;
 }
 
 int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& listfileName) {
@@ -246,181 +248,81 @@ char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) 
     return fileContent;
 }
 
-void PrintMpqInfo(HANDLE hArchive) {
-    std::string fileName = GetMpqFileName(hArchive);
-    std::cout << "File name: " << fileName << std::endl;
+void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty) {
+    // Map of property names to their corresponding actions
+    std::map<std::string, std::function<void(bool)>> propertyActions = {
+        {"format-version", [&](bool printName) {
+            TMPQHeader header = GetMpqArchiveInfo<TMPQHeader>(hArchive, SFileMpqHeader);
+            uint16_t formatVersion = header.wFormatVersion + 1;  // Add +1 because StormLib starts at 0
+            if (printName) {
+                std::cout << "Format version: ";
+            }
+            std::cout << formatVersion << std::endl;
+        }},
+        {"header-offset", [&](bool printName) {
+            int64_t headerOffset = GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderOffset);
+            if (printName) {
+                std::cout << "Header offset: ";
+            }
+            std::cout << headerOffset << std::endl;
+        }},
+        {"header-size", [&](bool printName) {
+            int64_t headerSize = GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderSize);
+            if (printName) {
+                std::cout << "Header size: ";
+            }
+            std::cout << headerSize << std::endl;
+        }},
+        {"archive-size", [&](bool printName) {
+            int32_t archiveSize = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqArchiveSize);
+            if (printName) {
+                std::cout << "Archive size: ";
+            }
+            std::cout << archiveSize << std::endl;
+        }},
+        {"file-count", [&](bool printName) {
+            int32_t numberOfFiles = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
+            if (printName) {
+                std::cout << "File count: ";
+            }
+            std::cout << numberOfFiles << std::endl;
+        }},
+        {"signature-type", [&](bool printName) {
+            int32_t signatureType = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqSignatures);
+            if (printName) {
+                std::cout << "Signature type: ";
+            }
+            if (signatureType == SIGNATURE_TYPE_NONE) {
+                std::cout << "None" << std::endl;
+            } else if (signatureType == SIGNATURE_TYPE_WEAK) {
+                std::cout << "Weak" << std::endl;
+            } else if (signatureType == SIGNATURE_TYPE_STRONG) {
+                std::cout << "Strong" << std::endl;
+            }
+        }}
+    };
 
-    int32_t archiveSize = GetMpqArchiveSize(hArchive);
-    std::cout << "Archive size: " << archiveSize << std::endl;
-
-    int64_t headerOffset = GetMpqArchiveHeaderOffset(hArchive);
-    std::cout << "Header offset: " << headerOffset << std::endl;
-
-    int64_t headerSize = GetMpqArchiveHeaderSize(hArchive);
-    std::cout << "Header size: " << headerSize << std::endl;
-
-    int32_t numberOfFiles = GetMpqArchiveFileCount(hArchive);
-    std::cout << "File count: " << numberOfFiles << std::endl;
-
-    int32_t signatureType = GetMpqArchiveSignatureType(hArchive);
-    std::cout << "Signature type: " << signatureType << std::endl;
-}
-
-std::string GetMpqFileName(HANDLE hArchive) {
-    char fileName[4096];  // Max path length in Linux, Windows is 256
-    if (!SFileGetFileInfo(hArchive, SFileMpqFileName, &fileName, sizeof(fileName), NULL)) {
-        std::cerr << "[+] Failed: SFileMpqFileName" << std::endl;
-        int32_t error = GetLastError();
-        std::cerr << "[+] Failed: " << "(" << error << ") " << std::endl;
-        return "";
-    }
-    return fileName;
-}
-
-TMPQHeader GetMpqHeader(HANDLE hArchive) {
-    TMPQHeader header;
-    if (!SFileGetFileInfo(hArchive, SFileMpqHeader, &header, sizeof(header), NULL)) {
-        std::cerr << "[+] Failed: SFileMpqHeader" << std::endl;
-        int32_t error = GetLastError();
-        std::cerr << "[+] Failed: " << "(" << error << ") " << std::endl;
-        return header;
-    }
-
-    unsigned short formatVersion = header.wFormatVersion;
-    std::cout << "[+] Format version: " << formatVersion << std::endl;
-    return header;
-}
-
-int32_t GetMpqArchiveSize(HANDLE hArchive) {
-    int32_t archiveSize;
-    if (!SFileGetFileInfo(hArchive, SFileMpqArchiveSize, &archiveSize, sizeof(archiveSize), NULL)) {
-        std::cerr << "[+] Failed: SFileMpqArchiveSize" << std::endl;
-        int32_t error = GetLastError();
-        std::cerr << "[+] Failed: " << "(" << error << ") " << std::endl;
-        return error;
-    }
-    return archiveSize;
-}
-
-int64_t GetMpqArchiveHeaderOffset(HANDLE hArchive) {
-    int64_t headerOffset;
-    if (!SFileGetFileInfo(hArchive, SFileMpqHeaderOffset, &headerOffset, sizeof(headerOffset), NULL)) {
-        std::cerr << "[+] Failed: SFileMpqHeaderOffset" << std::endl;
-        int32_t error = GetLastError();
-        std::cerr << "[+] Failed: " << "(" << error << ") " << std::endl;
-        return error;
-    }
-    return headerOffset;
-}
-
-int64_t GetMpqArchiveHeaderSize(HANDLE hArchive) {
-    int64_t headerSize;
-    if (!SFileGetFileInfo(hArchive, SFileMpqHeaderSize, &headerSize, sizeof(headerSize), NULL)) {
-        std::cerr << "[+] Failed: SFileMpqHeaderSize" << std::endl;
-        int32_t error = GetLastError();
-        std::cerr << "[+] Failed: " << "(" << error << ") " << std::endl;
-        return error;
-    }
-    return headerSize;
-}
-
-int32_t GetMpqArchiveSignatureType(HANDLE hArchive) {
-    int32_t signatureType;
-    if (!SFileGetFileInfo(hArchive, SFileMpqSignatures, &signatureType, sizeof(signatureType), NULL)) {
-        std::cerr << "[+] Failed: SFileMpqSignatures" << std::endl;
-        int32_t error = GetLastError();
-        std::cerr << "[+] Failed: " << "(" << error << ") " << std::endl;
-        return error;
-    }
-    return signatureType;
-}
-
-std::vector<char> GetMpqArchiveStrongSignature(HANDLE hArchive) {
-    std::vector<char> strongSignature;
-    if (!SFileGetFileInfo(hArchive, SFileMpqStrongSignature, &strongSignature, sizeof(strongSignature), NULL)) {
-        std::cerr << "[+] Failed: SFileMpqStrongSignature" << std::endl;
-        int32_t error = GetLastError();
-        std::cerr << "[+] Failed: " << "(" << error << ") " << std::endl;
-        return strongSignature;
-    }
-    return strongSignature;
-}
-
-int32_t GetMpqArchiveFileCount(HANDLE hArchive) {
-    int32_t numberOfFiles;
-    if (!SFileGetFileInfo(hArchive, SFileMpqNumberOfFiles, &numberOfFiles, sizeof(numberOfFiles), NULL)) {
-        std::cerr << "[+] Failed: SFileMpqNumberOfFiles" << std::endl;
-        int32_t error = GetLastError();
-        std::cerr << "[+] Failed: " << "(" << error << ") " << std::endl;
-        return error;
-    }
-    return numberOfFiles;
-}
-
-int PrintMpqSignature(HANDLE hArchive, int signatureType) {
-    std::vector<char> signatureContent;
-
-    // Verify archive using Stormlib function
-    int32_t verifiedArchive = SFileVerifyArchive(hArchive);
-    std::string verifiyMessage;
-    switch (verifiedArchive) {
-        case 0:
-            verifiyMessage = "ERROR_NO_SIGNATURE";
-            break;
-        case 1:
-            verifiyMessage = "ERROR_VERIFY_FAILED";
-            break;
-        case 2:
-            verifiyMessage = "WEAK_SIGNATURE_OK";
-            break;
-        case 3:
-            verifiyMessage = "WEAK_SIGNATURE_ERROR";
-            break;
-        case 4:
-            verifiyMessage = "STRONG_SIGNATURE_OK";
-            break;
-        case 5:
-            verifiyMessage = "STRONG_SIGNATURE_ERROR";
-            break;
-        default:
-            verifiyMessage = "UNKNOWN_ERROR";
-    }
-
-    std::cout << "[+] StormLib verify status: " << verifiyMessage << std::endl;
-
-    // Select signature file location based on signature type
-    if (signatureType == 1) {
-        std::cout << "[+] Attempting weak signature extraction..." << std::endl;
-        const char *szFileName = "(signature)";
-        unsigned int fileSize;
-        char* fileContent = ReadFile(hArchive, szFileName, &fileSize);
-        signatureContent.resize(fileSize);
-        std::copy(fileContent, fileContent + fileSize, signatureContent.begin());
+    // If infoProperty is empty, print all properties with their names (key)
+    // Otherwise, print only the property value
+    if (infoProperty.empty()) {
+        for (const auto& [key, action] : propertyActions) {
+            action(true);  // Print property name and value
+        }
     } else {
-        std::cout << "[+] Attempting strong signature extraction..." << std::endl;
-        signatureContent = GetMpqArchiveStrongSignature(hArchive);
-
-        if (signatureContent.empty()) {
-            std::string archiveName = GetMpqFileName(hArchive);
-            const fs::path archivePath = fs::canonical(archiveName);
-            int32_t archiveSize = GetMpqArchiveSize(hArchive);
-            int64_t archiveOffset = GetMpqArchiveHeaderOffset(hArchive);
-            std::uintmax_t fileSize = fs::file_size(archivePath);
-            int64_t signatureLength = fileSize - archiveOffset - archiveSize;
-
-            std::ifstream file_mpq(archivePath, std::ios::binary);
-            file_mpq.seekg(archiveOffset + archiveSize, std::ios::beg);
-            signatureContent.resize(signatureLength);
-            file_mpq.read(signatureContent.data(), signatureContent.size());
-            std::cout << "[+] Buffer size: " << signatureContent.size() << std::endl;
+        auto it = propertyActions.find(infoProperty);
+        if (it != propertyActions.end()) {
+            it->second(false);  // Print only the value
         }
     }
+}
 
-    std::cout << "[+] Signature content: " << std::endl;
-    for (char c : signatureContent) {
-        std::cout << std::hex << std::setw(2) << "\\x" << std::setfill('0') << (0xff & static_cast<unsigned int>(c));
+template <typename T>
+T GetMpqArchiveInfo(HANDLE hArchive, SFileInfoClass infoClass) {
+    T value{};
+    if (!SFileGetFileInfo(hArchive, infoClass, &value, sizeof(T), NULL)) {
+        int32_t error = GetLastError();
+        std::cerr << "[+] Failed to retrieve info (Error: " << error << ")" << std::endl;
+        return T{}; // Return default value for the type
     }
-    std::cout << std::endl;
-
-    return 1;
+    return value;
 }
