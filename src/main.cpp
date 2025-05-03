@@ -22,8 +22,10 @@ int main(int argc, char **argv) {
     std::string extractFileName = "default";
     std::string listfileName = "";
     int32_t mpqVersion = 1;
+    bool signArchive = false;
     std::string baseFolder = "";
     std::string infoProperty = "";
+    bool printSignature = false;
 
     std::set<std::string> validInfoProperties = {
         "format-version",
@@ -55,6 +57,7 @@ int main(int argc, char **argv) {
         ->check(CLI::ExistingDirectory);
     create->add_option("-o,--output", output, "Output file");
     create->add_option("-b,--base", baseFolder, "Base folder to use for file names");
+    create->add_flag("-s,--sign", signArchive, "Sign the MPQ archive (default false)");
     create->add_option("-v,--version", mpqVersion, "MPQ version (default 1)")
         ->check(CLI::Range(1, 2));
 
@@ -106,6 +109,7 @@ int main(int argc, char **argv) {
     verify->add_option("target", target, "Target MPQ file")
         ->required()
         ->check(CLI::ExistingFile);
+    verify->add_flag("-p,--print", printSignature, "Print the digital signature (in hex)");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -157,6 +161,9 @@ int main(int argc, char **argv) {
         HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, mpqVersion);
         if (hArchive) {
             AddFiles(hArchive, target);
+            if (signArchive) {
+                SignMpqArchive(hArchive);
+            }
             CloseMpqArchive(hArchive);
         } else {
             std::cerr << "[!] Failed to create MPQ archive." << std::endl;
@@ -213,7 +220,28 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Verify
     if (app.got_subcommand(verify)) {
-        std::cout << "[!] verify not implemented..." << std::endl;
+        HANDLE hArchive;
+        if (!OpenMpqArchive(target, &hArchive)) {
+            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
+            return 1;
+        }
+
+        uint32_t verifyResult = SFileVerifyArchive(hArchive);
+        if (verifyResult == ERROR_WEAK_SIGNATURE_OK || verifyResult == ERROR_STRONG_SIGNATURE_OK) {
+            // Print verification success
+            std::cout << "[+] Verify success" << std::endl;
+            // If verification passed, print signature if user requested it
+            if (printSignature) {
+                PrintMpqSignature(hArchive, target);
+            }
+
+            // Return 0, because verification passed
+            return 0;
+        }
+
+        // Any other verify result is no signature, or error verifying
+        std::cout << "[!] Verify failed" << std::endl;
+        return 1;        
     }
 
     return 0;

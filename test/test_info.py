@@ -22,8 +22,9 @@ def test_info_v1(binary_path):
         text=True
     )
 
-    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
     output_lines = set(result.stdout.splitlines())
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_output, f"Unexpected output: {output_lines}"
 
 
@@ -47,8 +48,9 @@ def test_info_v2(binary_path):
         text=True
     )
 
-    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
     output_lines = set(result.stdout.splitlines())
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_output, f"Unexpected output: {output_lines}"
 
 

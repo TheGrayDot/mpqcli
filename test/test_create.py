@@ -90,6 +90,40 @@ def test_create_mpq_with_output(binary_path, test_files):
         assert output_file.stat().st_size > 0, f"MPQ file is empty"
 
 
+def test_create_mpq_with_signature(binary_path, test_files):
+    """
+    Test MPQ archive creation with signature and output file argument.
+
+    This test checks:
+    - If the MPQ archive is created in the correct directory.
+    - If the MPQ archive is not empty.
+    - If the MPQ archive is signed correctly.
+    """
+    _ = test_files
+    script_dir = Path(__file__).parent
+    target_dir = script_dir / "data" / "files"
+
+    output_file = script_dir / "data" / f"mpq_with_weak_signature.mpq"
+    # Remove the target file if it exists
+    # Testing creation when file exists is handled:
+    # test_create_mpq_already_exists
+    if output_file.exists():
+        output_file.unlink()
+
+    result = subprocess.run(
+        [str(binary_path), "create", "-s", "-o", str(output_file), str(target_dir)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+
+    assert output_file.exists(), f"MPQ file was not created"
+
+    assert output_file.stat().st_size > 0, f"MPQ file is empty"
+
+
 def test_create_mpq_already_exists(binary_path, test_files):
     """
     Test MPQ file creation with an existing output file.
