@@ -366,7 +366,6 @@ int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
             std::cerr << "[+] Failed to read weak signature file." << std::endl;
             return -1;
         }
-        std::cout << "[+] Weak signature file size: " << fileSize << std::endl;
         signatureContent.resize(fileSize);
         std::copy(fileContent, fileContent + fileSize, signatureContent.begin());
         delete[] fileContent;

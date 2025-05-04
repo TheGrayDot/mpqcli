@@ -2,14 +2,14 @@ import subprocess
 from pathlib import Path
 
 
-def test_create_mpq_target_does_not_exist(binary_path, test_files):
+def test_create_mpq_target_does_not_exist(binary_path, generate_test_files):
     """
     Test MPQ file creation with a non-existent target.
 
     This test checks:
     - If the application exits correctly when the target does not exist.
     """
-    _ = test_files
+    _ = generate_test_files
     script_dir = Path(__file__).parent
     target_dir = script_dir / "does" / "not" / "exist"
 
@@ -23,7 +23,7 @@ def test_create_mpq_target_does_not_exist(binary_path, test_files):
     assert result.returncode == 105, f"mpqcli failed with error: {result.stderr}"
 
 
-def test_create_mpq_versions(binary_path, test_files):
+def test_create_mpq_versions(binary_path, generate_test_files):
     """
     Test MPQ archive creation with different MPQ versions.
 
@@ -32,7 +32,7 @@ def test_create_mpq_versions(binary_path, test_files):
     - If the MPQ archive is created in the correct directory.
     - If the MPQ archive is not empty.
     """
-    _ = test_files
+    _ = generate_test_files
     script_dir = Path(__file__).parent
     target_dir = script_dir / "data" / "files"
 
@@ -56,7 +56,7 @@ def test_create_mpq_versions(binary_path, test_files):
         assert target_file.stat().st_size > 0, f"MPQ file is empty (version {version})"
 
 
-def test_create_mpq_with_output(binary_path, test_files):
+def test_create_mpq_with_output(binary_path, generate_test_files):
     """
     Test MPQ archive creation with output file argument.
 
@@ -64,7 +64,7 @@ def test_create_mpq_with_output(binary_path, test_files):
     - If the MPQ archive is created in the correct directory.
     - If the MPQ archive is not empty.
     """
-    _ = test_files
+    _ = generate_test_files
     script_dir = Path(__file__).parent
     target_dir = script_dir / "data" / "files"
 
@@ -90,7 +90,7 @@ def test_create_mpq_with_output(binary_path, test_files):
         assert output_file.stat().st_size > 0, f"MPQ file is empty"
 
 
-def test_create_mpq_with_signature(binary_path, test_files):
+def test_create_mpq_with_signature(binary_path, generate_test_files):
     """
     Test MPQ archive creation with signature and output file argument.
 
@@ -99,7 +99,7 @@ def test_create_mpq_with_signature(binary_path, test_files):
     - If the MPQ archive is not empty.
     - If the MPQ archive is signed correctly.
     """
-    _ = test_files
+    _ = generate_test_files
     script_dir = Path(__file__).parent
     target_dir = script_dir / "data" / "files"
 
@@ -124,14 +124,14 @@ def test_create_mpq_with_signature(binary_path, test_files):
     assert output_file.stat().st_size > 0, f"MPQ file is empty"
 
 
-def test_create_mpq_already_exists(binary_path, test_files):
+def test_create_mpq_already_exists(binary_path, generate_test_files):
     """
     Test MPQ file creation with an existing output file.
 
     This test checks:
     - If the MPQ archive is not created (as archive exists already).
     """
-    _ = test_files
+    _ = generate_test_files
     script_dir = Path(__file__).parent
     target_dir = script_dir / "data" / "files"
 
