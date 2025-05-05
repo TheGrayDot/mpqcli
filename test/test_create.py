@@ -2,14 +2,14 @@ import subprocess
 from pathlib import Path
 
 
-def test_create_mpq_target_does_not_exist(binary_path, test_files):
+def test_create_mpq_target_does_not_exist(binary_path, generate_test_files):
     """
     Test MPQ file creation with a non-existent target.
 
     This test checks:
     - If the application exits correctly when the target does not exist.
     """
-    _ = test_files
+    _ = generate_test_files
     script_dir = Path(__file__).parent
     target_dir = script_dir / "does" / "not" / "exist"
 
@@ -23,7 +23,7 @@ def test_create_mpq_target_does_not_exist(binary_path, test_files):
     assert result.returncode == 105, f"mpqcli failed with error: {result.stderr}"
 
 
-def test_create_mpq_versions(binary_path, test_files):
+def test_create_mpq_versions(binary_path, generate_test_files):
     """
     Test MPQ archive creation with different MPQ versions.
 
@@ -32,7 +32,7 @@ def test_create_mpq_versions(binary_path, test_files):
     - If the MPQ archive is created in the correct directory.
     - If the MPQ archive is not empty.
     """
-    _ = test_files
+    _ = generate_test_files
     script_dir = Path(__file__).parent
     target_dir = script_dir / "data" / "files"
 
@@ -50,13 +50,11 @@ def test_create_mpq_versions(binary_path, test_files):
         )
 
         assert result.returncode == 0, f"mpqcli failed with error (version {version}): {result.stderr}"
-
         assert target_file.exists(), f"MPQ file was not created (version {version})"
-
         assert target_file.stat().st_size > 0, f"MPQ file is empty (version {version})"
 
 
-def test_create_mpq_with_output(binary_path, test_files):
+def test_create_mpq_with_output(binary_path, generate_test_files):
     """
     Test MPQ archive creation with output file argument.
 
@@ -64,7 +62,7 @@ def test_create_mpq_with_output(binary_path, test_files):
     - If the MPQ archive is created in the correct directory.
     - If the MPQ archive is not empty.
     """
-    _ = test_files
+    _ = generate_test_files
     script_dir = Path(__file__).parent
     target_dir = script_dir / "data" / "files"
 
@@ -84,20 +82,50 @@ def test_create_mpq_with_output(binary_path, test_files):
         )
 
         assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
-
-        assert output_file.exists(), f"MPQ file was not created"
-
-        assert output_file.stat().st_size > 0, f"MPQ file is empty"
+        assert output_file.exists(), "MPQ file was not created"
+        assert output_file.stat().st_size > 0, "MPQ file is empty"
 
 
-def test_create_mpq_already_exists(binary_path, test_files):
+def test_create_mpq_with_signature(binary_path, generate_test_files):
+    """
+    Test MPQ archive creation with signature and output file argument.
+
+    This test checks:
+    - If the MPQ archive is created in the correct directory.
+    - If the MPQ archive is not empty.
+    - If the MPQ archive is signed correctly.
+    """
+    _ = generate_test_files
+    script_dir = Path(__file__).parent
+    target_dir = script_dir / "data" / "files"
+
+    output_file = script_dir / "data" / "mpq_with_weak_signature.mpq"
+    # Remove the target file if it exists
+    # Testing creation when file exists is handled in following function:
+    # test_create_mpq_already_exists
+    if output_file.exists():
+        output_file.unlink()
+
+    result = subprocess.run(
+        [str(binary_path), "create", "-s", "-o", str(output_file), str(target_dir)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_file.exists(), "MPQ file was not created"
+    assert output_file.stat().st_size > 0, "MPQ file is empty"
+
+
+def test_create_mpq_already_exists(binary_path, generate_test_files):
     """
     Test MPQ file creation with an existing output file.
 
     This test checks:
     - If the MPQ archive is not created (as archive exists already).
     """
-    _ = test_files
+    _ = generate_test_files
     script_dir = Path(__file__).parent
     target_dir = script_dir / "data" / "files"
 

@@ -28,6 +28,14 @@ int CloseMpqArchive(HANDLE hArchive) {
     return 1;
 }
 
+int SignMpqArchive(HANDLE hArchive) {
+    if (!SFileSignArchive(hArchive, SIGNATURE_TYPE_WEAK)) {
+        std::cerr << "[+] Failed to sign MPQ archive." << std::endl;
+        return 0;
+    }
+    return 1;
+}
+
 int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& listfileName) {
     SFILE_FIND_DATA findData;
     const char *listfile = listfileName.empty() ? NULL : listfileName.c_str();
@@ -231,20 +239,22 @@ char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) 
     }
 
     *fileSize = SFileGetFileSize(hFile, NULL);
-
-    char* fileContent = new char[*fileSize + 1];
-    DWORD dwBytes;
-    if (!SFileReadFile(hFile, fileContent, *fileSize, &dwBytes, NULL)) {
-        std::cerr << "[+] Failed: Cannot read file contents..." << std::endl;
-        int32_t error = GetLastError();
-        std::cout << "[+] Error: " << error << std::endl;
-        delete[] fileContent;
-        return 0;
+    if (*fileSize == SFILE_INVALID_SIZE) {
+        std::cerr << "[+] Failed: Invalid file size for: " << szFileName << std::endl;
+        SFileCloseFile(hFile);
+        return NULL;
     }
 
-    SFileFindClose(hFile);
+    char* fileContent = new char[*fileSize];
+    DWORD dwBytesRead;
+    if (!SFileReadFile(hFile, fileContent, *fileSize, &dwBytesRead, NULL)) {
+        std::cerr << "[+] Failed: Cannot read file contents for: " << szFileName << std::endl;
+        delete[] fileContent;
+        SFileCloseFile(hFile);
+        return NULL;
+    }
 
-    fileContent[*fileSize + 1] = '\0';
+    SFileCloseFile(hFile);
     return fileContent;
 }
 
@@ -321,8 +331,69 @@ T GetMpqArchiveInfo(HANDLE hArchive, SFileInfoClass infoClass) {
     T value{};
     if (!SFileGetFileInfo(hArchive, infoClass, &value, sizeof(T), NULL)) {
         int32_t error = GetLastError();
-        std::cerr << "[+] Failed to retrieve info (Error: " << error << ")" << std::endl;
+        std::cerr << "[+] GetMpqArchiveInfo failed (Error: " << error << ")" << std::endl;
         return T{}; // Return default value for the type
     }
     return value;
+}
+
+bool VerifyMpqArchive(HANDLE hArchive) {
+    uint32_t verifyArchiveResult = SFileVerifyArchive(hArchive);
+    if (verifyArchiveResult == ERROR_WEAK_SIGNATURE_OK ) {
+        return 0;
+    } else if (verifyArchiveResult == ERROR_STRONG_SIGNATURE_OK) {
+        return 1;
+    }
+
+    // Every other result is no signature, or failed verification
+    return -1;
+}
+
+int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
+    // Determine if we have a strong or weak digital signature
+    int32_t signatureType = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqSignatures);
+
+    std::vector<char> signatureContent;
+    
+    if (signatureType == SIGNATURE_TYPE_NONE) {
+        return 1;
+    } else if (signatureType == SIGNATURE_TYPE_WEAK) {
+        const char *szFileName = "(signature)";
+        unsigned int fileSize;
+        char* fileContent = ReadFile(hArchive, szFileName, &fileSize);
+
+        if (fileContent == NULL) {
+            std::cerr << "[+] Failed to read weak signature file." << std::endl;
+            return -1;
+        }
+        signatureContent.resize(fileSize);
+        std::copy(fileContent, fileContent + fileSize, signatureContent.begin());
+        delete[] fileContent;
+
+    } else if (signatureType == SIGNATURE_TYPE_STRONG) {
+        signatureContent = GetMpqArchiveInfo<std::vector<char>>(hArchive, SFileMpqStrongSignature);
+        if (signatureContent.empty()) {
+            int32_t archiveSize = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqArchiveSize); 
+            int64_t archiveOffset = GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderOffset);
+
+            const fs::path archivePath = fs::canonical(target);
+            std::uintmax_t fileSize = fs::file_size(archivePath);
+            int64_t signatureLength = fileSize - archiveOffset - archiveSize;
+
+            std::ifstream file_mpq(archivePath, std::ios::binary);
+            file_mpq.seekg(archiveOffset + archiveSize, std::ios::beg);
+            signatureContent.resize(signatureLength);
+            file_mpq.read(signatureContent.data(), signatureContent.size());
+            file_mpq.close();
+        }
+    }
+
+    std::cout << "[+] Signature content:" << std::endl;
+    for (char c : signatureContent) {
+        std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') 
+                  << (0xff & static_cast<unsigned int>(c));
+    }
+    std::cout << std::endl;
+
+    return 0;
 }

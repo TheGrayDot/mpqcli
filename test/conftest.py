@@ -1,6 +1,6 @@
 import platform
 from pathlib import Path
-import shutil
+import urllib.request
 
 import pytest
 
@@ -21,7 +21,7 @@ def binary_path():
 
 
 @pytest.fixture(scope="session")
-def test_files():
+def generate_test_files():
     script_dir = Path(__file__).parent
 
     data_dir = script_dir / "data"
@@ -47,4 +47,38 @@ def test_files():
 
     yield created_files
 
-    shutil.rmtree(data_dir)
+
+@pytest.fixture(scope="session")
+def download_test_files():
+    script_dir = Path(__file__).parent
+
+    data_dir = script_dir / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    file_urls = {
+        "v1_weak_signature_patch.mpq": (
+            "https://archive.org/download/World_of_Warcraft_Client_and_Installation_Archive/"
+            "Patches/1.x/WoW-1.10.0-to-1.10.1-enGB-patch.zip/wow-patch.mpq"
+        ),
+        "v2_strong_signature_patch.mpq": (
+            "https://archive.org/download/World_of_Warcraft_Client_and_Installation_Archive/"
+            "Patches/3.x/wow-3.2.2-to-3.3.0-enGB-Win-patch.zip/"
+            "wow-3.2.2-to-3.3.0-enGB-Win-patch%2Fwow-final.MPQ"
+        )
+    }
+
+    downloaded_files = []
+
+    for name, url in file_urls.items():
+        file_path = data_dir / name
+        if file_path.exists():
+            downloaded_files.append(file_path)
+            continue
+
+        try:
+            urllib.request.urlretrieve(url, file_path)
+            downloaded_files.append(file_path)
+        except Exception:
+            exit(1)
+
+    return downloaded_files
