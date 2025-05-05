@@ -1,6 +1,5 @@
 import platform
 from pathlib import Path
-import shutil
 import urllib.request
 
 import pytest
@@ -48,8 +47,6 @@ def generate_test_files():
 
     yield created_files
 
-    # shutil.rmtree(data_dir)
-
 
 @pytest.fixture(scope="session")
 def download_test_files():
@@ -81,7 +78,7 @@ def download_test_files():
         try:
             urllib.request.urlretrieve(url, file_path)
             downloaded_files.append(file_path)
-        except Exception as e:
+        except Exception:
             exit(1)
 
     return downloaded_files

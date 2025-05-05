@@ -31,3 +31,7 @@ test_mpqcli:
 
 test_clean:
 	rm -rf test/data
+
+test_lint:
+	. ./test/venv/bin/activate && \
+	ruff check ./test

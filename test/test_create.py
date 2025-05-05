@@ -50,9 +50,7 @@ def test_create_mpq_versions(binary_path, generate_test_files):
         )
 
         assert result.returncode == 0, f"mpqcli failed with error (version {version}): {result.stderr}"
-
         assert target_file.exists(), f"MPQ file was not created (version {version})"
-
         assert target_file.stat().st_size > 0, f"MPQ file is empty (version {version})"
 
 
@@ -84,10 +82,8 @@ def test_create_mpq_with_output(binary_path, generate_test_files):
         )
 
         assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
-
-        assert output_file.exists(), f"MPQ file was not created"
-
-        assert output_file.stat().st_size > 0, f"MPQ file is empty"
+        assert output_file.exists(), "MPQ file was not created"
+        assert output_file.stat().st_size > 0, "MPQ file is empty"
 
 
 def test_create_mpq_with_signature(binary_path, generate_test_files):
@@ -103,9 +99,9 @@ def test_create_mpq_with_signature(binary_path, generate_test_files):
     script_dir = Path(__file__).parent
     target_dir = script_dir / "data" / "files"
 
-    output_file = script_dir / "data" / f"mpq_with_weak_signature.mpq"
+    output_file = script_dir / "data" / "mpq_with_weak_signature.mpq"
     # Remove the target file if it exists
-    # Testing creation when file exists is handled:
+    # Testing creation when file exists is handled in following function:
     # test_create_mpq_already_exists
     if output_file.exists():
         output_file.unlink()
@@ -118,10 +114,8 @@ def test_create_mpq_with_signature(binary_path, generate_test_files):
     )
 
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
-
-    assert output_file.exists(), f"MPQ file was not created"
-
-    assert output_file.stat().st_size > 0, f"MPQ file is empty"
+    assert output_file.exists(), "MPQ file was not created"
+    assert output_file.stat().st_size > 0, "MPQ file is empty"
 
 
 def test_create_mpq_already_exists(binary_path, generate_test_files):
