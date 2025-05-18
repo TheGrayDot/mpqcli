@@ -11,7 +11,7 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string &
 int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure);
 HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_t mpqVersion);
 int AddFiles(HANDLE hArvhive, const std::string& inputPath);
-int AddFile(HANDLE hArchive, const std::string& inputFile);
+int AddFile(HANDLE hArchive, const std::string& entry, const std::string& target);
 int RemoveFile(HANDLE hArchive, const std::string& fileName);
 int ListFiles(HANDLE hHandle, const std::string &listfileName);
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize);

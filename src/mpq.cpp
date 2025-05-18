@@ -143,24 +143,36 @@ HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_
     return hMpq;
 }
 
-int AddFiles(HANDLE hArvhive, const std::string& inputPath) {
-    for (const auto &entry : fs::recursive_directory_iterator(inputPath)) {
+int AddFiles(HANDLE hArvhive, const std::string& target) {
+    for (const auto &entry : fs::recursive_directory_iterator(target)) {
         if (fs::is_regular_file(entry.path())) {
-            AddFile(hArvhive, entry.path().u8string());
+            AddFile(hArvhive, entry.path().u8string(), target);
         }
     }
     return 0;
 }
 
-int AddFile(HANDLE hArchive, const std::string& inputFile) {
+int AddFile(HANDLE hArchive, const std::string& entry, const std::string& target) {
+    // entry is the file to add, found by the recursive_directory_iterator
+    // target is the initial path provided by the user on the CLI
+
     // Return if file doesn't exist on disk
-    if (!fs::exists(inputFile)) {
-        std::cerr << "[!] File doesn't exist on disk: " << inputFile << std::endl;
+    if (!fs::exists(entry)) {
+        std::cerr << "[!] File doesn't exist on disk: " << entry << std::endl;
         return -1;
     }
 
+    // Convert target to a path
+    fs::path targetPath = fs::path(target);
+
+    // Strip the target path from the file name
+    fs::path inputFilePath = fs::relative(entry, targetPath);
+
+    std::cout << "[+] Target path: " << targetPath.u8string() << std::endl;
+    std::cout << "[+] Input file: " << entry << std::endl;
+    std::cout << "[+] Adding file: " << inputFilePath.u8string() << std::endl;
+
     // Normalise path for MPQ
-    fs::path inputFilePath = fs::relative(inputFile);
     std::string archiveFileName = WindowsifyFilePath(inputFilePath.u8string());
     std::cout << "[+] Adding file: " << archiveFileName << std::endl;
 
@@ -177,7 +189,7 @@ int AddFile(HANDLE hArchive, const std::string& inputFile) {
 
     bool addedFile = SFileAddFileEx(
         hArchive,
-        inputFile.c_str(),
+        entry.c_str(),
         archiveFileName.c_str(),
         dwFlags,
         dwCompression,
