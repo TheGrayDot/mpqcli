@@ -86,7 +86,7 @@ def test_create_mpq_with_output(binary_path, generate_test_files):
         assert output_file.stat().st_size > 0, "MPQ file is empty"
 
 
-def test_create_mpq_with_signature(binary_path, generate_test_files):
+def test_create_mpq_with_weak_signature(binary_path, generate_test_files):
     """
     Test MPQ archive creation with signature and output file argument.
 
