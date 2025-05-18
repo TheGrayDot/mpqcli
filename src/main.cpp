@@ -56,7 +56,6 @@ int main(int argc, char **argv) {
         ->required()
         ->check(CLI::ExistingDirectory);
     create->add_option("-o,--output", output, "Output file");
-    create->add_option("-b,--base", baseFolder, "Base folder to use for file names");
     create->add_flag("-s,--sign", signArchive, "Sign the MPQ archive (default false)");
     create->add_option("-v,--version", mpqVersion, "MPQ version (default 1)")
         ->check(CLI::Range(1, 2));
@@ -155,7 +154,7 @@ int main(int argc, char **argv) {
 
         // Determine number of files we are going to add
         int32_t fileCount = CountFilesInDirectory(target);
-        fileCount += 2;  // Add 2 for listfile and attributes
+        fileCount += 3;  // Add 3 for listfile, attributes and signature (if needed)
     
         // Create the MPQ archive and add files
         HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, mpqVersion);
