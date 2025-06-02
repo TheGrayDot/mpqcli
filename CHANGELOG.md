@@ -8,6 +8,10 @@
 - Added tests for `read` subcommand
 - Added new helper functions to print ASCII or hexidecimal output
 
+### Fixed
+
+- Fixed line endings in Windows pytest cases
+
 ## 0.5.0 - 2025-05-05
 
 ### Added

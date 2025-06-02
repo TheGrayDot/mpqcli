@@ -40,7 +40,10 @@ def generate_test_files():
     for filename, content in files.items():
         file_path = files_dir / filename
         if isinstance(content, str):
-            file_path.write_text(content, newline="\r\n")
+            if platform.system() == "Windows":
+                file_path.write_text(content, newline="\r\n")
+            else:
+                file_path.write_text(content, newline="\n")
         if isinstance(content, bytes):
             file_path.write_bytes(content)
         created_files.append(file_path)
