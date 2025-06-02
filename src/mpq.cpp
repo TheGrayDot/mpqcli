@@ -363,15 +363,16 @@ bool VerifyMpqArchive(HANDLE hArchive) {
 
 int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
     // Determine if we have a strong or weak digital signature
-    int32_t signatureType = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqSignatures);
+    int32_t signatureType =
+        GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqSignatures);
 
     std::vector<char> signatureContent;
-    
+
     if (signatureType == SIGNATURE_TYPE_NONE) {
         return 1;
     } else if (signatureType == SIGNATURE_TYPE_WEAK) {
-        const char *szFileName = "(signature)";
-        unsigned int fileSize;
+        const char* szFileName = "(signature)";
+        uint32_t fileSize;
         char* fileContent = ReadFile(hArchive, szFileName, &fileSize);
 
         if (fileContent == NULL) {
@@ -379,14 +380,21 @@ int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
             return -1;
         }
         signatureContent.resize(fileSize);
-        std::copy(fileContent, fileContent + fileSize, signatureContent.begin());
+        std::copy(fileContent, fileContent + fileSize,
+                  signatureContent.begin());
+
+        std::cout << "[+] Signature content:" << std::endl;
+        PrintAsHex(fileContent, fileSize);
         delete[] fileContent;
 
     } else if (signatureType == SIGNATURE_TYPE_STRONG) {
-        signatureContent = GetMpqArchiveInfo<std::vector<char>>(hArchive, SFileMpqStrongSignature);
+        signatureContent = GetMpqArchiveInfo<std::vector<char>>(
+            hArchive, SFileMpqStrongSignature);
         if (signatureContent.empty()) {
-            int32_t archiveSize = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqArchiveSize); 
-            int64_t archiveOffset = GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderOffset);
+            int32_t archiveSize =
+                GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqArchiveSize);
+            int64_t archiveOffset =
+                GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderOffset);
 
             const fs::path archivePath = fs::canonical(target);
             std::uintmax_t fileSize = fs::file_size(archivePath);
@@ -397,15 +405,16 @@ int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
             signatureContent.resize(signatureLength);
             file_mpq.read(signatureContent.data(), signatureContent.size());
             file_mpq.close();
+
+            char* fileContent = new char[signatureContent.size()];
+            std::copy(signatureContent.begin(), signatureContent.end(),
+                      fileContent);
+
+            std::cout << "[+] Signature content:" << std::endl;
+            PrintAsHex(fileContent, signatureContent.size());
+            delete[] fileContent;
         }
     }
-
-    std::cout << "[+] Signature content:" << std::endl;
-    for (char c : signatureContent) {
-        std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') 
-                  << (0xff & static_cast<unsigned int>(c));
-    }
-    std::cout << std::endl;
 
     return 0;
 }
