@@ -17,7 +17,8 @@ def test_read_mpq_v1_plain(binary_path):
         text=True
     )
 
-    output_lines = set(result.stdout.splitlines())
+    # Remove empty lines from output, Windows adds an extra empty line
+    output_lines = set(line for line in result.stdout.splitlines() if line.strip() != "")
 
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_output, f"Unexpected output: {output_lines}"
