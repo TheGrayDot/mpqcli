@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Set project version
-project(MPQCLI VERSION 0.5.0)
+project(MPQCLI VERSION 0.6.0)
 
 # Determine git commit hash
 execute_process (
@@ -12,6 +12,8 @@ execute_process (
 
 # Set project defaults
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_BUILD_TYPE Release)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${MPQCLI_BINARY_DIR}/bin")
