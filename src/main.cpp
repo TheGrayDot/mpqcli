@@ -96,6 +96,15 @@ int main(int argc, char **argv) {
     extract->add_option("-l,--listfile", listfileName, "File listing content of MPQ")
         ->check(CLI::ExistingFile);
 
+    // Subcommand: Read
+    CLI::App* read =
+        app.add_subcommand("read", "Read a file from the MPQ file");
+    read->add_option("target", target, "Target MPQ file")
+        ->required()
+        ->check(CLI::ExistingFile);
+    read->add_option("-f,--file", extractFileName, "Target file to read")
+        ->required();
+
     // Subcommand: Patch
     CLI::App *patch = app.add_subcommand("patch", "Various MPQ patch helpers");
     patch->add_option("target", target, "Target file")
@@ -180,6 +189,13 @@ int main(int argc, char **argv) {
         std::cout << "[!] remove not implemented..." << std::endl;
     }
 
+    // Handle subcommand: List
+    if (app.got_subcommand(list)) {
+        HANDLE hArchive;
+        OpenMpqArchive(target, &hArchive);
+        ListFiles(hArchive, listfileName);
+    }
+
     // Handle subcommand: Extract
     if (app.got_subcommand(extract)) {
         // If no output directory specified, use MPQ path without extension
@@ -205,11 +221,30 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Handle subcommand: List
-    if (app.got_subcommand(list)) {
+    // Handle subcommand: Read
+    if (app.got_subcommand(read)) {
         HANDLE hArchive;
-        OpenMpqArchive(target, &hArchive);
-        ListFiles(hArchive, listfileName);
+        if (!OpenMpqArchive(target, &hArchive)) {
+            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
+            return 1;
+        }
+
+        uint32_t fileSize;
+        char* fileContent =
+            ReadFile(hArchive, extractFileName.c_str(), &fileSize);
+        if (fileContent == NULL) {
+            return 1;
+        }
+
+        if (IsPrintable(fileContent, fileSize)) {
+            PrintAsText(fileContent, fileSize);
+        } else {
+            PrintAsHex(fileContent, fileSize);
+        }
+
+        delete[] fileContent;
+        CloseMpqArchive(hArchive);
+        return 0;
     }
 
     // Handle subcommand: Patch

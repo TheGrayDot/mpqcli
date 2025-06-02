@@ -1,5 +1,6 @@
-import subprocess
 from pathlib import Path
+import platform
+import subprocess
 
 
 def test_info_v1(binary_path):
@@ -10,10 +11,15 @@ def test_info_v1(binary_path):
         "Format version: 1",
         "Header offset: 0",
         "Header size: 32",
-        "Archive size: 347",
+        "Archive size: 345",
         "File count: 4",
         "Signature type: None",
     }
+
+    # Adjust the expected output for Windows due to different line endings
+    if platform.system() == "Windows":
+        expected_output.remove("Archive size: 345")
+        expected_output.add("Archive size: 347")
 
     result = subprocess.run(
         [str(binary_path), "info", str(test_file)],
@@ -36,10 +42,15 @@ def test_info_v2(binary_path):
         "Format version: 2",
         "Header offset: 0",
         "Header size: 44",
-        "Archive size: 351",
+        "Archive size: 349",
         "File count: 4",
         "Signature type: None",
     }
+
+    # Adjust the expected output for Windows due to different line endings
+    if platform.system() == "Windows":
+        expected_output.remove("Archive size: 349")
+        expected_output.add("Archive size: 351")
 
     result = subprocess.run(
         [str(binary_path), "info", str(test_file)],
@@ -62,10 +73,17 @@ def test_info_v1_properties(binary_path):
         ("format-version", "1"),
         ("header-offset", "0"),
         ("header-size", "32"),
-        ("archive-size", "347"),
+        ("archive-size", "345"),
         ("file-count", "4"),
         ("signature-type", "None"),
     ]
+
+    # Adjust archive-size for Windows
+    if platform.system() == "Windows":
+        test_cases = [
+            (k, "347") if k == "archive-size" else (k, v)
+            for (k, v) in test_cases
+        ]
 
     for property_name, expected_output in test_cases:
         result = subprocess.run(
@@ -87,10 +105,17 @@ def test_info_v2_properties(binary_path):
         ("format-version", "2"),
         ("header-offset", "0"),
         ("header-size", "44"),
-        ("archive-size", "351"),
+        ("archive-size", "349"),
         ("file-count", "4"),
         ("signature-type", "None"),
     ]
+
+    # Adjust archive-size for Windows
+    if platform.system() == "Windows":
+        test_cases = [
+            (k, "351") if k == "archive-size" else (k, v)
+            for (k, v) in test_cases
+        ]
 
     for property_name, expected_output in test_cases:
         result = subprocess.run(
