@@ -12,7 +12,7 @@
 namespace fs = std::filesystem;
 
 int main(int argc, char **argv) {
-    CLI::App app{"A command line tool to read, extract, search, create and verify MPQ file using the StormLib library"};
+    CLI::App app{"A command line tool to read, extract, search, create and verify MPQ archives using the StormLib library"};
 
     std::string target = "default";
     std::string file = "default";
@@ -43,71 +43,71 @@ int main(int argc, char **argv) {
     CLI::App *about = app.add_subcommand("about", "Prints program information");
 
     // Subcommand: Info
-    CLI::App *info = app.add_subcommand("info", "Prints info about the MPQ file");
-    info->add_option("target", target, "Target MPQ file")
+    CLI::App *info = app.add_subcommand("info", "Prints info about an MPQ archive");
+    info->add_option("target", target, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
-    info->add_option("-p,--property", infoProperty, "Print a specific property value only")
+    info->add_option("-p,--property", infoProperty, "Prints only a specific property value")
         ->check(CLI::IsMember(validInfoProperties));
 
     // Subcommand: Create
-    CLI::App *create = app.add_subcommand("create", "Create MPQ file from target directory");
+    CLI::App *create = app.add_subcommand("create", "Create an MPQ archive from target directory");
     create->add_option("target", target, "Target directory")
         ->required()
         ->check(CLI::ExistingDirectory);
-    create->add_option("-o,--output", output, "Output file");
+    create->add_option("-o,--output", output, "Output MPQ archive");
     create->add_flag("-s,--sign", signArchive, "Sign the MPQ archive (default false)");
-    create->add_option("-v,--version", mpqVersion, "MPQ version (default 1)")
+    create->add_option("-v,--version", mpqVersion, "Set the MPQ archive version (default 1)")
         ->check(CLI::Range(1, 2));
 
     // Subcommand: Add
-    CLI::App *add = app.add_subcommand("add", "Add file to an existing MPQ file");
+    CLI::App *add = app.add_subcommand("add", "Add a file to an existing MPQ archive");
     add->add_option("file", file, "File to add")
         ->required()
         ->check(CLI::ExistingFile);
-    add->add_option("target", target, "Target MPQ file")
+    add->add_option("target", target, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
 
     // Subcommand: Remove
-    CLI::App *remove = app.add_subcommand("remove", "Remove file from an existing MPQ file");
+    CLI::App *remove = app.add_subcommand("remove", "Remove file from an existing MPQ archive");
     remove->add_option("file", target, "File to remove")
         ->required();
-    remove->add_option("target", target, "Target MPQ file")
+    remove->add_option("target", target, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
 
     // Subcommand: List
-    CLI::App *list = app.add_subcommand("list", "List files from the MPQ file");
-    list->add_option("target", target, "Target MPQ file")
+    CLI::App *list = app.add_subcommand("list", "List files from the MPQ archive");
+    list->add_option("target", target, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
-    list->add_option("-l,--listfile", listfileName, "File listing content of MPQ")
+    list->add_option("-l,--listfile", listfileName, "File listing content of an MPQ archive")
         ->check(CLI::ExistingFile);
 
     // Subcommand: Extract
-    CLI::App *extract = app.add_subcommand("extract", "Extract files from the MPQ file");
-    extract->add_option("target", target, "Target MPQ file")
+    CLI::App *extract = app.add_subcommand("extract", "Extract files from the MPQ archive");
+    extract->add_option("target", target, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
     extract->add_option("-o,--output", output, "Output directory");
     extract->add_option("-f,--file", extractFileName, "Target file to extract");
     extract->add_flag("-k,--keep", keepFolderStructure, "Keep folder structure (default false)");
-    extract->add_option("-l,--listfile", listfileName, "File listing content of MPQ")
+    extract->add_option("-l,--listfile", listfileName, "File listing content of an MPQ archive")
         ->check(CLI::ExistingFile);
 
     // Subcommand: Read
     CLI::App* read =
-        app.add_subcommand("read", "Read a file from the MPQ file");
-    read->add_option("target", target, "Target MPQ file")
+        app.add_subcommand("read", "Read a file from an MPQ archive");
+    read->add_option("target", target, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
     read->add_option("-f,--file", extractFileName, "Target file to read")
         ->required();
 
     // Subcommand: Verify
-    CLI::App *verify = app.add_subcommand("verify", "Verify the MPQ file");
-    verify->add_option("target", target, "Target MPQ file")
+    CLI::App *verify = app.add_subcommand("verify", "Verify the MPQ archive");
+    verify->add_option("target", target, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
     verify->add_flag("-p,--print", printSignature, "Print the digital signature (in hex)");
