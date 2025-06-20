@@ -4,13 +4,13 @@
 
 ![Release](https://img.shields.io/github/v/release/TheGrayDot/mpqcli?style=flat) ![Downloads](https://img.shields.io/github/downloads/TheGrayDot/mpqcli/total?style=flat)
 
-A command line tool to create, add, remove, list, extract, patch, and verify MPQ files using the [StormLib library](https://github.com/ladislav-zezula/StormLib).
+A command line tool to create, add, remove, list, extract, and verify MPQ archives using the [StormLib library](https://github.com/ladislav-zezula/StormLib).
 
 > ⚠️ **Warning:** This project is under active development and will change functionality between released versions until version 1.0.0.
 
 ## Overview
 
-**This is a command line tool, designed for automation**. For example, run one command to create an MPQ file from a directory of files. If you require an MPQ tool with a graphical interface (GUI) - I would recommend using [Ladik's MPQ Editor](http://www.zezula.net/en/mpq/download.html).
+**This is a command line tool, designed for automation**. For example, run one command to create an MPQ archive from a directory of files or run one command to search and extract files from an MPQ archive. If you require an MPQ tool with a graphical interface (GUI) - I would recommend using [Ladik's MPQ Editor](http://www.zezula.net/en/mpq/download.html).
 
 **This project is for original World of Warcraft MPQ archives**. This means is has been primarily authored for MPQ files used in the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3) and WoTLK (3.3.5). It has only been tested on WoW MPQ archives/patches which use MPQ versions 1 or 2. No testing has been performed on other MPQ versions or archives from other games.
 
@@ -24,17 +24,23 @@ Download latest release on Linux:
 
 ```
 TAG=$(curl -s https://api.github.com/repos/TheGrayDot/mpqcli/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
-curl -L -o mpqcli-linux https://github.com/TheGrayDot/mpqcli/releases/download/$TAG/mpqcli-linux
-chmod u+x mpqcli-linux
-./mpqcli-linux version
+curl -L -o mpqcli https://github.com/TheGrayDot/mpqcli/releases/download/$TAG/mpqcli-linux
+chmod u+x mpqcli
+./mpqcli version
+```
+
+Add the `mpqcli` binary to your path:
+
+```
+mv mpqcli /usr/local/bin/
 ```
 
 Download the latest release on Windows:
 
 ```
 $TAG = (Invoke-RestMethod -Uri "https://api.github.com/repos/TheGrayDot/mpqcli/releases/latest").tag_name
-Invoke-WebRequest -Uri "https://github.com/TheGrayDot/mpqcli/releases/download/$TAG/mpqcli-windows.exe" -OutFile "mpqcli-windows.exe"
-.\mpqcli-windows.exe version
+Invoke-WebRequest -Uri "https://github.com/TheGrayDot/mpqcli/releases/download/$TAG/mpqcli-windows.exe" -OutFile "mpqcli.exe"
+.\mpqcli.exe version
 ```
 
 ### Docker Image
@@ -58,37 +64,6 @@ To use local files with the container, mount a directory from your host system:
 ```
 docker run --rm -v $(pwd):/data ghcr.io/thegraydot/mpqcli:latest list /data/example.mpq
 ```
-
-## Building
-
-### Requirements
-
-- cmake
-- C++ 17 compiler
-- StormLib (provided as Git submodule)
-- CLI11 (provided as GitSubmodule)
-
-### Quickstart Linux
-
-```
-git clone --recursive https://github.com/TheGrayDot/mpqcli.git
-cd mpqcli
-cmake -B build
-cmake --build build
-```
-
-The `mpqcli` binary will be available in: `./build/bin/mpqcli`
-
-### Quickstart Windows
-
-```
-git clone --recursive https://github.com/TheGrayDot/mpqcli.git
-cd mpqcli
-cmake -B build
-cmake --build build --config Release
-```
-
-The `mpqcli.exe` binary will be available in: `./build/bin/mpqcli.exe`
 
 ## Subcommands
 
@@ -190,21 +165,36 @@ mpqcli create --version 2 <target_directory>
 
 The `add` subcommand has not yet been added.
 
-### Extract an MPQ archive from a self-executable patch
+## Building
 
-Extract an MPQ archive from a self-executable patch file (`.exe`), for example, a WoW executable patch (e.g., `WoW-1.12.0.5595-to-1.12.1.5875-enUS-patch.exe`). 
+### Requirements
+
+- cmake
+- C++ 17 compiler
+- StormLib (provided as Git submodule)
+- CLI11 (provided as GitSubmodule)
+
+### Linux
 
 ```
-mpqcli patch <target_exe_file>
+git clone --recursive https://github.com/TheGrayDot/mpqcli.git
+cd mpqcli
+cmake -B build
+cmake --build build
 ```
 
-### Extract an MPQ archive and binary data from a self-executable patch
+The `mpqcli` binary will be available in: `./build/bin/mpqcli`
 
-Extract an MPQ archive from a patch file (e.g., `.exe`), and extract the preceeding data (as a `.bin` file). 
+### Windows
 
 ```
-mpqcli patch -b <target_exe_file>
+git clone --recursive https://github.com/TheGrayDot/mpqcli.git
+cd mpqcli
+cmake -B build
+cmake --build build --config Release
 ```
+
+The `mpqcli.exe` binary will be available in: `.\build\bin/Release\mpqcli.exe`
 
 ## Dependencies
 
