@@ -205,3 +205,34 @@ This project requires the [StormLib](https://github.com/ladislav-zezula/StormLib
 ### CLI11
 
 This project also uses the [CLI11](https://github.com/CLIUtils/CLI11) command line parser for C++11. It provides a simple and easy to use/implement CLI arguments.
+
+## Tests
+
+This project implements End-to-end (E2E) testing, sometimes referred to as system testing or integration testing. This methodology is used because it verifies application functionality by simulating actual usage by an end user. Testing includes creating a variety of MPQ archives, as well as dynamically  downloading some small (~1-5MB) MPQ archives from the Internet Archive. The Python programming language coupled with the [pytest framework](https://github.com/pytest-dev/pytest) is used to implement testing, mainly due to ease of implementation.
+
+To configure the testing environment you will need Python installed, as well as the required `pytest` package. On a Debian-based Linux system, the following will configure the environment: 
+
+```
+sudo apt install python3-venv python3-pip
+python3 -m venv test/venv
+source test/venv/bin/activate
+pip3 install -r test/requirements.txt
+```
+
+Then you can run the tests:
+
+```
+thomas@t1000:~/repos/mpqcli$ python3 -m pytest test -s
+================ test session starts ================
+platform linux -- Python 3.10.12, pytest-8.3.5, pluggy-1.6.0
+rootdir: /home/thomas/repos/mpqcli
+collected 18 items                                                                     
+
+test/test_create.py .....
+test/test_info.py .....
+test/test_list.py ..
+test/test_read.py ..
+test/test_verify.py ....
+
+================ 18 passed in 0.16s ================
+```
