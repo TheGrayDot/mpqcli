@@ -105,13 +105,6 @@ int main(int argc, char **argv) {
     read->add_option("-f,--file", extractFileName, "Target file to read")
         ->required();
 
-    // Subcommand: Patch
-    CLI::App *patch = app.add_subcommand("patch", "Various MPQ patch helpers");
-    patch->add_option("target", target, "Target file")
-        ->required()
-        ->check(CLI::ExistingFile);
-    patch->add_flag("-b,--bin", patchExtractBin, "Extract BIN file from EXE patch (default false)");
-
     // Subcommand: Verify
     CLI::App *verify = app.add_subcommand("verify", "Verify the MPQ file");
     verify->add_option("target", target, "Target MPQ file")
@@ -245,11 +238,6 @@ int main(int argc, char **argv) {
         delete[] fileContent;
         CloseMpqArchive(hArchive);
         return 0;
-    }
-
-    // Handle subcommand: Patch
-    if (app.got_subcommand(patch)) {
-        std::cout << "[!] patch not implemented..." << std::endl;
     }
 
     // Handle subcommand: Verify
