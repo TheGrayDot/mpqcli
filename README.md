@@ -4,7 +4,7 @@
 
 ![Release](https://img.shields.io/github/v/release/TheGrayDot/mpqcli?style=flat) ![Downloads](https://img.shields.io/github/downloads/TheGrayDot/mpqcli/total?style=flat)
 
-A command line tool to create, add, remove, list, extract, and verify MPQ archives using the [StormLib library](https://github.com/ladislav-zezula/StormLib).
+A command line tool to create, add, remove, list, extract, read, and verify MPQ archives using the [StormLib library](https://github.com/ladislav-zezula/StormLib).
 
 > ⚠️ **Warning:** This project is under active development and will change functionality between released versions until version 1.0.0.
 
@@ -16,7 +16,7 @@ A command line tool to create, add, remove, list, extract, and verify MPQ archiv
 - Run one command to list all files in an MPQ archive
 - Run one command to search and extract files from an MPQ archive
 
-**This project is for primarily for older World of Warcraft MPQ archives**. This means is has been primarily authored for MPQ files versions 1 and 2, which includes the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3) and WoTLK (3.3.5). It has only been tested on WoW MPQ archives/patches which use MPQ versions 1 or 2. No testing has been performed on other MPQ versions or archives from other games. The tool will most likely work, as the underlying Stormlib library supports these other versions.
+**This project is for primarily for older World of Warcraft MPQ archives**. This means is has been authored for MPQ files versions 1 and 2, which includes the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3) and WoTLK (3.3.5). It has only been tested on WoW MPQ archives/patches which use MPQ versions 1 or 2. No testing has been performed on other MPQ versions or archives from other games. However, the tool will most likely work, as the underlying Stormlib library supports these other versions.
 
 If you require an MPQ tool with a graphical interface (GUI) and explicit support for more MPQ archive versions - I would recommend using [Ladik's MPQ Editor](http://www.zezula.net/en/mpq/download.html).
 
@@ -63,13 +63,13 @@ To download the latest version of the `mpqcli` Docker image, run:
 docker pull ghcr.io/thegraydot/mpqcli:latest
 ```
 
-You can run mpqcli commands directly using the Docker container. For example:
+You can run `mpqcli` commands directly using the Docker container. For example:
 
 ```
 docker run ghcr.io/thegraydot/mpqcli:latest version
 ```
 
-To use local files with the container, mount a directory from your host system. In the following example, the `-v` argument is used to mount the present working directory to `/data` in the container. Then the `mpqcli` container runs the `list` subcommand with `/data/example.mpq` as the target MPQ archive.
+To use local files in the container, mount a directory from your host system. In the following example, the `-v` argument is used to mount the present working directory to `/data` directory in the container. Then the `mpqcli` container runs the `list` subcommand with `/data/example.mpq` as the target MPQ archive.
 
 ```
 docker run -v $(pwd):/data ghcr.io/thegraydot/mpqcli:latest list /data/example.mpq
@@ -86,11 +86,12 @@ The `mpqcli` program has the follwoing subcommands:
 - `remove`: Remove a file from an existing MPQ archive (not implemented)
 - `list`: List files in a target MPQ archive
 - `extract`: Extract one/all files from a target MPQ archive
+- `read`: Read a specific file to stdout
 - `verify`: Verify a target MPQ archive signature
 
 ## Command Examples
 
-### Create archive from a target directory
+### Create an MPQ archive from a target directory
 
 Create an MPQ file from a target directory. Automatically adds `(listfile)` to the archive, and will skip this file if it exists in the target directory.
 
@@ -98,11 +99,21 @@ Create an MPQ file from a target directory. Automatically adds `(listfile)` to t
 mpqcli create <target_directory>
 ```
 
+### Create an MPQ archive using a specific version
+
 Support for creating an MPQ archive version 1 or version 2 by using the `-v` or `--version` argument.
 
 ```
 mpqcli create -v 1 <target_directory>
 mpqcli create --version 2 <target_directory>
+```
+
+### Create and sign an MPQ archive
+
+Use the `-s` or `--sign` argument to cryptographically sign an MPQ archive with the Blizzard weak signature.
+
+```
+mpqcli create --version 1 --sign <target_directory>
 ```
 
 ### Add a file to an existing archive
@@ -113,7 +124,7 @@ The `add` subcommand has not yet been added.
 
 The `remove` subcommand has not yet been added.
 
-### List all files
+### List all files in an MPQ archive
 
 Pretty simple, list files in an MPQ archive. Useful to "pipe" to other tools, such as `grep` (see below for examples).
 
@@ -129,7 +140,7 @@ Older MPQ archives do not contain (complete) file paths of their content. By pro
 mpqcli list -l /path/to/listfile <target_mpq_file>
 ```
 
-### Extract all files
+### Extract all files from an MPQ archive
 
 The output will be saved in a folder with the same name as the target MPQ file, without the extension.
 
@@ -139,7 +150,7 @@ mpqcli extract <target_mpq_file>
 
 ### Extract all files to a target directory
 
-Extract files to a specific target directory - which will be created if it doesn't already exist.
+Extract files to a specific target directory, which, will be created if it doesn't already exist.
 
 ```
 mpqcli extract -o /path/to/target/directory <target_mpq_file>
@@ -160,6 +171,14 @@ Extract a single file using the `-f` option. If the target file in the MPQ archi
 ```
 mpqcli extract -f "InstallCD\Unpack\InstallLogTemplate\BaseHeader.html" <target_mpq_file>
 ```
+
+### Read a specific file from an MPQ archive
+
+TODO
+
+### Verify an MPQ archive
+
+TODO
 
 ## Advanced Command Examples
 
