@@ -10,15 +10,23 @@ A command line tool to create, add, remove, list, extract, and verify MPQ archiv
 
 ## Overview
 
-**This is a command line tool, designed for automation**. For example, run one command to create an MPQ archive from a directory of files or run one command to search and extract files from an MPQ archive. If you require an MPQ tool with a graphical interface (GUI) - I would recommend using [Ladik's MPQ Editor](http://www.zezula.net/en/mpq/download.html).
+**This is a command line tool, designed for automation**. For example:
 
-**This project is for original World of Warcraft MPQ archives**. This means is has been primarily authored for MPQ files used in the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3) and WoTLK (3.3.5). It has only been tested on WoW MPQ archives/patches which use MPQ versions 1 or 2. No testing has been performed on other MPQ versions or archives from other games.
+- Run one command to create an MPQ archive from a directory of files
+- Run one command to list all files in an MPQ archive
+- Run one command to search and extract files from an MPQ archive
+
+**This project is for primarily for older World of Warcraft MPQ archives**. This means is has been primarily authored for MPQ files versions 1 and 2, which includes the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3) and WoTLK (3.3.5). It has only been tested on WoW MPQ archives/patches which use MPQ versions 1 or 2. No testing has been performed on other MPQ versions or archives from other games. The tool will most likely work, as the underlying Stormlib library supports these other versions.
+
+If you require an MPQ tool with a graphical interface (GUI) and explicit support for more MPQ archive versions - I would recommend using [Ladik's MPQ Editor](http://www.zezula.net/en/mpq/download.html).
 
 ## Download
 
 ### Precompiled Binaries
 
 Check the [latest release with binaries](https://github.com/TheGrayDot/mpqcli/releases).
+
+### Latest Precompiled Binary on Linux
 
 Download latest release on Linux:
 
@@ -35,6 +43,8 @@ Add the `mpqcli` binary to your path:
 mv mpqcli /usr/local/bin/
 ```
 
+### Latest Precompiled Binary on Windows
+
 Download the latest release on Windows:
 
 ```
@@ -45,7 +55,7 @@ Invoke-WebRequest -Uri "https://github.com/TheGrayDot/mpqcli/releases/download/$
 
 ### Docker Image
 
-The Docker image for `mpqcli` is hosted on [GitHub Container Registry (GHCR)](https://ghcr.io). It provides a lightweight and portable way to use `mpqcli` without needing to build or install it manually.
+The Docker image for `mpqcli` is hosted on [GitHub Container Registry (GHCR)](https://ghcr.io). It provides a lightweight and portable way to use `mpqcli` without needing to build or download a binary.
 
 To download the latest version of the `mpqcli` Docker image, run:
 
@@ -56,13 +66,13 @@ docker pull ghcr.io/thegraydot/mpqcli:latest
 You can run mpqcli commands directly using the Docker container. For example:
 
 ```
-docker run --rm ghcr.io/thegraydot/mpqcli:latest version
+docker run ghcr.io/thegraydot/mpqcli:latest version
 ```
 
-To use local files with the container, mount a directory from your host system:
+To use local files with the container, mount a directory from your host system. In the following example, the `-v` argument is used to mount the present working directory to `/data` in the container. Then the `mpqcli` container runs the `list` subcommand with `/data/example.mpq` as the target MPQ archive.
 
 ```
-docker run --rm -v $(pwd):/data ghcr.io/thegraydot/mpqcli:latest list /data/example.mpq
+docker run -v $(pwd):/data ghcr.io/thegraydot/mpqcli:latest list /data/example.mpq
 ```
 
 ## Subcommands
@@ -70,15 +80,54 @@ docker run --rm -v $(pwd):/data ghcr.io/thegraydot/mpqcli:latest list /data/exam
 The `mpqcli` program has the follwoing subcommands:
 
 - `version`: Print the tool version number
+- `about`: Print information about the tool
 - `create`: Create an MPQ archive from a target directory
 - `add`: Add a file to an existing MPQ archive (not implemented)
 - `remove`: Remove a file from an existing MPQ archive (not implemented)
 - `list`: List files in a target MPQ archive
 - `extract`: Extract one/all files from a target MPQ archive
-- `patch`: Functionality to patch files (not implemented)
 - `verify`: Verify a target MPQ archive signature
 
-## Example Commands
+## Command Examples
+
+### Create archive from a target directory
+
+Create an MPQ file from a target directory. Automatically adds `(listfile)` to the archive, and will skip this file if it exists in the target directory.
+
+```
+mpqcli create <target_directory>
+```
+
+Support for creating an MPQ archive version 1 or version 2 by using the `-v` or `--version` argument.
+
+```
+mpqcli create -v 1 <target_directory>
+mpqcli create --version 2 <target_directory>
+```
+
+### Add a file to an existing archive
+
+The `add` subcommand has not yet been added.
+
+### Remove a file from an existing archive
+
+The `remove` subcommand has not yet been added.
+
+### List all files
+
+Pretty simple, list files in an MPQ archive. Useful to "pipe" to other tools, such as `grep` (see below for examples).
+
+```
+mpqcli list <target_mpq_file>
+```
+
+### List all files with an external listfile
+
+Older MPQ archives do not contain (complete) file paths of their content. By providing an external listfile that lists the content of the MPQ archive, the listed files will have the correct paths. Listfiles can be downloaded on [Ladislav Zezula's site](http://www.zezula.net/en/mpq/download.html).
+
+```
+mpqcli list -l /path/to/listfile <target_mpq_file>
+```
 
 ### Extract all files
 
@@ -112,21 +161,7 @@ Extract a single file using the `-f` option. If the target file in the MPQ archi
 mpqcli extract -f "InstallCD\Unpack\InstallLogTemplate\BaseHeader.html" <target_mpq_file>
 ```
 
-### List all files
-
-Pretty simple, list files in an MPQ archive. Useful to "pipe" to other tools, such as `grep` (see below for examples).
-
-```
-mpqcli list <target_mpq_file>
-```
-
-### List all files with an external listfile
-
-Older MPQ archives do not contain (complete) file paths of their content. By providing an external listfile that lists the content of the MPQ archive, the listed files will have the correct paths. Listfiles can be downloaded on [Ladislav Zezula's site](http://www.zezula.net/en/mpq/download.html).
-
-```
-mpqcli list -l /path/to/listfile <target_mpq_file>
-```
+## Advanced Command Examples
 
 ### Search and extract files on Linux
 
@@ -145,25 +180,6 @@ The following command lists all files in an MPQ archive, and each filename is fi
 ```
 mpqcli.exe list <target_mpq_file> | Select-String -Pattern ".exe" | ForEach-Object { mpqcli.exe extract -f $_ <target_mpq_file> }
 ```
-
-### Create archive from a target directory
-
-Create an MPQ file from a target directory. Automatically adds `(listfile)` to the archive, and will skip this file if it exists in the target directory.
-
-```
-mpqcli create <target_directory>
-```
-
-Support for creating an MPQ archive version 1 or version 2 by using the `-v` or `--version` argument.
-
-```
-mpqcli create -v 1 <target_directory>
-mpqcli create --version 2 <target_directory>
-```
-
-### Add a file to an existing archive
-
-The `add` subcommand has not yet been added.
 
 ## Building
 
@@ -194,7 +210,7 @@ cmake -B build
 cmake --build build --config Release
 ```
 
-The `mpqcli.exe` binary will be available in: `.\build\bin/Release\mpqcli.exe`
+The `mpqcli.exe` binary will be available in: `.\build\bin\Release\mpqcli.exe`
 
 ## Dependencies
 
@@ -219,20 +235,8 @@ source test/venv/bin/activate
 pip3 install -r test/requirements.txt
 ```
 
-Then you can run the tests:
+Then you can run the tests using:
 
 ```
-thomas@t1000:~/repos/mpqcli$ python3 -m pytest test -s
-================ test session starts ================
-platform linux -- Python 3.10.12, pytest-8.3.5, pluggy-1.6.0
-rootdir: /home/thomas/repos/mpqcli
-collected 18 items                                                                     
-
-test/test_create.py .....
-test/test_info.py .....
-test/test_list.py ..
-test/test_read.py ..
-test/test_verify.py ....
-
-================ 18 passed in 0.16s ================
+python3 -m pytest test -s
 ```
