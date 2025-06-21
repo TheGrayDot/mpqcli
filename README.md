@@ -174,11 +174,33 @@ mpqcli extract -f "InstallCD\Unpack\InstallLogTemplate\BaseHeader.html" <target_
 
 ### Read a specific file from an MPQ archive
 
-TODO
+Read the `patch.cmd` file from an MPQ archive and print the file contents to stdout.
+
+```
+mpqcli read -f patch.cmd <target_mpq_file>
+```
+
+The tool will determine if the contents of the file are printable - if so, will print out normal ASCII. Otherwise, the tool will print hexadecimal. For example, when reading the `WoW.exe` file from a WoW self-executable patch.
+
+```
+mpqcli read -f "WoW.exe" WoW-1.8.4-enUS-patch.exe
+```
 
 ### Verify an MPQ archive
 
-TODO
+Check the digital signature of an MPQ archive, by verifying the signature in the archive with a collection of known Blizzard public keys (bundled in Stormlib library). The tool will print if verification is successful or fails, as well as returning `0` for success and any other value for fail.
+
+```
+mpqcli verify <target_mpq_file>
+```
+
+### Verify an MPQ archive and print the digital signature
+
+Check the digital signature of an MPQ archive, by verifying the signature in the archive and also print the digital signature value in hexadecimal using the `-p` or `--print` argument.
+
+```
+mpqcli verify -p <target_mpq_file>
+```
 
 ## Advanced Command Examples
 
