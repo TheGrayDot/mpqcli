@@ -77,7 +77,7 @@ docker run -v $(pwd):/data ghcr.io/thegraydot/mpqcli:latest list /data/example.m
 
 ## Subcommands
 
-The `mpqcli` program has the follwoing subcommands:
+The `mpqcli` program has the following subcommands:
 
 - `version`: Print the tool version number
 - `about`: Print information about the tool
@@ -129,7 +129,7 @@ The `remove` subcommand has not yet been added.
 Pretty simple, list files in an MPQ archive. Useful to "pipe" to other tools, such as `grep` (see below for examples).
 
 ```
-mpqcli list <target_mpq_file>
+mpqcli list <target_mpq_archive>
 ```
 
 ### List all files with an external listfile
@@ -137,7 +137,7 @@ mpqcli list <target_mpq_file>
 Older MPQ archives do not contain (complete) file paths of their content. By providing an external listfile that lists the content of the MPQ archive, the listed files will have the correct paths. Listfiles can be downloaded on [Ladislav Zezula's site](http://www.zezula.net/en/mpq/download.html).
 
 ```
-mpqcli list -l /path/to/listfile <target_mpq_file>
+mpqcli list -l /path/to/listfile <target_mpq_archive>
 ```
 
 ### Extract all files from an MPQ archive
@@ -145,7 +145,7 @@ mpqcli list -l /path/to/listfile <target_mpq_file>
 The output will be saved in a folder with the same name as the target MPQ file, without the extension.
 
 ```
-mpqcli extract <target_mpq_file>
+mpqcli extract <target_mpq_archive>
 ```
 
 ### Extract all files to a target directory
@@ -153,7 +153,7 @@ mpqcli extract <target_mpq_file>
 Extract files to a specific target directory, which, will be created if it doesn't already exist.
 
 ```
-mpqcli extract -o /path/to/target/directory <target_mpq_file>
+mpqcli extract -o /path/to/target/directory <target_mpq_archive>
 ```
 
 ### Extract all files with an external listfile
@@ -161,7 +161,7 @@ mpqcli extract -o /path/to/target/directory <target_mpq_file>
 Older MPQ archives do not contain (complete) file paths of their content. By providing an external listfile that lists the content of the MPQ archive, the extracted files will have the correct names and paths. Listfiles can be downloaded on [Ladislav Zezula's site](http://www.zezula.net/en/mpq/download.html).
 
 ```
-mpqcli extract -l /path/to/listfile <target_mpq_file>
+mpqcli extract -l /path/to/listfile <target_mpq_archive>
 ```
 
 ### Extract one specific file
@@ -169,7 +169,7 @@ mpqcli extract -l /path/to/listfile <target_mpq_file>
 Extract a single file using the `-f` option. If the target file in the MPQ archive is nested (in a directory) you need to include the full path. Similar to examples above, you can use the `-o` argument to specify the output directory.
 
 ```
-mpqcli extract -f "InstallCD\Unpack\InstallLogTemplate\BaseHeader.html" <target_mpq_file>
+mpqcli extract -f "InstallCD\Unpack\InstallLogTemplate\BaseHeader.html" <target_mpq_archive>
 ```
 
 ### Read a specific file from an MPQ archive
@@ -177,7 +177,7 @@ mpqcli extract -f "InstallCD\Unpack\InstallLogTemplate\BaseHeader.html" <target_
 Read the `patch.cmd` file from an MPQ archive and print the file contents to stdout.
 
 ```
-mpqcli read -f patch.cmd <target_mpq_file>
+mpqcli read -f patch.cmd <target_mpq_archive>
 ```
 
 The tool will determine if the contents of the file are printable - if so, will print out normal ASCII. Otherwise, the tool will print hexadecimal. For example, when reading the `WoW.exe` file from a WoW self-executable patch.
@@ -191,7 +191,7 @@ mpqcli read -f "WoW.exe" WoW-1.8.4-enUS-patch.exe
 Check the digital signature of an MPQ archive, by verifying the signature in the archive with a collection of known Blizzard public keys (bundled in Stormlib library). The tool will print if verification is successful or fails, as well as returning `0` for success and any other value for fail.
 
 ```
-mpqcli verify <target_mpq_file>
+mpqcli verify <target_mpq_archive>
 ```
 
 ### Verify an MPQ archive and print the digital signature
@@ -199,7 +199,7 @@ mpqcli verify <target_mpq_file>
 Check the digital signature of an MPQ archive, by verifying the signature in the archive and also print the digital signature value in hexadecimal using the `-p` or `--print` argument.
 
 ```
-mpqcli verify -p <target_mpq_file>
+mpqcli verify -p <target_mpq_archive>
 ```
 
 ## Advanced Command Examples
@@ -211,7 +211,7 @@ The `mpqcli` tool has no native search feature - instead it is designed to be in
 The following command lists all files in an MPQ archive, and each filename is filtered using `grep` - selecting files with `exe` in their name, which is then passed back to `mpqcli extract`. The result: search and extract all `exe` files.
 
 ```
-mpqcli list <target_mpq_file> | grep ".exe" | xargs -I@ mpqcli extract -f "@" <target_mpq_file>
+mpqcli list <target_mpq_archive> | grep ".exe" | xargs -I@ mpqcli extract -f "@" <target_mpq_archive>
 ```
 
 ### Search and extract files on Windows
@@ -219,7 +219,7 @@ mpqcli list <target_mpq_file> | grep ".exe" | xargs -I@ mpqcli extract -f "@" <t
 The following command lists all files in an MPQ archive, and each filename is filtered using `grep` - selecting files with `exe` in their name, which is then passed back to `mpqcli extract`. The result: search and extract all `exe` files.
 
 ```
-mpqcli.exe list <target_mpq_file> | Select-String -Pattern ".exe" | ForEach-Object { mpqcli.exe extract -f $_ <target_mpq_file> }
+mpqcli.exe list <target_mpq_archive> | Select-String -Pattern ".exe" | ForEach-Object { mpqcli.exe extract -f $_ <target_mpq_archive> }
 ```
 
 ## Building
