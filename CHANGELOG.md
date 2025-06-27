@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1 - 2025-06-27
+
+### Fixed
+
+- Updated readme to match application functionality
+
 ## 0.6.0 - 2025-06-02
 
 ### Added
