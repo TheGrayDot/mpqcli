@@ -10,13 +10,13 @@ A command line tool to create, add, remove, list, extract, read, and verify MPQ 
 
 ## Overview
 
-**This is a command line tool, designed for automation**. For example:
+**This is a command-line tool, designed for automation.** For example:
 
 - Run one command to create an MPQ archive from a directory of files
 - Run one command to list all files in an MPQ archive
 - Run one command to search and extract files from an MPQ archive
 
-**This project is for primarily for older World of Warcraft MPQ archives**. This means is has been authored for MPQ files versions 1 and 2, which includes the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3) and WoTLK (3.3.5). It has only been tested on WoW MPQ archives/patches which use MPQ versions 1 or 2. No testing has been performed on other MPQ versions or archives from other games. However, the tool will most likely work, as the underlying Stormlib library supports these other versions.
+**This project is primarily for older World of Warcraft MPQ archives**. This means it has been authored for MPQ files versions 1 and 2, which include the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3), and WoTLK (3.3.5). It has only been tested on WoW MPQ archives/patches that use MPQ versions 1 or 2. No testing has been performed on other MPQ versions or archives from other games. However, the tool will most likely work, as the underlying Stormlib library supports these other versions.
 
 If you require an MPQ tool with a graphical interface (GUI) and explicit support for more MPQ archive versions - I would recommend using [Ladik's MPQ Editor](http://www.zezula.net/en/mpq/download.html).
 
@@ -28,7 +28,7 @@ Check the [latest release with binaries](https://github.com/TheGrayDot/mpqcli/re
 
 ### Latest Precompiled Binary on Linux
 
-Download latest release on Linux:
+Download the latest release on Linux:
 
 ```
 TAG=$(curl -s https://api.github.com/repos/TheGrayDot/mpqcli/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
@@ -81,6 +81,7 @@ The `mpqcli` program has the following subcommands:
 
 - `version`: Print the tool version number
 - `about`: Print information about the tool
+- `info`: Print information about an MPQ archive properties
 - `create`: Create an MPQ archive from a target directory
 - `add`: Add a file to an existing MPQ archive (not implemented)
 - `remove`: Remove a file from an existing MPQ archive (not implemented)
@@ -91,6 +92,33 @@ The `mpqcli` program has the following subcommands:
 
 ## Command Examples
 
+### Print information about an MPQ archive
+
+The `info` subcommand prints a list of useful information (property keys and values) of an MPQ archive.
+
+```
+mpqcli info <target_mpq_archive>
+```
+
+### Print one specific MPQ archive property
+
+The `info` subcommand supports the following properties:
+
+```
+format-version
+header-offset
+header-size
+archive-size
+file-count
+signature-type
+```
+
+You can use the `-p` or `--property` argument with the `info` subcommand to print just the value of a specific property. This can be useful for automation, for example, to determine the signature type of a directory of MPQ archives.
+
+```
+mpqcli info -p file-count <target_mpq_archive>
+```
+
 ### Create an MPQ archive from a target directory
 
 Create an MPQ file from a target directory. Automatically adds `(listfile)` to the archive, and will skip this file if it exists in the target directory.
@@ -98,6 +126,8 @@ Create an MPQ file from a target directory. Automatically adds `(listfile)` to t
 ```
 mpqcli create <target_directory>
 ```
+
+The default mode of operation for the `create` subcommand is to take everything from the "target" directory (and below) and recursively add it to the archive. The directory structure is retained. Windows-style backslash path separators are used (`\`), as per the observed behavior in most MPQ archives.
 
 ### Create an MPQ archive using a specific version
 
@@ -166,7 +196,7 @@ mpqcli extract -l /path/to/listfile <target_mpq_archive>
 
 ### Extract one specific file
 
-Extract a single file using the `-f` option. If the target file in the MPQ archive is nested (in a directory) you need to include the full path. Similar to examples above, you can use the `-o` argument to specify the output directory.
+Extract a single file using the `-f` option. If the target file in the MPQ archive is nested (in a directory) you need to include the full path. Similar to the examples above, you can use the `-o` argument to specify the output directory.
 
 ```
 mpqcli extract -f "InstallCD\Unpack\InstallLogTemplate\BaseHeader.html" <target_mpq_archive>
@@ -188,7 +218,7 @@ mpqcli read -f "WoW.exe" WoW-1.8.4-enUS-patch.exe
 
 ### Verify an MPQ archive
 
-Check the digital signature of an MPQ archive, by verifying the signature in the archive with a collection of known Blizzard public keys (bundled in Stormlib library). The tool will print if verification is successful or fails, as well as returning `0` for success and any other value for fail.
+Check the digital signature of an MPQ archive, by verifying the signature in the archive with a collection of known Blizzard public keys (bundled in Stormlib library). The tool will print if verification is successful or fails, as well as return `0` for success and any other value for failure.
 
 ```
 mpqcli verify <target_mpq_archive>
@@ -206,7 +236,7 @@ mpqcli verify -p <target_mpq_archive>
 
 ### Search and extract files on Linux
 
-The `mpqcli` tool has no native search feature - instead it is designed to be integrated with other, extenal operating system tools. For example, `mpqcli list` can be "piped" to `grep` in Linux or `Select-String` in Windows Powershell to perform searching.
+The `mpqcli` tool has no native search feature - instead, it is designed to be integrated with other, external operating system tools. For example, `mpqcli list` can be "piped" to `grep` in Linux or `Select-String` in Windows Powershell to perform searching.
 
 The following command lists all files in an MPQ archive, and each filename is filtered using `grep` - selecting files with `exe` in their name, which is then passed back to `mpqcli extract`. The result: search and extract all `exe` files.
 
@@ -257,11 +287,11 @@ The `mpqcli.exe` binary will be available in: `.\build\bin\Release\mpqcli.exe`
 
 ### StormLib
 
-This project requires the [StormLib](https://github.com/ladislav-zezula/StormLib) library. Many thanks to [Ladislav Zezula](https://github.com/ladislav-zezula) for authoring such a good library and releasing the code under an open source licence. The StormLib library has a number of requirements. However, the build method specifies using the libraries bundled with StormLib.
+This project requires the [StormLib](https://github.com/ladislav-zezula/StormLib) library. Many thanks to [Ladislav Zezula](https://github.com/ladislav-zezula) for authoring such a good library and releasing the code under an open-source license. The StormLib library has a number of requirements. However, the build method specifies using the libraries bundled with StormLib.
 
 ### CLI11
 
-This project also uses the [CLI11](https://github.com/CLIUtils/CLI11) command line parser for C++11. It provides a simple and easy to use/implement CLI arguments.
+This project also uses the [CLI11](https://github.com/CLIUtils/CLI11) command line parser for C++11. It provides simple and easy-to-use CLI arguments.
 
 ## Tests
 
