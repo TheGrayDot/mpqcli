@@ -11,6 +11,9 @@ jobs:
   release_binaries:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download Linux binary
         uses: actions/download-artifact@v4
         with:
@@ -21,6 +24,14 @@ jobs:
         with:
           name: mpqcli-windows.exe
 
+      - name: Extract latest changelog section
+        id: changelog
+        run: |
+          CHANGELOG_CONTENT=$(awk '/^## /{i++} i==1{print}' CHANGELOG.md | tail -n +2)
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Release package
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
@@ -28,6 +39,7 @@ jobs:
           files: |
             mpqcli-linux
             mpqcli-windows.exe
+          body: ${{ steps.changelog.outputs.content }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
