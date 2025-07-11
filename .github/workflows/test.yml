@@ -46,7 +46,7 @@ jobs:
           python3 -m pytest test
 
   test_windows:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       # Only need repo content to install test/requirements.txt
       - name: Check out repository code
