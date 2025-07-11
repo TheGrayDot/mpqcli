@@ -8,3 +8,17 @@ updates:
       interval: weekly
     assignees:
       - "thomaslaurenson"
+
+  - package-ecosystem: python
+    directory: /test
+    schedule:
+      interval: weekly
+    assignees:
+      - "thomaslaurenson"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    assignees:
+      - "thomaslaurenson"
