@@ -9,7 +9,7 @@ updates:
     assignees:
       - "thomaslaurenson"
 
-  - package-ecosystem: python
+  - package-ecosystem: pip
     directory: /test
     schedule:
       interval: weekly
