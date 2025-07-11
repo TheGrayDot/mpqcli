@@ -32,7 +32,7 @@ jobs:
           retention-days: 1
 
   build_windows:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
