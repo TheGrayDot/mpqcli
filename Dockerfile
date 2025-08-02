@@ -1,5 +1,5 @@
 # Stage 1: Build and Test
-FROM alpine:3.18 AS builder
+FROM alpine:3.22 AS builder
 
 RUN apk add --no-cache \
     build-base \
@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir -r test/requirements.txt
 RUN python3 -m pytest test
 
 # Stage 2: Create a minimal runtime image
-FROM alpine:3.18 AS runtime
+FROM alpine:3.22 AS runtime
 
 RUN apk add --no-cache \
     libstdc++ \
