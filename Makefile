@@ -25,6 +25,11 @@ docker_build:
 docker_run:
 	@docker run -it mpqcli:$(VERSION) about
 
+test_create_venv:
+	python3 -m venv ./test/venv
+	. ./test/venv/bin/activate && \
+	pip3 install -r ./test/requirements.txt
+
 test_mpqcli:
 	. ./test/venv/bin/activate && \
 	python3 -m pytest test -s
