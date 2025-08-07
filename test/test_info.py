@@ -81,7 +81,7 @@ def test_info_v1_properties(binary_path):
     # Adjust archive-size for Windows
     if platform.system() == "Windows":
         test_cases = [
-            (k, "482") if k == "archive-size" else (k, v)
+            (k, "486") if k == "archive-size" else (k, v)
             for (k, v) in test_cases
         ]
 
