@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <map>
 #include <functional>
+#include <vector>
 
 #include <StormLib.h>
 
@@ -37,8 +38,10 @@ int SignMpqArchive(HANDLE hArchive) {
 }
 
 int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& listfileName) {
+    // Check if the user provided a listfile input
+    const char *listfile = (listfileName == "default") ? NULL : listfileName.c_str();
+
     SFILE_FIND_DATA findData;
-    const char *listfile = listfileName.empty() ? NULL : listfileName.c_str();
     HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, listfile);
     if (findHandle == NULL) {
         std::cerr << "[+] Failed to find first file in MPQ archive." << std::endl;
@@ -108,27 +111,33 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
 }
 
 HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_t mpqVersion) {
-    // Determine MPQ archive version we are creating
-    int32_t targetMpqVersion = MPQ_CREATE_ARCHIVE_V1;
-    if (mpqVersion == 1) {
-        targetMpqVersion = MPQ_CREATE_ARCHIVE_V1;
-    } else if (mpqVersion == 2) {
-        targetMpqVersion = MPQ_CREATE_ARCHIVE_V2;
-    } else {
-        std::cerr << "[+] Invalid MPQ version specified. Exiting..." << std::endl;
-        return NULL;
-    };
-
     // Check if file already exists
     if (fs::exists(outputArchiveName)) {
         std::cerr << "[+] File already exists: " << outputArchiveName << " Exiting..." << std::endl;
         return NULL;
     }
 
+    // Configure flags for MPQ file, this includes:
+    // If we store attributes such as filetime
+    // The MPQ archive version
+    int32_t dwCreateFlags = 0;
+
+    if (mpqVersion == 1) {
+        dwCreateFlags += MPQ_CREATE_ARCHIVE_V1;
+    } else if (mpqVersion == 2) {
+        dwCreateFlags += MPQ_CREATE_ARCHIVE_V2;
+    } else {
+        dwCreateFlags += MPQ_CREATE_ARCHIVE_V1;
+    };
+
+    // Always include attributes
+    // This is needed for filetime, locale, CRC32 and MD5
+    dwCreateFlags += MPQ_CREATE_ATTRIBUTES;
+
     HANDLE hMpq;
     bool result = SFileCreateArchive(
         outputArchiveName.c_str(),
-        targetMpqVersion,
+        dwCreateFlags,
         fileCount,
         &hMpq
     );
@@ -153,8 +162,8 @@ int AddFiles(HANDLE hArvhive, const std::string& target) {
 }
 
 int AddFile(HANDLE hArchive, const std::string& entry, const std::string& target) {
-    // entry is the file to add, found by the recursive_directory_iterator
-    // target is the initial path provided by the user on the CLI
+    // entry: file to add, found by the recursive_directory_iterator
+    // target: initial path provided by the user on the CLI
 
     // Return if file doesn't exist on disk
     if (!fs::exists(entry)) {
@@ -167,10 +176,6 @@ int AddFile(HANDLE hArchive, const std::string& entry, const std::string& target
 
     // Strip the target path from the file name
     fs::path inputFilePath = fs::relative(entry, targetPath);
-
-    std::cout << "[+] Target path: " << targetPath.u8string() << std::endl;
-    std::cout << "[+] Input file: " << entry << std::endl;
-    std::cout << "[+] Adding file: " << inputFilePath.u8string() << std::endl;
 
     // Normalise path for MPQ
     std::string archiveFileName = WindowsifyFilePath(inputFilePath.u8string());
@@ -219,10 +224,11 @@ int RemoveFile(HANDLE hArchive, const std::string& fileName) {
     return 0;
 }
 
-int ListFiles(HANDLE hArchive, const std::string& listfileName) {
-    // Find the first file in MPQ archive to iterate from
+int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bool listDetailed) {
+    // Check if the user provided a listfile input
+    const char *listfile = (listfileName == "default") ? NULL : listfileName.c_str();
+
     SFILE_FIND_DATA findData;
-    const char *listfile = listfileName.empty() ? NULL : listfileName.c_str();
     HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, listfile);
     if (findHandle == NULL) {
         std::cerr << "[+] Failed to find first file in MPQ archive." << std::endl;
@@ -230,12 +236,52 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName) {
         return -1;
     }
 
+    // "Special" files are base files used by MPQ file format
+    // These are skipped, unless "-a" or "--all" are specified
+    std::vector<std::string> specialFiles = {
+        "(listfile)",
+        "(signature)",
+        "(attributes)"
+    };
+
     // Loop through all files in MPQ archive
     do {
-        std::cout << findData.cFileName << std::endl;
+        // Skip special files unless user wants to list all (like ls -a)
+        if (!listAll && std::find(specialFiles.begin(), specialFiles.end(), findData.cFileName) != specialFiles.end()) {
+            continue;
+        }
+
+        // Print the detailed (long) file listing (like ls -l)
+        if (listDetailed) {
+            // We need to open the file to get detailed information
+            // Use our custom GetFileInfo function
+            HANDLE hFile;
+            if (!SFileOpenFileEx(hArchive, findData.cFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
+                std::cerr << "[+] Failed to open file: " << findData.cFileName << std::endl;
+                continue; // Skip to the next file
+            }
+
+            int32_t fileSize = GetFileInfo<int32_t>(hFile, SFileInfoFileSize);
+            int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
+            std::string fileLocaleStr = LocaleToLang(fileLocale);
+            int64_t fileTime = GetFileInfo<int64_t>(hFile, SFileInfoFileTime);
+            std::string fileTimeStr = FileTimeToLsTime(fileTime);
+
+            // Print the file details in a formatted way
+            std::cout << std::setw(11) << fileSize << " "  // 4GB max size is 10 characters
+                      << std::setw(5) << fileLocaleStr << " "  // Locale is max 4 characters
+                      << std::setw(18) << fileTimeStr << " "  // File time is formatted as "MMM DD YYYY HH:MM"
+                      << findData.cFileName << std::endl;
+
+            SFileCloseFile(hFile);
+        } else {
+            // Print just the filename (like default ls command output)
+            std::cout << findData.cFileName << std::endl;
+        }
+
     } while (SFileFindNextFile(findHandle, &findData));
 
-    return 1;
+    return 0;
 }
 
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) {
@@ -274,7 +320,7 @@ void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty) {
     // Map of property names to their corresponding actions
     std::map<std::string, std::function<void(bool)>> propertyActions = {
         {"format-version", [&](bool printName) {
-            TMPQHeader header = GetMpqArchiveInfo<TMPQHeader>(hArchive, SFileMpqHeader);
+            TMPQHeader header = GetFileInfo<TMPQHeader>(hArchive, SFileMpqHeader);
             uint16_t formatVersion = header.wFormatVersion + 1;  // Add +1 because StormLib starts at 0
             if (printName) {
                 std::cout << "Format version: ";
@@ -282,35 +328,35 @@ void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty) {
             std::cout << formatVersion << std::endl;
         }},
         {"header-offset", [&](bool printName) {
-            int64_t headerOffset = GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderOffset);
+            int64_t headerOffset = GetFileInfo<int64_t>(hArchive, SFileMpqHeaderOffset);
             if (printName) {
                 std::cout << "Header offset: ";
             }
             std::cout << headerOffset << std::endl;
         }},
         {"header-size", [&](bool printName) {
-            int64_t headerSize = GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderSize);
+            int64_t headerSize = GetFileInfo<int64_t>(hArchive, SFileMpqHeaderSize);
             if (printName) {
                 std::cout << "Header size: ";
             }
             std::cout << headerSize << std::endl;
         }},
         {"archive-size", [&](bool printName) {
-            int32_t archiveSize = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqArchiveSize);
+            int32_t archiveSize = GetFileInfo<int32_t>(hArchive, SFileMpqArchiveSize);
             if (printName) {
                 std::cout << "Archive size: ";
             }
             std::cout << archiveSize << std::endl;
         }},
         {"file-count", [&](bool printName) {
-            int32_t numberOfFiles = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
+            int32_t numberOfFiles = GetFileInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
             if (printName) {
                 std::cout << "File count: ";
             }
             std::cout << numberOfFiles << std::endl;
         }},
         {"signature-type", [&](bool printName) {
-            int32_t signatureType = GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqSignatures);
+            int32_t signatureType = GetFileInfo<int32_t>(hArchive, SFileMpqSignatures);
             if (printName) {
                 std::cout << "Signature type: ";
             }
@@ -339,11 +385,11 @@ void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty) {
 }
 
 template <typename T>
-T GetMpqArchiveInfo(HANDLE hArchive, SFileInfoClass infoClass) {
+T GetFileInfo(HANDLE hFile, SFileInfoClass infoClass) {
     T value{};
-    if (!SFileGetFileInfo(hArchive, infoClass, &value, sizeof(T), NULL)) {
+    if (!SFileGetFileInfo(hFile, infoClass, &value, sizeof(T), NULL)) {
         int32_t error = GetLastError();
-        std::cerr << "[+] GetMpqArchiveInfo failed (Error: " << error << ")" << std::endl;
+        // std::cerr << "[+] GetFileInfo failed (Error: " << error << ")" << std::endl;
         return T{}; // Return default value for the type
     }
     return value;
@@ -364,7 +410,7 @@ bool VerifyMpqArchive(HANDLE hArchive) {
 int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
     // Determine if we have a strong or weak digital signature
     int32_t signatureType =
-        GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqSignatures);
+        GetFileInfo<int32_t>(hArchive, SFileMpqSignatures);
 
     std::vector<char> signatureContent;
 
@@ -388,13 +434,13 @@ int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
         delete[] fileContent;
 
     } else if (signatureType == SIGNATURE_TYPE_STRONG) {
-        signatureContent = GetMpqArchiveInfo<std::vector<char>>(
+        signatureContent = GetFileInfo<std::vector<char>>(
             hArchive, SFileMpqStrongSignature);
         if (signatureContent.empty()) {
-            int32_t archiveSize =
-                GetMpqArchiveInfo<int32_t>(hArchive, SFileMpqArchiveSize);
+            int64_t archiveSize =
+                GetFileInfo<int64_t>(hArchive, SFileMpqArchiveSize64);
             int64_t archiveOffset =
-                GetMpqArchiveInfo<int64_t>(hArchive, SFileMpqHeaderOffset);
+                GetFileInfo<int64_t>(hArchive, SFileMpqHeaderOffset);
 
             const fs::path archivePath = fs::canonical(target);
             std::uintmax_t fileSize = fs::file_size(archivePath);

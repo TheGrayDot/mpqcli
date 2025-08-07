@@ -1,3 +1,5 @@
+from datetime import datetime
+import os
 import platform
 from pathlib import Path
 import urllib.request
@@ -36,6 +38,12 @@ def generate_test_files():
         "bytes": b"\x00\x01\x02\x03\x04\x05\x06\x07",
     }
 
+    # Hard-coded timestamp: July 29, 2025, 14:31:00
+    # This is needed because archive size changes based on the timestamp
+    # and we need to have a consistent test output for "detailed" listing
+    dt = datetime(2025, 7, 29, 14, 31, 0)
+    ts = dt.timestamp()
+
     created_files = []
     for filename, content in files.items():
         file_path = files_dir / filename
@@ -46,6 +54,7 @@ def generate_test_files():
                 file_path.write_text(content, newline="\n")
         if isinstance(content, bytes):
             file_path.write_bytes(content)
+        os.utime(file_path, (ts, ts))
         created_files.append(file_path)
 
     yield created_files

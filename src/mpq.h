@@ -13,13 +13,13 @@ HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_
 int AddFiles(HANDLE hArvhive, const std::string& inputPath);
 int AddFile(HANDLE hArchive, const std::string& entry, const std::string& target);
 int RemoveFile(HANDLE hArchive, const std::string& fileName);
-int ListFiles(HANDLE hHandle, const std::string &listfileName);
+int ListFiles(HANDLE hHandle, const std::string &listfileName, bool listAll, bool listDetailed);
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize);
 void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty);
 bool VerifyMpqArchive(HANDLE hArchive);
 int32_t PrintMpqSignature(HANDLE hArchive, std::string target);
 
 template <typename T>
-T GetMpqArchiveInfo(HANDLE hArchive, SFileInfoClass infoClass);
+T GetFileInfo(HANDLE hFile, SFileInfoClass infoClass);
 
 #endif
