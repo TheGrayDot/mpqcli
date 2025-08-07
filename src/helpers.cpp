@@ -29,19 +29,19 @@ std::string FileTimeToLsTime(int64_t fileTime) {
 
 std::string LocaleToLang(uint16_t locale) {
     switch (locale) {
-        case 0:  return "enUS";             // English (US/GB)
-        case 1:  return "koKR";             // Korean
-        case 2:  return "frFR";             // French
-        case 3:  return "deDE";             // German
-        case 4:  return "zhCN";             // Chinese (Simplified)
-        case 5:  return "zhTW";             // Chinese (Taiwan)
-        case 6:  return "esES";             // Spanish (Spain)
-        case 7:  return "esMX";             // Spanish (Mexico)
-        case 8:  return "ruRU";             // Russian
-        case 9:  return "jaJP";             // Japanese
-        case 10: return "ptPT";             // Portuguese (Portugal)
-        case 11: return "itIT";             // Italian
-        default: return "NULL";             // Unknown locale
+        case 0:  return "enUS";     // English (US/GB)
+        case 1:  return "koKR";     // Korean
+        case 2:  return "frFR";     // French
+        case 3:  return "deDE";     // German
+        case 4:  return "zhCN";     // Chinese (Simplified)
+        case 5:  return "zhTW";     // Chinese (Taiwan)
+        case 6:  return "esES";     // Spanish (Spain)
+        case 7:  return "esMX";     // Spanish (Mexico)
+        case 8:  return "ruRU";     // Russian
+        case 9:  return "jaJP";     // Japanese
+        case 10: return "ptPT";     // Portuguese (Portugal)
+        case 11: return "itIT";     // Italian
+        default: return "";         // Unknown locale
     }
 }
 
