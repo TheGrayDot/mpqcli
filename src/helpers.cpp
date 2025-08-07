@@ -22,7 +22,11 @@ std::string FileTimeToLsTime(int64_t fileTime) {
     int64_t unixTime = (fileTime / 10000000) - EPOCH_DIFF;
     char buf[20];
     struct tm tm_buf;
+#ifdef _WIN32
+    localtime_s(&tm_buf, &unixTime);
+#else
     localtime_r(&unixTime, &tm_buf);
+#endif
     strftime(buf, sizeof(buf), "%b %e %Y %H:%M", &tm_buf);
     return std::string(buf);
 }
