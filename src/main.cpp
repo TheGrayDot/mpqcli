@@ -14,17 +14,25 @@ namespace fs = std::filesystem;
 int main(int argc, char **argv) {
     CLI::App app{"A command line tool to read, extract, search, create and verify MPQ archives using the StormLib library"};
 
+    // CLI args: base, reused in multiple subcommands
     std::string target = "default";
-    std::string file = "default";
-    std::string output = "default";
+    std::string file = "default";  // add, remove, extract, read
+    std::string output = "default";  // create, extract
+    std::string fileName = "default";  // read, extract
+    std::string listfileName = "default";  // list, extract
+    bool signArchive = false; // create, add (BUT ADD IS NOT ACTIVE)
+    // BASE - could add "base"
+
+    // CLI: extract
     bool keepFolderStructure = false;
-    bool patchExtractBin = false;
-    std::string extractFileName = "default";
-    std::string listfileName = "";
+    // CLI: create
     int32_t mpqVersion = 1;
-    bool signArchive = false;
     std::string baseFolder = "";
     std::string infoProperty = "";
+    // CLI: list
+    bool listDetailed = false;
+    bool listAll = false;
+    // CLI: sign
     bool printSignature = false;
 
     std::set<std::string> validInfoProperties = {
@@ -84,6 +92,8 @@ int main(int argc, char **argv) {
         ->check(CLI::ExistingFile);
     list->add_option("-l,--listfile", listfileName, "File listing content of an MPQ archive")
         ->check(CLI::ExistingFile);
+    list->add_flag("-d,--detailed", listDetailed, "File listing with additional columns (default false)");
+    list->add_flag("-a,--all", listAll, "File listing including hidden files (default true)");
 
     // Subcommand: Extract
     CLI::App *extract = app.add_subcommand("extract", "Extract files from the MPQ archive");
@@ -91,7 +101,7 @@ int main(int argc, char **argv) {
         ->required()
         ->check(CLI::ExistingFile);
     extract->add_option("-o,--output", output, "Output directory");
-    extract->add_option("-f,--file", extractFileName, "Target file to extract");
+    extract->add_option("-f,--file", fileName, "Target file to extract");
     extract->add_flag("-k,--keep", keepFolderStructure, "Keep folder structure (default false)");
     extract->add_option("-l,--listfile", listfileName, "File listing content of an MPQ archive")
         ->check(CLI::ExistingFile);
@@ -102,7 +112,7 @@ int main(int argc, char **argv) {
     read->add_option("target", target, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
-    read->add_option("-f,--file", extractFileName, "Target file to read")
+    read->add_option("-f,--file", fileName, "Target file to read")
         ->required();
 
     // Subcommand: Verify
@@ -186,7 +196,9 @@ int main(int argc, char **argv) {
     if (app.got_subcommand(list)) {
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
-        ListFiles(hArchive, listfileName);
+        ListFiles(hArchive, listfileName, listAll, listDetailed);
+        // TODO: Could add another argument for "all"
+        // This would include (attributes), (listfile), (signature)
     }
 
     // Handle subcommand: Extract
@@ -207,8 +219,8 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        if (extractFileName != "default") {
-            ExtractFile(hArchive, output, extractFileName, keepFolderStructure);
+        if (fileName != "default") {
+            ExtractFile(hArchive, output, fileName, keepFolderStructure);
         } else {
             ExtractFiles(hArchive, output, listfileName);
         }
@@ -224,7 +236,7 @@ int main(int argc, char **argv) {
 
         uint32_t fileSize;
         char* fileContent =
-            ReadFile(hArchive, extractFileName.c_str(), &fileSize);
+            ReadFile(hArchive, fileName.c_str(), &fileSize);
         if (fileContent == NULL) {
             return 1;
         }

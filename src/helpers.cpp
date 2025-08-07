@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include <ctime>
 
 #include <StormLib.h>
 
@@ -13,6 +14,36 @@
 
 namespace fs = std::filesystem;
 
+std::string FileTimeToLsTime(int64_t fileTime) {
+    if (fileTime == 0) {
+        return "";
+    }
+    constexpr int64_t EPOCH_DIFF = 11644473600LL;
+    int64_t unixTime = (fileTime / 10000000) - EPOCH_DIFF;
+    char buf[20];
+    struct tm tm_buf;
+    localtime_r(&unixTime, &tm_buf);
+    strftime(buf, sizeof(buf), "%b %e %Y %H:%M", &tm_buf);
+    return std::string(buf);
+}
+
+std::string LocaleToLang(uint16_t locale) {
+    switch (locale) {
+        case 0:  return "enUS";             // English (US/GB)
+        case 1:  return "koKR";             // Korean
+        case 2:  return "frFR";             // French
+        case 3:  return "deDE";             // German
+        case 4:  return "zhCN";             // Chinese (Simplified)
+        case 5:  return "zhTW";             // Chinese (Taiwan)
+        case 6:  return "esES";             // Spanish (Spain)
+        case 7:  return "esMX";             // Spanish (Mexico)
+        case 8:  return "ruRU";             // Russian
+        case 9:  return "jaJP";             // Japanese
+        case 10: return "ptPT";             // Portuguese (Portugal)
+        case 11: return "itIT";             // Italian
+        default: return "NULL";             // Unknown locale
+    }
+}
 
 std::string NormalizeFilePath(const fs::path &path) {
     std::string filePath = path.u8string();
