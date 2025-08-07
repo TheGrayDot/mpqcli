@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+import platform
 
 
 def test_list_mpq_with_output_v1(binary_path):
