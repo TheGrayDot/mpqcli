@@ -20,9 +20,7 @@ int main(int argc, char **argv) {
     std::string output = "default";  // create, extract
     std::string fileName = "default";  // read, extract
     std::string listfileName = "default";  // list, extract
-    bool signArchive = false; // create, add (BUT ADD IS NOT ACTIVE)
-    // BASE - could add "base"
-
+    bool signArchive = false; // create, add
     // CLI: extract
     bool keepFolderStructure = false;
     // CLI: create
