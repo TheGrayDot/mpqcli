@@ -38,6 +38,13 @@ def test_list_mpq_with_detailed(binary_path):
         "         27  enUS  Jul 29 2025 14:31 cats.txt",
     }
 
+    # Adjust filesize for Windows
+    if platform.system() == "Windows":
+        expected_output.remove("         27  enUS  Jul 29 2025 14:31 dogs.txt")
+        expected_output.add("         28  enUS  Jul 29 2025 14:31 dogs.txt")
+        expected_output.remove("         27  enUS  Jul 29 2025 14:31 cats.txt")
+        expected_output.add("         28  enUS  Jul 29 2025 14:31 cats.txt")
+
     result = subprocess.run(
         [str(binary_path), "list", "-a", "-d", str(test_file)],
         stdout=subprocess.PIPE,

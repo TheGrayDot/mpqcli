@@ -18,8 +18,8 @@ def test_info_v1(binary_path):
 
     # Adjust the expected output for Windows due to different line endings
     if platform.system() == "Windows":
-        expected_output.remove("Archive size: 345")
-        expected_output.add("Archive size: 347")
+        expected_output.remove("Archive size: 484")
+        expected_output.add("Archive size: 486")
 
     result = subprocess.run(
         [str(binary_path), "info", str(test_file)],
@@ -49,8 +49,8 @@ def test_info_v2(binary_path):
 
     # Adjust the expected output for Windows due to different line endings
     if platform.system() == "Windows":
-        expected_output.remove("Archive size: 349")
-        expected_output.add("Archive size: 351")
+        expected_output.remove("Archive size: 480")
+        expected_output.add("Archive size: 482")
 
     result = subprocess.run(
         [str(binary_path), "info", str(test_file)],
@@ -81,7 +81,7 @@ def test_info_v1_properties(binary_path):
     # Adjust archive-size for Windows
     if platform.system() == "Windows":
         test_cases = [
-            (k, "347") if k == "archive-size" else (k, v)
+            (k, "482") if k == "archive-size" else (k, v)
             for (k, v) in test_cases
         ]
 
@@ -113,7 +113,7 @@ def test_info_v2_properties(binary_path):
     # Adjust archive-size for Windows
     if platform.system() == "Windows":
         test_cases = [
-            (k, "351") if k == "archive-size" else (k, v)
+            (k, "482") if k == "archive-size" else (k, v)
             for (k, v) in test_cases
         ]
 
