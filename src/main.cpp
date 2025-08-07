@@ -195,8 +195,6 @@ int main(int argc, char **argv) {
         HANDLE hArchive;
         OpenMpqArchive(target, &hArchive);
         ListFiles(hArchive, listfileName, listAll, listDetailed);
-        // TODO: Could add another argument for "all"
-        // This would include (attributes), (listfile), (signature)
     }
 
     // Handle subcommand: Extract
