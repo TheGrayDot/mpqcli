@@ -11,8 +11,8 @@ def test_info_v1(binary_path):
         "Format version: 1",
         "Header offset: 0",
         "Header size: 32",
-        "Archive size: 345",
-        "File count: 4",
+        "Archive size: 484",
+        "File count: 5",
         "Signature type: None",
     }
 
@@ -42,8 +42,8 @@ def test_info_v2(binary_path):
         "Format version: 2",
         "Header offset: 0",
         "Header size: 44",
-        "Archive size: 349",
-        "File count: 4",
+        "Archive size: 480",
+        "File count: 5",
         "Signature type: None",
     }
 
@@ -73,8 +73,8 @@ def test_info_v1_properties(binary_path):
         ("format-version", "1"),
         ("header-offset", "0"),
         ("header-size", "32"),
-        ("archive-size", "345"),
-        ("file-count", "4"),
+        ("archive-size", "484"),
+        ("file-count", "5"),
         ("signature-type", "None"),
     ]
 
@@ -105,8 +105,8 @@ def test_info_v2_properties(binary_path):
         ("format-version", "2"),
         ("header-offset", "0"),
         ("header-size", "44"),
-        ("archive-size", "349"),
-        ("file-count", "4"),
+        ("archive-size", "480"),
+        ("file-count", "5"),
         ("signature-type", "None"),
     ]
 

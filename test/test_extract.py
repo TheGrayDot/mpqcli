@@ -41,6 +41,7 @@ def test_extract_mpq_default_options(binary_path, generate_test_files):
         "dogs.txt",
         "bytes",
         "(listfile)",
+        "(attributes)",
     }
 
     result = subprocess.run(
@@ -86,6 +87,7 @@ def test_extract_mpq_output_directory_specified(binary_path, generate_test_files
         "dogs.txt",
         "bytes",
         "(listfile)",
+        "(attributes)",
     }
 
     result = subprocess.run(
