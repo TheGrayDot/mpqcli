@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Set project version
-project(MPQCLI VERSION 0.6.2)
+project(MPQCLI VERSION 0.7.0)
 
 # Determine git commit hash
 execute_process (
