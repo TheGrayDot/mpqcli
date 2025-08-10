@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 
     // Subcommand: Remove
     CLI::App *remove = app.add_subcommand("remove", "Remove file from an existing MPQ archive");
-    remove->add_option("file", target, "File to remove")
+    remove->add_option("file", file, "File to remove")
         ->required();
     remove->add_option("target", target, "Target MPQ archive")
         ->required()
@@ -188,6 +188,7 @@ int main(int argc, char **argv) {
             std::cerr << "[!] Failed to open MPQ archive." << std::endl;
             return 1;
         }
+
         // Save the file to root of MPQ archive
         fs::path fileNamePath = fs::path(file);
         std::string fileNameString = fileNamePath.filename().u8string();
@@ -198,7 +199,15 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Remove
     if (app.got_subcommand(remove)) {
-        std::cout << "[!] remove not implemented..." << std::endl;
+        HANDLE hArchive;
+        // Open the MPQ archive for writing (this is why we set flag as 0)
+        if (!OpenMpqArchive(target, &hArchive, 0)) {
+            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
+            return 1;
+        }
+
+        RemoveFile(hArchive, file);
+        CloseMpqArchive(hArchive);
     }
 
     // Handle subcommand: List

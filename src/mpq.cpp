@@ -173,7 +173,6 @@ int AddFiles(HANDLE hArchive, const std::string& target) {
 
 int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFilePath) {
     std::cout << "[+] Adding file: " << archiveFilePath << std::endl;
-    std::cout << "[+] Local file: " << localFile << std::endl;
 
     // Return if file doesn't exist on disk
     if (!fs::exists(localFile)) {
@@ -211,13 +210,15 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
     return 0;
 }
 
-int RemoveFile(HANDLE hArchive, const std::string& fileName) {
-    if (!SFileHasFile(hArchive, fileName.c_str())) {
+int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath) {
+    std::cout << "[+] Removing file: " << archiveFilePath << std::endl;
+
+    if (!SFileHasFile(hArchive, archiveFilePath.c_str())) {
         std::cerr << "[+] Failed: File doesn't exist" << std::endl;
         return -1;
     }
 
-    if (!SFileRemoveFile(hArchive, fileName.c_str(), 0)) {
+    if (!SFileRemoveFile(hArchive, archiveFilePath.c_str(), 0)) {
         std::cerr << "[+] Failed: File cannot be removed" << std::endl;
         return -1;
     }
