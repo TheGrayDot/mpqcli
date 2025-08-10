@@ -65,13 +65,36 @@ std::string WindowsifyFilePath(const fs::path &path) {
     return filePath;
 }
 
-int CountFilesInDirectory(const std::string &directory) {
-    int fileCount = 0;
+int32_t CalculateMpqMaxFileValue(const std::string &directory) {
+    int32_t fileCount = 0;
+
+    // Determine number of files in target directory
     for (const auto &entry : fs::directory_iterator(directory)) {
         if (fs::is_regular_file(entry.path())) {
             ++fileCount;
         }
     }
+
+    // Always add 3 for "special" files
+    fileCount += 3;
+
+    // Based on file count, determine max number of files an MPQ archive can hold
+    // We always have a minimum of 32
+    // Anything over is rounded up to the closest power of 2
+    // For example: 64, 128, 256
+    // This is examples behavior of WoW MPQ archives (patches and installs)
+    if (fileCount <= 32) {
+        return 32;
+    }
+
+    fileCount--;
+    fileCount |= fileCount >> 1;
+    fileCount |= fileCount >> 2;
+    fileCount |= fileCount >> 4;
+    fileCount |= fileCount >> 8;
+    fileCount |= fileCount >> 16;
+    fileCount++;
+
     return fileCount;
 }
 
