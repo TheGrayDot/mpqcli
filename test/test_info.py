@@ -13,6 +13,7 @@ def test_info_v1(binary_path):
         "Header size: 32",
         "Archive size: 484",
         "File count: 5",
+        "Max files: 8",
         "Signature type: None",
     }
 
@@ -44,6 +45,7 @@ def test_info_v2(binary_path):
         "Header size: 44",
         "Archive size: 480",
         "File count: 5",
+        "Max files: 8",
         "Signature type: None",
     }
 
