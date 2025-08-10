@@ -11,16 +11,16 @@ def test_info_v1(binary_path):
         "Format version: 1",
         "Header offset: 0",
         "Header size: 32",
-        "Archive size: 484",
+        "Archive size: 1380",
         "File count: 5",
-        "Max files: 8",
+        "Max files: 64",
         "Signature type: None",
     }
 
     # Adjust the expected output for Windows due to different line endings
     if platform.system() == "Windows":
-        expected_output.remove("Archive size: 484")
-        expected_output.add("Archive size: 486")
+        expected_output.remove("Archive size: 1380")
+        expected_output.add("Archive size: 1382")
 
     result = subprocess.run(
         [str(binary_path), "info", str(test_file)],
@@ -43,16 +43,16 @@ def test_info_v2(binary_path):
         "Format version: 2",
         "Header offset: 0",
         "Header size: 44",
-        "Archive size: 480",
+        "Archive size: 1376",
         "File count: 5",
-        "Max files: 8",
+        "Max files: 64",
         "Signature type: None",
     }
 
     # Adjust the expected output for Windows due to different line endings
     if platform.system() == "Windows":
-        expected_output.remove("Archive size: 480")
-        expected_output.add("Archive size: 482")
+        expected_output.remove("Archive size: 1376")
+        expected_output.add("Archive size: 1378")
 
     result = subprocess.run(
         [str(binary_path), "info", str(test_file)],
@@ -75,7 +75,7 @@ def test_info_v1_properties(binary_path):
         ("format-version", "1"),
         ("header-offset", "0"),
         ("header-size", "32"),
-        ("archive-size", "484"),
+        ("archive-size", "1380"),
         ("file-count", "5"),
         ("signature-type", "None"),
     ]
@@ -83,7 +83,7 @@ def test_info_v1_properties(binary_path):
     # Adjust archive-size for Windows
     if platform.system() == "Windows":
         test_cases = [
-            (k, "486") if k == "archive-size" else (k, v)
+            (k, "1382") if k == "archive-size" else (k, v)
             for (k, v) in test_cases
         ]
 
@@ -107,7 +107,7 @@ def test_info_v2_properties(binary_path):
         ("format-version", "2"),
         ("header-offset", "0"),
         ("header-size", "44"),
-        ("archive-size", "480"),
+        ("archive-size", "1376"),
         ("file-count", "5"),
         ("signature-type", "None"),
     ]
@@ -115,7 +115,7 @@ def test_info_v2_properties(binary_path):
     # Adjust archive-size for Windows
     if platform.system() == "Windows":
         test_cases = [
-            (k, "482") if k == "archive-size" else (k, v)
+            (k, "1378") if k == "archive-size" else (k, v)
             for (k, v) in test_cases
         ]
 
