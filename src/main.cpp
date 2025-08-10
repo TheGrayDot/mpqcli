@@ -12,25 +12,29 @@
 namespace fs = std::filesystem;
 
 int main(int argc, char **argv) {
-    CLI::App app{"A command line tool to read, extract, search, create and verify MPQ archives using the StormLib library"};
+    CLI::App app{
+        "A command line tool to create, add, remove, list, extract, read, and verify MPQ archives "
+        "using the StormLib library"
+    };
 
-    // CLI args: base, reused in multiple subcommands
+    // CLI: base
+    // These are reused in multiple subcommands
     std::string target = "default";
     std::string file = "default";  // add, remove, extract, read
     std::string output = "default";  // create, extract
     std::string fileName = "default";  // read, extract
     std::string listfileName = "default";  // list, extract
     bool signArchive = false; // create, add
+    // CLI: info
+    std::string infoProperty = "";    
     // CLI: extract
     bool keepFolderStructure = false;
     // CLI: create
     int32_t mpqVersion = 1;
-    std::string baseFolder = "";
-    std::string infoProperty = "";
     // CLI: list
     bool listDetailed = false;
     bool listAll = false;
-    // CLI: sign
+    // CLI: verify
     bool printSignature = false;
 
     std::set<std::string> validInfoProperties = {
