@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
         "header-size",
         "archive-size",
         "file-count",
+        "max-files",
         "signature-type"
     };
 

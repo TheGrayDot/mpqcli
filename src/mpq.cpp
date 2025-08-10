@@ -355,6 +355,13 @@ void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty) {
             }
             std::cout << numberOfFiles << std::endl;
         }},
+        {"max-files", [&](bool printName) {
+            int32_t maxFiles = GetFileInfo<int32_t>(hArchive, SFileMpqMaxFileCount);
+            if (printName) {
+                std::cout << "Max files: ";
+            }
+            std::cout << maxFiles << std::endl;
+        }},
         {"signature-type", [&](bool printName) {
             int32_t signatureType = GetFileInfo<int32_t>(hArchive, SFileMpqSignatures);
             if (printName) {
