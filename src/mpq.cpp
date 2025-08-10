@@ -13,8 +13,8 @@
 
 namespace fs = std::filesystem;
 
-int OpenMpqArchive(const std::string &filename, HANDLE *hArchive) {
-    if (!SFileOpenArchive(filename.c_str(), 0, MPQ_OPEN_READ_ONLY, hArchive)) {
+int OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags) {
+    if (!SFileOpenArchive(filename.c_str(), 0, flags, hArchive)) {
         std::cerr << "[+] Failed to open: " << filename << std::endl;
         return 0;
     }
@@ -152,39 +152,39 @@ HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_
     return hMpq;
 }
 
-int AddFiles(HANDLE hArvhive, const std::string& target) {
+int AddFiles(HANDLE hArchive, const std::string& target) {
+    // We need to "clean" the target path to ensure it is a valid directory
+    // and to strip any directory structure from the files we add
+    fs::path targetPath = fs::path(target);
+
     for (const auto &entry : fs::recursive_directory_iterator(target)) {
         if (fs::is_regular_file(entry.path())) {
-            AddFile(hArvhive, entry.path().u8string(), target);
+            // Strip the target path from the file name
+            fs::path inputFilePath = fs::relative(entry, targetPath);
+
+            // Normalise path for MPQ
+            std::string archiveFilePath = WindowsifyFilePath(inputFilePath.u8string());
+
+            AddFile(hArchive, entry.path().u8string(), archiveFilePath);
         }
     }
     return 0;
 }
 
-int AddFile(HANDLE hArchive, const std::string& entry, const std::string& target) {
-    // entry: file to add, found by the recursive_directory_iterator
-    // target: initial path provided by the user on the CLI
+int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFilePath) {
+    std::cout << "[+] Adding file: " << archiveFilePath << std::endl;
+    std::cout << "[+] Local file: " << localFile << std::endl;
 
     // Return if file doesn't exist on disk
-    if (!fs::exists(entry)) {
-        std::cerr << "[!] File doesn't exist on disk: " << entry << std::endl;
+    if (!fs::exists(localFile)) {
+        std::cerr << "[!] File doesn't exist on disk: " << localFile << std::endl;
         return -1;
     }
 
-    // Convert target to a path
-    fs::path targetPath = fs::path(target);
-
-    // Strip the target path from the file name
-    fs::path inputFilePath = fs::relative(entry, targetPath);
-
-    // Normalise path for MPQ
-    std::string archiveFileName = WindowsifyFilePath(inputFilePath.u8string());
-    std::cout << "[+] Adding file: " << archiveFileName << std::endl;
-
     // Check if file exists in MPQ archive
-    bool hasFile = SFileHasFile(hArchive, archiveFileName.c_str());
+    bool hasFile = SFileHasFile(hArchive, archiveFilePath.c_str());
     if (hasFile) {
-        std::cerr << "[!] File already exists in MPQ archive: " << archiveFileName << " Skipping..." << std::endl;
+        std::cerr << "[!] File already exists in MPQ archive: " << archiveFilePath << " Skipping..." << std::endl;
         return -1;
     }
 
@@ -194,8 +194,8 @@ int AddFile(HANDLE hArchive, const std::string& entry, const std::string& target
 
     bool addedFile = SFileAddFileEx(
         hArchive,
-        entry.c_str(),
-        archiveFileName.c_str(),
+        localFile.c_str(),
+        archiveFilePath.c_str(),
         dwFlags,
         dwCompression,
         MPQ_COMPRESSION_NEXT_SAME
@@ -203,7 +203,8 @@ int AddFile(HANDLE hArchive, const std::string& entry, const std::string& target
 
     if (!addedFile) {
         int32_t error = GetLastError();
-        std::cerr << "[!] Error: " << error << " Failed to add: " << archiveFileName << std::endl;
+        std::cerr << "[!] Error: " << error << " Failed to add: " << archiveFilePath << std::endl;
+        std::cerr << "[!] (" << strerror(error) << ")" << std::endl;
         return -1;
     }
 

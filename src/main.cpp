@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
     // Handle subcommand: Info
     if (app.got_subcommand(info)){
         HANDLE hArchive;
-        if (!OpenMpqArchive(target, &hArchive)) {
+        if (!OpenMpqArchive(target, &hArchive, MPQ_OPEN_READ_ONLY)) {
             std::cerr << "[!] Failed to open MPQ archive." << std::endl;
             return 1;
         }
@@ -164,8 +164,7 @@ int main(int argc, char **argv) {
         std::cout << "[+] Output file: " << outputFile << std::endl;
 
         // Determine number of files we are going to add
-        int32_t fileCount = CountFilesInDirectory(target);
-        fileCount += 3;  // Add 3 for listfile, attributes and signature (if needed)
+        int32_t fileCount = CalculateMpqMaxFileValue(target);
     
         // Create the MPQ archive and add files
         HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, mpqVersion);
@@ -183,7 +182,18 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Add
     if (app.got_subcommand(add)) {
-        std::cout << "[!] add not implemented..." << std::endl;
+        HANDLE hArchive;
+        // Open the MPQ archive for writing (this is why we set flag as 0)
+        if (!OpenMpqArchive(target, &hArchive, 0)) {
+            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
+            return 1;
+        }
+        // Save the file to root of MPQ archive
+        fs::path fileNamePath = fs::path(file);
+        std::string fileNameString = fileNamePath.filename().u8string();
+
+        AddFile(hArchive, file, fileNameString);
+        CloseMpqArchive(hArchive);
     }
 
     // Handle subcommand: Remove
@@ -194,7 +204,10 @@ int main(int argc, char **argv) {
     // Handle subcommand: List
     if (app.got_subcommand(list)) {
         HANDLE hArchive;
-        OpenMpqArchive(target, &hArchive);
+        if (!OpenMpqArchive(target, &hArchive, MPQ_OPEN_READ_ONLY)) {
+            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
+            return 1;
+        }
         ListFiles(hArchive, listfileName, listAll, listDetailed);
     }
 
@@ -211,7 +224,7 @@ int main(int argc, char **argv) {
         fs::create_directory(output);
 
         HANDLE hArchive;
-        if (!OpenMpqArchive(target, &hArchive)) {
+        if (!OpenMpqArchive(target, &hArchive, MPQ_OPEN_READ_ONLY)) {
             std::cerr << "[!] Failed to open MPQ archive." << std::endl;
             return 1;
         }
@@ -226,7 +239,7 @@ int main(int argc, char **argv) {
     // Handle subcommand: Read
     if (app.got_subcommand(read)) {
         HANDLE hArchive;
-        if (!OpenMpqArchive(target, &hArchive)) {
+        if (!OpenMpqArchive(target, &hArchive, MPQ_OPEN_READ_ONLY)) {
             std::cerr << "[!] Failed to open MPQ archive." << std::endl;
             return 1;
         }
@@ -252,7 +265,7 @@ int main(int argc, char **argv) {
     // Handle subcommand: Verify
     if (app.got_subcommand(verify)) {
         HANDLE hArchive;
-        if (!OpenMpqArchive(target, &hArchive)) {
+        if (!OpenMpqArchive(target, &hArchive, MPQ_OPEN_READ_ONLY)) {
             std::cerr << "[!] Failed to open MPQ archive." << std::endl;
             return 1;
         }
