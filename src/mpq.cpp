@@ -193,7 +193,7 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
 
     bool addedFile = SFileAddFileEx(
         hArchive,
-        localFile.c_str(),
+        localFile.u8string().c_str(),
         archiveFilePath.c_str(),
         dwFlags,
         dwCompression,
@@ -203,7 +203,6 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
     if (!addedFile) {
         int32_t error = GetLastError();
         std::cerr << "[!] Error: " << error << " Failed to add: " << archiveFilePath << std::endl;
-        std::cerr << "[!] (" << strerror(error) << ")" << std::endl;
         return -1;
     }
 
@@ -466,7 +465,7 @@ int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
                       fileContent);
 
             std::cout << "[+] Signature content:" << std::endl;
-            PrintAsHex(fileContent, signatureContent.size());
+            PrintAsHex(fileContent, static_cast<uint32_t>(signatureContent.size()));
             delete[] fileContent;
         }
     }
