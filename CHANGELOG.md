@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.8.0 - 2025-08-11
+
+### Added
+
+- Added `add`/`remove` subcommands working
+- Added tests for `add`/`remove` subcommands
+- Added `max-files` property to `info` subcommand
+
+### Changed
+
+- Change for default maximum file count when creating MPQ archives
+
+## 0.7.0 - 2025-08-09
+
+### Added
+
+- Added detailed (long) listing
+
+### Fixed
+
+- Updated create subcommand to always include attributes
+- Updated Info function to support archive/file property fetching
+
+## 0.6.2 - 2025-07-11
+
+### Added
+
+- Added tests for `extract` subcommand
+- Added dependabot configuration for Python and Docker
+
+### Fixed
+
+- Fixed deprecated Windows Action running to Server 2022
+
 ## 0.6.1 - 2025-06-27
 
 ### Fixed
