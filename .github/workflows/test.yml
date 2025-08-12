@@ -12,7 +12,7 @@ jobs:
     steps:
       # Only need repo content to install test/requirements.txt
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: false
 
@@ -50,7 +50,7 @@ jobs:
     steps:
       # Only need repo content to install test/requirements.txt
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: false
 
