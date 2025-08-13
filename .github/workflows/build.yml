@@ -46,6 +46,8 @@ jobs:
       - name: Run cmake
         run: |
           cmake -B build \
+          -G "Visual Studio 17 2022" \
+          -A x64 \
           -DBUILD_MPQCLI=ON \
           -DBUILD_PYTHON_WRAPPER=OFF
 
