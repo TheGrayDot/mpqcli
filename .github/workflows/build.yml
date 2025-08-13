@@ -8,12 +8,16 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: true
 
       - name: Run cmake
-        run: cmake -B build
+        run: |
+          cmake -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_MPQCLI=ON \
+          -DBUILD_PYTHON_WRAPPER=OFF
 
       - name: Compile project
         run: cmake --build build
@@ -35,12 +39,18 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: true
 
       - name: Run cmake
-        run: cmake -B build
+        shell: bash
+        run: |
+          cmake -B build \
+          -G "Visual Studio 17 2022" \
+          -A x64 \
+          -DBUILD_MPQCLI=ON \
+          -DBUILD_PYTHON_WRAPPER=OFF
 
       - name: Compile project
         run: cmake --build build --config Release
@@ -62,7 +72,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: true
 
