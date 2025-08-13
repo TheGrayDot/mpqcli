@@ -46,7 +46,6 @@ jobs:
       - name: Run cmake
         run: |
           cmake -B build \
-          -DCMAKE_BUILD_TYPE=Release \
           -DBUILD_MPQCLI=ON \
           -DBUILD_PYTHON_WRAPPER=OFF
 
