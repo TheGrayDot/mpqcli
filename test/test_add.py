@@ -70,9 +70,9 @@ def test_add_file_to_mpq_archive(binary_path, generate_test_files):
         text=True
     )
 
-    assert result.returncode == 0, f"mpqcli failed with error (version {version}): {result.stderr}"
-    assert target_file.exists(), f"MPQ file was not created (version {version})"
-    assert target_file.stat().st_size > 0, f"MPQ file is empty (version {version})"
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert target_file.exists(), "MPQ file was not created"
+    assert target_file.stat().st_size > 0, "MPQ file is empty"
 
     # Create a new test file on the fly
     test_file = script_dir / "data" / "test.txt"
