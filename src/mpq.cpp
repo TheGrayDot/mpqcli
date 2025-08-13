@@ -403,18 +403,6 @@ T GetFileInfo(HANDLE hFile, SFileInfoClass infoClass) {
     return value;
 }
 
-bool VerifyMpqArchive(HANDLE hArchive) {
-    uint32_t verifyArchiveResult = SFileVerifyArchive(hArchive);
-    if (verifyArchiveResult == ERROR_WEAK_SIGNATURE_OK ) {
-        return 0;
-    } else if (verifyArchiveResult == ERROR_STRONG_SIGNATURE_OK) {
-        return 1;
-    }
-
-    // Every other result is no signature, or failed verification
-    return -1;
-}
-
 int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
     // Determine if we have a strong or weak digital signature
     int32_t signatureType =
