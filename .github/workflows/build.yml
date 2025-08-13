@@ -13,7 +13,11 @@ jobs:
           submodules: true
 
       - name: Run cmake
-        run: cmake -B build
+        run: |
+          cmake -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_MPQCLI=ON \
+          -DBUILD_PYTHON_WRAPPER=OFF
 
       - name: Compile project
         run: cmake --build build
@@ -40,7 +44,11 @@ jobs:
           submodules: true
 
       - name: Run cmake
-        run: cmake -B build
+        run: |
+          cmake -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_MPQCLI=ON \
+          -DBUILD_PYTHON_WRAPPER=OFF
 
       - name: Compile project
         run: cmake --build build --config Release
