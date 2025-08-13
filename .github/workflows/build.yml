@@ -44,6 +44,7 @@ jobs:
           submodules: true
 
       - name: Run cmake
+        shell: bash
         run: |
           cmake -B build \
           -G "Visual Studio 17 2022" \
