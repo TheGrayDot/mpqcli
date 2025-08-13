@@ -102,7 +102,7 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
     if (SFileExtractFile(hArchive, szFileName, outputFileName.c_str(), 0)) {
         std::cout << "[+] Extracted: " << fileNameString << std::endl;
     } else {
-        int32_t error = GetLastError();
+        int32_t error = SErrGetLastError();
         std::cerr << "[+] Failed: " << "(" << error << ") " << szFileName << std::endl;
         return error;
     }
@@ -144,7 +144,7 @@ HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_
 
     if (!result) {
         std::cerr << "[+] Failed to create MPQ archive." << std::endl;
-        int32_t error = GetLastError();
+        int32_t error = SErrGetLastError();
         std::cout << "[+] Error: " << error << std::endl;
         return NULL;
     }
@@ -201,7 +201,7 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
     );
 
     if (!addedFile) {
-        int32_t error = GetLastError();
+        int32_t error = SErrGetLastError();
         std::cerr << "[!] Error: " << error << " Failed to add: " << archiveFilePath << std::endl;
         return -1;
     }
@@ -396,7 +396,7 @@ template <typename T>
 T GetFileInfo(HANDLE hFile, SFileInfoClass infoClass) {
     T value{};
     if (!SFileGetFileInfo(hFile, infoClass, &value, sizeof(T), NULL)) {
-        int32_t error = GetLastError();
+        int32_t error = SErrGetLastError();
         // std::cerr << "[+] GetFileInfo failed (Error: " << error << ")" << std::endl;
         return T{}; // Return default value for the type
     }
