@@ -7,6 +7,11 @@
 #include <vector>
 #include <ctime>
 
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 #include <StormLib.h>
 
 #include "helpers.h"
