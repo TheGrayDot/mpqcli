@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     // CLI: info
-    std::string infoProperty = "";    
+    std::string infoProperty = "default";    
     // CLI: extract
     bool extractKeepFolderStructure = false;
     // CLI: create

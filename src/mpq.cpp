@@ -378,9 +378,9 @@ void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty) {
         }}
     };
 
-    // If infoProperty is empty, print all properties with their names (key)
+    // If infoProperty is "default", print all properties with their names (key)
     // Otherwise, print only the property value
-    if (infoProperty.empty()) {
+    if (infoProperty == "default") {
         for (const auto& [key, action] : propertyActions) {
             action(true);  // Print property name and value
         }
