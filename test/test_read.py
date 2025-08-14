@@ -11,7 +11,7 @@ def test_read_mpq_v1_plain(binary_path):
     }
 
     result = subprocess.run(
-        [str(binary_path), "read", "-f", "cats.txt", str(test_file)],
+        [str(binary_path), "read", "cats.txt", str(test_file)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
@@ -29,11 +29,11 @@ def test_read_mpq_v1_hex(binary_path):
     test_file = script_dir / "data" / "mpq_with_output_v1.mpq"
 
     expected_output = {
-        "\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07",
+        "\x00\x01\x02\x03\x04\x05\x06\x07",
     }
 
     result = subprocess.run(
-        [str(binary_path), "read", "-f", "bytes", str(test_file)],
+        [str(binary_path), "read", "bytes", str(test_file)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
