@@ -98,24 +98,9 @@ int32_t CalculateMpqMaxFileValue(const std::string &directory) {
     return fileCount;
 }
 
-bool IsPrintable(const char* buffer, uint32_t size) {
-    for (uint32_t i = 0; i < size; ++i) {
-        unsigned char c = static_cast<unsigned char>(buffer[i]);
-        if (!std::isprint(c) && !std::isspace(c)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-void PrintAsText(const char* buffer, uint32_t size) {
+void PrintAsBinary(const char* buffer, uint32_t size) {
+#ifdef _WIN32
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
     std::cout.write(buffer, size);
-}
-
-void PrintAsHex(const char* buffer, uint32_t size) {
-    for (uint32_t i = 0; i < size; ++i) {
-        std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0')
-                  << (static_cast<unsigned int>(
-                         static_cast<unsigned char>(buffer[i])));
-    }
 }

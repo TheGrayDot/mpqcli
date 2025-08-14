@@ -425,8 +425,7 @@ int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
         std::copy(fileContent, fileContent + fileSize,
                   signatureContent.begin());
 
-        std::cout << "[+] Signature content:" << std::endl;
-        PrintAsHex(fileContent, fileSize);
+        PrintAsBinary(fileContent, fileSize);
         delete[] fileContent;
 
     } else if (signatureType == SIGNATURE_TYPE_STRONG) {
@@ -452,8 +451,7 @@ int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
             std::copy(signatureContent.begin(), signatureContent.end(),
                       fileContent);
 
-            std::cout << "[+] Signature content:" << std::endl;
-            PrintAsHex(fileContent, static_cast<uint32_t>(signatureContent.size()));
+            PrintAsBinary(fileContent, static_cast<uint32_t>(signatureContent.size()));
             delete[] fileContent;
         }
     }
