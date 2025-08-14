@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.8.1 - 2025-08-15
+
+### Added
+
+- Added print raw bytes for `read` and `verify` subcommands
+
+### Fixed
+
+- Tests for `read` and `verify` subcommands
+
+### Removed
+
+- Ability to print hex or plaintext in `read` and `verify` subcommands
+- Removed messages when printing signature value
+
 ## 0.8.0 - 2025-08-11
 
 ### Added
