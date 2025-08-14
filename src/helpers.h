@@ -11,8 +11,6 @@ std::string LocaleToLang(uint16_t locale);
 std::string NormalizeFilePath(const fs::path &path);
 std::string WindowsifyFilePath(const fs::path &path);
 int32_t CalculateMpqMaxFileValue(const std::string &directory);
-bool IsPrintable(const char* buffer, uint32_t size);
-void PrintAsText(const char* buffer, uint32_t size);
-void PrintAsHex(const char* buffer, uint32_t size);
+void PrintAsBinary(const char* buffer, uint32_t size);
 
 #endif

@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     // CLI: info
-    std::string infoProperty = "";    
+    std::string infoProperty = "default";    
     // CLI: extract
     bool extractKeepFolderStructure = false;
     // CLI: create
@@ -109,13 +109,12 @@ int main(int argc, char **argv) {
         ->check(CLI::ExistingFile);
 
     // Subcommand: Read
-    CLI::App* read =
-        app.add_subcommand("read", "Read a file from an MPQ archive");
+    CLI::App* read = app.add_subcommand("read", "Read a file from an MPQ archive");
+    read->add_option("file", baseFile, "File to read")
+        ->required();
     read->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
-    read->add_option("-f,--file", baseFile, "Target file to read")
-        ->required();
 
     // Subcommand: Verify
     CLI::App *verify = app.add_subcommand("verify", "Verify the MPQ archive");
@@ -257,17 +256,12 @@ int main(int argc, char **argv) {
         }
 
         uint32_t fileSize;
-        char* fileContent =
-            ReadFile(hArchive, baseFile.c_str(), &fileSize);
+        char* fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize);
         if (fileContent == NULL) {
             return 1;
         }
 
-        if (IsPrintable(fileContent, fileSize)) {
-            PrintAsText(fileContent, fileSize);
-        } else {
-            PrintAsHex(fileContent, fileSize);
-        }
+        PrintAsBinary(fileContent, fileSize);
 
         delete[] fileContent;
         CloseMpqArchive(hArchive);
@@ -284,20 +278,22 @@ int main(int argc, char **argv) {
 
         uint32_t verifyResult = SFileVerifyArchive(hArchive);
         if (verifyResult == ERROR_WEAK_SIGNATURE_OK || verifyResult == ERROR_STRONG_SIGNATURE_OK) {
-            // Print verification success
-            std::cout << "[+] Verify success" << std::endl;
-            // If verification passed, print signature if user requested it
             if (verifyPrintSignature) {
+                // If printing the signature, don't print success message
+                // because the user might want to pipe/redirect the signature data
                 PrintMpqSignature(hArchive, baseTarget);
+            } else {
+                // Just print verification success
+                std::cout << "[+] Verify success" << std::endl;
             }
-
+            
             // Return 0, because verification passed
             return 0;
         }
 
         // Any other verify result is no signature, or error verifying
         std::cout << "[!] Verify failed" << std::endl;
-        return 1;        
+        return 1;
     }
 
     return 0;
