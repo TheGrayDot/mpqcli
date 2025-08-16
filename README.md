@@ -29,11 +29,14 @@ If you require an MPQ tool with a graphical interface (GUI) and explicit support
 
 Pre-built binaries are available for Linux and Windows.
 
+Linux/WSL:
+
 ```
-# Unix/Linux/macOS
 curl -fsSL https://raw.githubusercontent.com/thegraydot/mpqcli/main/scripts/install.sh | bash
 
-# Windows PowerShell
+Microsoft Windows:
+
+```
 irm https://raw.githubusercontent.com/thegraydot/mpqcli/main/scripts/install.ps1 | iex
 ```
 
