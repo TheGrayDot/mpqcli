@@ -4,6 +4,7 @@ project(MPQCLI VERSION 0.8.1)
 
 # Options
 option(BUILD_MPQCLI "Build the mpqcli CLI app" ON)
+option(BUILD_STATIC "Build static binary" OFF)
 option(BUILD_PYTHON_WRAPPER "Build the Python wrapper" OFF)
 
 # Set project defaults
@@ -15,6 +16,13 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Static linking configuration
+if(BUILD_STATIC)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    set(BUILD_SHARED_LIBS OFF)
+endif()
 
 # Determine git commit hash
 execute_process (

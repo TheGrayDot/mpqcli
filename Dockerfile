@@ -6,33 +6,29 @@ RUN apk add --no-cache \
     cmake \
     git \
     python3 \
-    py3-pip \
-    libstdc++ \
-    libgcc
+    py3-pip
 
 WORKDIR /mpqcli
 
 COPY . .
 
-RUN cmake -B build
+RUN cmake -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_MPQCLI=ON \
+    -DBUILD_PYTHON_WRAPPER=OFF \
+    -DBUILD_STATIC=ON
 
 RUN cmake --build build
+
+RUN strip build/bin/mpqcli
 
 RUN pip install --no-cache-dir -r test/requirements.txt
 
 RUN python3 -m pytest test
 
 # Stage 2: Create a minimal runtime image
-FROM alpine:3.18 AS runtime
+FROM scratch AS runtime
 
-RUN apk add --no-cache \
-    libstdc++ \
-    libgcc
+COPY --from=builder /mpqcli/build/bin/mpqcli /mpqcli
 
-WORKDIR /mpqcli
-
-COPY --from=builder /mpqcli/build/bin/mpqcli /usr/local/bin/mpqcli
-
-RUN chmod +x /usr/local/bin/mpqcli
-
-ENTRYPOINT ["mpqcli"]
+ENTRYPOINT ["/mpqcli"]

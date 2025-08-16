@@ -26,13 +26,13 @@ jobs:
         run: ./build/bin/mpqcli version
 
       - name: Copy mpqcli binary
-        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-linux
+        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-linux-amd64-glibc
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mpqcli-linux
-          path: ./build/bin/mpqcli-linux
+          name: mpqcli-linux-amd64-glibc
+          path: ./build/bin/mpqcli-linux-amd64-glibc
           retention-days: 1
 
   build_windows:
@@ -59,13 +59,13 @@ jobs:
         run: build/bin/Release/mpqcli.exe version
 
       - name: Copy mpqcli binary
-        run: cp build/bin/Release/mpqcli.exe build/bin/mpqcli-windows.exe
+        run: cp build/bin/Release/mpqcli.exe build/bin/mpqcli-windows-amd64.exe
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mpqcli-windows.exe
-          path: build/bin/mpqcli-windows.exe
+          name: mpqcli-windows-amd64.exe
+          path: build/bin/mpqcli-windows-amd64.exe
           retention-days: 1
 
   build_docker:
@@ -80,9 +80,25 @@ jobs:
         run: |
           docker build -t mpqcli .
 
+      - name: Extract MUSL binary from Docker image
+        run: |
+          # Create a temporary container from the image
+          CONTAINER_ID=$(docker create mpqcli)
+          # Copy the binary from the container
+          docker cp $CONTAINER_ID:/mpqcli ./mpqcli-linux-amd64-musl
+          # Clean up the container
+          docker rm $CONTAINER_ID
+
       - name: Save Docker image as a tar file
         run: |
           docker save mpqcli -o mpqcli-docker.tar
+
+      - name: Upload MUSL binary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpqcli-linux-amd64-musl
+          path: mpqcli-linux-amd64-musl
+          retention-days: 1
 
       - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4
