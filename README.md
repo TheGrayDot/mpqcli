@@ -102,14 +102,12 @@ Signature type: Weak
 
 The `info` subcommand supports the following properties:
 
-```
-format-version
-header-offset
-header-size
-archive-size
-file-count
-signature-type
-```
+- `format-version`
+- `header-offset`
+- `header-size`
+- `archive-size`
+- `file-count`
+- `signature-type`
 
 You can use the `-p` or `--property` argument with the `info` subcommand to print just the value of a specific property. This can be useful for automation, for example, to determine the signature type of a directory of MPQ archives.
 
