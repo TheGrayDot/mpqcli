@@ -33,6 +33,7 @@ Linux/WSL:
 
 ```
 curl -fsSL https://raw.githubusercontent.com/thegraydot/mpqcli/main/scripts/install.sh | bash
+```
 
 Microsoft Windows:
 
