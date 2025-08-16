@@ -1,7 +1,7 @@
 name: Build
 
 on:
-  workflow_call
+  push
 
 jobs:
   build_linux_amd64_glibc:
