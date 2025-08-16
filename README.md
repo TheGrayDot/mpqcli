@@ -2,7 +2,9 @@
 
 ![Build Status](https://img.shields.io/github/actions/workflow/status/TheGrayDot/mpqcli/tag.yml?style=flat) ![Test Status](https://img.shields.io/github/actions/workflow/status/TheGrayDot/mpqcli/tag.yml?style=flat&label=test)
 
-![Release](https://img.shields.io/github/v/release/TheGrayDot/mpqcli?style=flat) ![Downloads](https://img.shields.io/github/downloads/TheGrayDot/mpqcli/total?style=flat)
+![Release Version](https://img.shields.io/github/v/release/TheGrayDot/mpqcli?style=flat)
+
+![Release downloads](https://img.shields.io/github/downloads/thegraydot/mpqcli/total?label=Release%20downloads) ![Container downloads](https://img.shields.io/badge/Container_downloads-6-green)
 
 A command line tool to create, add, remove, list, extract, read, and verify MPQ archives using the [StormLib library](https://github.com/ladislav-zezula/StormLib).
 
@@ -10,13 +12,14 @@ A command line tool to create, add, remove, list, extract, read, and verify MPQ 
 
 ## Overview
 
-**This is a command-line tool, designed for automation.** For example:
+**This is a command-line tool, designed for automation and built with the Unix philosophy in mind.**  It is designed to work seamlessly with other command-line tools, supporting piping, redirection, and integration into shell scripts and workflows. For example:
 
 - Run one command to create an MPQ archive from a directory of files
 - Run one command to list all files in an MPQ archive
-- Run one command to search and extract files from an MPQ archive
+- Pipe the output to `grep` or other tools to search, filter, or process files
+- Redirect output to files or other commands for further automation
 
-**This project is primarily for older World of Warcraft MPQ archives**. This means it has been authored for MPQ files versions 1 and 2, which include the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3), and WoTLK (3.3.5). It has only been tested on WoW MPQ archives/patches that use MPQ versions 1 or 2. No testing has been performed on other MPQ versions or archives from other games. However, the tool will most likely work, as the underlying Stormlib library supports these other versions.
+**This project is primarily for older World of Warcraft MPQ archives**. This means it has been authored for MPQ archives versions 1 and 2, which include the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3), and WoTLK (3.3.5). It has only been tested on WoW MPQ archives/patches that use MPQ versions 1 or 2. No testing has been performed on other MPQ versions or archives from other games. However, the tool will most likely work on other MPQ archive versions, as the underlying Stormlib library supports all MPQ archive versions.
 
 If you require an MPQ tool with a graphical interface (GUI) and explicit support for more MPQ archive versions - I would recommend using [Ladik's MPQ Editor](http://www.zezula.net/en/mpq/download.html).
 
@@ -24,34 +27,17 @@ If you require an MPQ tool with a graphical interface (GUI) and explicit support
 
 ### Precompiled Binaries
 
+Pre-built binaries are available for Linux and Windows.
+
+```
+# Unix/Linux/macOS
+curl -fsSL https://raw.githubusercontent.com/thegraydot/mpqcli/main/scripts/install.sh | bash
+
+# Windows PowerShell
+irm https://raw.githubusercontent.com/thegraydot/mpqcli/main/scripts/install.ps1 | iex
+```
+
 Check the [latest release with binaries](https://github.com/TheGrayDot/mpqcli/releases).
-
-### Latest Precompiled Binary on Linux
-
-Download the latest release on Linux:
-
-```
-TAG=$(curl -s https://api.github.com/repos/TheGrayDot/mpqcli/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
-curl -L -o mpqcli https://github.com/TheGrayDot/mpqcli/releases/download/$TAG/mpqcli-linux
-chmod u+x mpqcli
-./mpqcli version
-```
-
-Add the `mpqcli` binary to your path:
-
-```
-mv mpqcli /usr/local/bin/
-```
-
-### Latest Precompiled Binary on Windows
-
-Download the latest release on Windows:
-
-```
-$TAG = (Invoke-RestMethod -Uri "https://api.github.com/repos/TheGrayDot/mpqcli/releases/latest").tag_name
-Invoke-WebRequest -Uri "https://github.com/TheGrayDot/mpqcli/releases/download/$TAG/mpqcli-windows.exe" -OutFile "mpqcli.exe"
-.\mpqcli.exe version
-```
 
 ### Docker Image
 
@@ -92,12 +78,21 @@ The `mpqcli` program has the following subcommands:
 
 ## Command Examples
 
+All of the examples use the MPQ archive file, named `wow-patch.mpq`, from a Vanilla World of Warcraft patch file, named `WoW-1.10.0-to-1.10.1-enGB-patch.zip`. If you want to replicate these examples, you can [download the `wow-patch.mpq` file](https://archive.org/download/World_of_Warcraft_Client_and_Installation_Archive/Patches/1.x/WoW-1.10.0-to-1.10.1-enGB-patch.zip/wow-patch.mpq) from the Internet Archive.
+
 ### Print information about an MPQ archive
 
 The `info` subcommand prints a list of useful information (property keys and values) of an MPQ archive.
 
 ```
-mpqcli info <target_mpq_archive>
+mpqcli info wow-patch.mpq
+Archive size: 1798918
+File count: 65
+Format version: 1
+Header offset: 0
+Header size: 32
+Max files: 128
+Signature type: Weak
 ```
 
 ### Print one specific MPQ archive property
@@ -116,7 +111,8 @@ signature-type
 You can use the `-p` or `--property` argument with the `info` subcommand to print just the value of a specific property. This can be useful for automation, for example, to determine the signature type of a directory of MPQ archives.
 
 ```
-mpqcli info -p file-count <target_mpq_archive>
+mpqcli info -p file-count wow-patch.mpq
+65
 ```
 
 ### Create an MPQ archive from a target directory
@@ -148,18 +144,49 @@ mpqcli create --version 1 --sign <target_directory>
 
 ### Add a file to an existing archive
 
-The `add` subcommand has not yet been added.
+Add a local file to an already existing MPQ archive.
+
+```
+echo "For The Horde!" > fth.txt
+mpqcli add fth.txt wow-patch.mpq
+```
 
 ### Remove a file from an existing archive
 
-The `remove` subcommand has not yet been added.
+Remove a file from an existing MPQ archive.
+
+```
+mpqcli remove fth.txt wow-patch.mpq
+```
 
 ### List all files in an MPQ archive
 
 Pretty simple, list files in an MPQ archive. Useful to "pipe" to other tools, such as `grep` (see below for examples).
 
 ```
-mpqcli list <target_mpq_archive>
+mpqcli list wow-patch.mpq
+BM_COKETENT01.BLP
+Blizzard_CraftUI.xml
+CreatureSoundData.dbc
+...
+Blizzard_CraftUI.lua
+30ee7bd3959906e358eff01332cf045e.blp
+realmlist.wtf
+```
+
+### List all files with detailed output
+
+Similar to the `ls` command with the `-l` and `-a` options, additional detailed information can be included with the `list` subcommand. The `-a` option includes printing "special" files used in MPQ archives including: `(listfile)`, `(attributes)` and `(signature)`.
+
+```
+mpqcli list -d -a wow-patch.mpq 
+      88604  enUS  Mar 29 2006 12:02 BM_COKETENT01.BLP
+        243  enUS  Apr  5 2006 07:28 Blizzard_CraftUI.xml
+        388  enUS  Mar 30 2006 05:32 CreatureSoundData.dbc
+        ...
+        184  enUS  Apr  5 2006 07:28 Blizzard_CraftUI.lua
+      44900  enUS  Mar 29 2006 12:01 30ee7bd3959906e358eff01332cf045e.blp
+         68  enUS  Apr  7 2006 10:58 realmlist.wtf
 ```
 
 ### List all files with an external listfile
@@ -175,15 +202,22 @@ mpqcli list -l /path/to/listfile <target_mpq_archive>
 The output will be saved in a folder with the same name as the target MPQ file, without the extension.
 
 ```
-mpqcli extract <target_mpq_archive>
+mpqcli extract wow-patch.mpq
+[+] Extracted: BM_COKETENT01.BLP
+[+] Extracted: Blizzard_CraftUI.xml
+[+] Extracted: CreatureSoundData.dbc
+...
+[+] Extracted: Blizzard_CraftUI.lua
+[+] Extracted: 30ee7bd3959906e358eff01332cf045e.blp
+[+] Extracted: realmlist.wtf
 ```
 
 ### Extract all files to a target directory
 
-Extract files to a specific target directory, which, will be created if it doesn't already exist.
+Extract files to a specific target directory, which, will be created if it doesn't already exist. In this example, `patch-1.10` is the user-specified output directory.
 
 ```
-mpqcli extract -o /path/to/target/directory <target_mpq_archive>
+mpqcli extract -o patch-1.10 wow-patch.mpq
 ```
 
 ### Extract all files with an external listfile
@@ -191,7 +225,7 @@ mpqcli extract -o /path/to/target/directory <target_mpq_archive>
 Older MPQ archives do not contain (complete) file paths of their content. By providing an external listfile that lists the content of the MPQ archive, the extracted files will have the correct names and paths. Listfiles can be downloaded on [Ladislav Zezula's site](http://www.zezula.net/en/mpq/download.html).
 
 ```
-mpqcli extract -l /path/to/listfile <target_mpq_archive>
+mpqcli extract -l path/to/listfile <target_mpq_archive>
 ```
 
 ### Extract one specific file
@@ -199,21 +233,42 @@ mpqcli extract -l /path/to/listfile <target_mpq_archive>
 Extract a single file using the `-f` option. If the target file in the MPQ archive is nested (in a directory) you need to include the full path. Similar to the examples above, you can use the `-o` argument to specify the output directory.
 
 ```
-mpqcli extract -f "InstallCD\Unpack\InstallLogTemplate\BaseHeader.html" <target_mpq_archive>
+mpqcli extract -f "Documentation\Layout\Greeting.html" "World of Warcraft_1.12.1.5875/Data/base.MPQ"
 ```
 
 ### Read a specific file from an MPQ archive
 
-Read the `patch.cmd` file from an MPQ archive and print the file contents to stdout.
+Read the `patch.cmd` file from an MPQ archive and print the file contents to stdout. Even though the subcommand always outputs bytes, plaintext files will be human-readable.
 
 ```
-mpqcli read -f patch.cmd <target_mpq_archive>
+mpqcli read patch.cmd wow-patch.mpq
+* set the product patch name
+PatchVersion This patch upgrades World of Warcraft from version 1.10.0.5195 to version 1.10.1.5230.
+* make sure that we don't patch version 1.10.1.5230 or greater
+FileVersionEqualTo    "$(InstallPath)\WoW.exe"    1.10.0.5195   0xffff.0xffff.0xffff.0xffff
+* ProductVersionLessThan "$(InstallPath)\WoW.exe"    0.0.0.256  0.0.0.0xffff
+Language enGB
+SetLauncher "$(InstallPath)\WoW.exe"
+* SetUninstall $(WinDir)\WoWUnin.dat
+Self "World of Warcraft"
+WoWPatchIndex 2
+PatchSize 1992294400
 ```
 
-The tool will determine if the contents of the file are printable - if so, will print out normal ASCII. Otherwise, the tool will print hexadecimal. For example, when reading the `WoW.exe` file from a WoW self-executable patch.
+The tool will always print output in bytes and is designed to be "piped" or redirected. For example, redirect the binary `WoW.exe` file from a WoW patch to a local file:
 
 ```
-mpqcli read -f "WoW.exe" WoW-1.8.4-enUS-patch.exe
+mpqcli read "WoW.exe" wow-patch.mpq > WoW.exe
+```
+
+Another example, piping the bytes to the `xxd` tool.
+
+```
+mpqcli read "WoW.exe" wow-patch.mpq | xxd
+00000000: 1800 0404 de2a a5da 3240 4500 3250 4500  .....*..2@E.2PE.
+00000010: 69ac 2703 0859 c601 0a7a 4500 8942 5344  i.'..Y...zE..BSD
+00000020: 4946 4634 30a0 2905 8203 f244 0482 3250  IFF40.)....D..2P
+00000030: 4504 8080 0280 9002 8098 0281 d801 0585  E...............
 ```
 
 ### Verify an MPQ archive
@@ -221,15 +276,23 @@ mpqcli read -f "WoW.exe" WoW-1.8.4-enUS-patch.exe
 Check the digital signature of an MPQ archive, by verifying the signature in the archive with a collection of known Blizzard public keys (bundled in Stormlib library). The tool will print if verification is successful or fails, as well as return `0` for success and any other value for failure.
 
 ```
-mpqcli verify <target_mpq_archive>
+mpqcli verify wow-patch.mpq
+[+] Verify success
+```
+
+If verification passes, a zero (`0`) exit status will be returned. This can be helpful to verify a large number of MPQ archives without the need to review the status message that is printed out.
+
+```
+echo $?
+0
 ```
 
 ### Verify an MPQ archive and print the digital signature
 
-Check the digital signature of an MPQ archive, by verifying the signature in the archive and also print the digital signature value in hexadecimal using the `-p` or `--print` argument.
+Check the digital signature of an MPQ archive, by verifying the signature in the archive and also printing the digital signature value in bytes using the `-p` or `--print` argument.
 
 ```
-mpqcli verify -p <target_mpq_archive>
+mpqcli verify -p wow-patch.mpq > signature
 ```
 
 ## Advanced Command Examples
@@ -241,7 +304,13 @@ The `mpqcli` tool has no native search feature - instead, it is designed to be i
 The following command lists all files in an MPQ archive, and each filename is filtered using `grep` - selecting files with `exe` in their name, which is then passed back to `mpqcli extract`. The result: search and extract all `exe` files.
 
 ```
-mpqcli list <target_mpq_archive> | grep ".exe" | xargs -I@ mpqcli extract -f "@" <target_mpq_archive>
+mpqcli list wow-patch.mpq | grep ".exe" | xargs -I@ mpqcli extract -f "@" wow-patch.mpq
+[+] Extracted: Launcher.exe
+[+] Extracted: BackgroundDownloader.exe
+[+] Extracted: WoW.exe
+[+] Extracted: BNUpdate.exe
+[+] Extracted: Repair.exe
+[+] Extracted: WowError.exe
 ```
 
 ### Search and extract files on Windows
@@ -249,7 +318,7 @@ mpqcli list <target_mpq_archive> | grep ".exe" | xargs -I@ mpqcli extract -f "@"
 The following command lists all files in an MPQ archive, and each filename is filtered using `grep` - selecting files with `exe` in their name, which is then passed back to `mpqcli extract`. The result: search and extract all `exe` files.
 
 ```
-mpqcli.exe list <target_mpq_archive> | Select-String -Pattern ".exe" | ForEach-Object { mpqcli.exe extract -f $_ <target_mpq_archive> }
+mpqcli.exe list wow-patch.mpq | Select-String -Pattern ".exe" | ForEach-Object { mpqcli.exe extract -f $_ wow-patch.mpq }
 ```
 
 ## Building
