@@ -24,6 +24,16 @@ jobs:
         with:
           name: mpqcli-linux-amd64-musl
 
+      - name: Download Linux ARM64 GLIBC binary
+        uses: actions/download-artifact@v5
+        with:
+          name: mpqcli-linux-arm64-glibc
+
+      - name: Download Linux ARM64 MUSL binary
+        uses: actions/download-artifact@v5
+        with:
+          name: mpqcli-linux-arm64-musl
+
       - name: Download Windows binary
         uses: actions/download-artifact@v5
         with:
@@ -44,6 +54,8 @@ jobs:
           files: |
             mpqcli-linux-amd64-glibc
             mpqcli-linux-amd64-musl
+            mpqcli-linux-arm64-glibc
+            mpqcli-linux-arm64-musl
             mpqcli-windows-amd64.exe
           body: ${{ steps.changelog.outputs.content }}
         env:

@@ -25,47 +25,29 @@ error() {
 
 # Detect OS and architecture
 detect_platform() {
-    local os arch
+    local os arch lib
 
     # Detect OS
     case "$(uname -s)" in
-        Linux*)     os="unknown-linux";;
-        MINGW*|MSYS*|CYGWIN*)  os="pc-windows";;
+        Linux*)     os="linux";;
         *)          error "Unsupported operating system: $(uname -s)";;
     esac
 
     # Detect architecture
     case "$(uname -m)" in
-        x86_64|amd64)   arch="x86_64";;
-        aarch64|arm64)  arch="aarch64";;
-        armv7l)         arch="armv7";;
+        x86_64|amd64)   arch="amd64";;
+        aarch64|arm64)  arch="arm64";;
         *)              error "Unsupported architecture: $(uname -m)";;
     esac
 
-    # Detect libc for Linux
-    if [[ "$os" == "unknown-linux" ]]; then
-        if ldd --version 2>&1 | grep -q musl; then
-            os="${os}-musl"
-        else
-            os="${os}-gnu"
-        fi
-
-        # Special case for armv7
-        if [[ "$arch" == "armv7" ]]; then
-            if [[ "$os" == "unknown-linux-musl" ]]; then
-                os="unknown-linux-musleabihf"
-            else
-                os="unknown-linux-gnueabihf"
-            fi
-        fi
+    # Determine if we want glibc or musl
+    if ldd --version 2>&1 | grep -q musl; then
+        lib="musl"
+    else
+        lib="glibc"
     fi
 
-    # Windows uses different extension
-    if [[ "$os" == "pc-windows" ]]; then
-        os="${os}-msvc"
-    fi
-
-    echo "${arch}-${os}"
+    echo "${os}-${arch}-${lib}"
 }
 
 # Download and verify file
@@ -115,12 +97,7 @@ install() {
     info "Detected platform: ${platform}"
 
     # Determine binary file for download
-    local filename
-    if [[ "$platform" == *"windows"* ]]; then
-        filename="mpqcli-windows.exe"
-    else
-        filename="mpqcli-linux"
-    fi
+    local filename="mpqcli-${platform}"
 
     # Download URL
     local download_url="${BASE_URL}/download/v${version}/${filename}"
@@ -185,7 +162,7 @@ EXAMPLES:
     INSTALL_DIR=$HOME/.local/bin $0
 
     # Install specific tag
-    $0 --tag v0.1.0
+    $0 --tag v0.8.0
 EOF
 }
 

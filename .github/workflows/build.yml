@@ -4,7 +4,7 @@ on:
   workflow_call
 
 jobs:
-  build_linux:
+  build_linux_amd64_glibc:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
@@ -33,6 +33,97 @@ jobs:
         with:
           name: mpqcli-linux-amd64-glibc
           path: ./build/bin/mpqcli-linux-amd64-glibc
+          retention-days: 1
+
+  build_linux_amd64_musl:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Build Docker image (AMD64)
+        run: |
+          docker build --platform linux/amd64 -t mpqcli .
+
+      - name: Extract MUSL binary from Docker image
+        run: |
+          # Create a temporary container from the image
+          CONTAINER_ID=$(docker create mpqcli)
+          # Copy the binary from the container
+          docker cp $CONTAINER_ID:/mpqcli ./mpqcli-linux-amd64-musl
+          # Clean up the container
+          docker rm $CONTAINER_ID
+
+      - name: Save Docker image as a tar file
+        run: |
+          docker save mpqcli -o mpqcli-docker.tar
+
+      - name: Upload MUSL binary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpqcli-linux-amd64-musl
+          path: mpqcli-linux-amd64-musl
+          retention-days: 1
+
+  build_linux_arm64_glibc:
+    runs-on: ubuntu-22.04-arm64
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Run cmake for ARM64
+        run: |
+          cmake -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_MPQCLI=ON \
+          -DBUILD_PYTHON_WRAPPER=OFF
+
+      - name: Compile project for ARM64
+        run: cmake --build build
+
+      - name: Check mpqcli version (ARM64)
+        run: ./build/bin/mpqcli version
+
+      - name: Copy ARM64 binary
+        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-linux-arm64-glibc
+
+      - name: Upload ARM64 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpqcli-linux-arm64-glibc
+          path: ./build/bin/mpqcli-linux-arm64-glibc
+          retention-days: 1
+
+  build_linux_arm64_musl:
+    runs-on: ubuntu-22.04-arm64
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Build ARM64 Docker image
+        run: |
+          docker build --platform linux/arm64 -t mpqcli-arm64 .
+
+      - name: Extract ARM64 MUSL binary from Docker image
+        run: |
+          # Create a temporary container from the ARM64 image
+          CONTAINER_ID=$(docker create mpqcli-arm64)
+          # Copy the binary from the container
+          docker cp $CONTAINER_ID:/mpqcli ./mpqcli-linux-arm64-musl
+          # Clean up the container
+          docker rm $CONTAINER_ID
+
+      - name: Upload ARM64 MUSL binary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpqcli-linux-arm64-musl
+          path: mpqcli-linux-arm64-musl
           retention-days: 1
 
   build_windows:
@@ -76,29 +167,13 @@ jobs:
         with:
           submodules: true
 
-      - name: Build Docker image
+      - name: Build Docker image (AMD64)
         run: |
-          docker build -t mpqcli .
-
-      - name: Extract MUSL binary from Docker image
-        run: |
-          # Create a temporary container from the image
-          CONTAINER_ID=$(docker create mpqcli)
-          # Copy the binary from the container
-          docker cp $CONTAINER_ID:/mpqcli ./mpqcli-linux-amd64-musl
-          # Clean up the container
-          docker rm $CONTAINER_ID
+          docker build --platform linux/amd64 -t mpqcli .
 
       - name: Save Docker image as a tar file
         run: |
           docker save mpqcli -o mpqcli-docker.tar
-
-      - name: Upload MUSL binary as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mpqcli-linux-amd64-musl
-          path: mpqcli-linux-amd64-musl
-          retention-days: 1
 
       - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4

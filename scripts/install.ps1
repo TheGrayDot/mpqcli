@@ -9,7 +9,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$BinaryName = "mpqcli"
+$BinaryName = "mpqcli-windows-amd64.exe"
 $Repo = "thegraydot/mpqcli"
 $BaseUrl = "https://github.com/$Repo/releases"
 
@@ -49,13 +49,13 @@ function Get-Platform {
     } else {
         Write-Error-And-Exit "32-bit Windows is not supported"
     }
-    
+
     # Check for ARM64
     $processorArch = $env:PROCESSOR_ARCHITECTURE
     if ($processorArch -eq "ARM64") {
-        $platform = "aarch64-pc-windows-msvc"
+        Write-Error-And-Exit "ARM64 Windows is not supported"
     }
-    
+
     return $platform
 }
 
@@ -64,7 +64,7 @@ function Download-File {
         [string]$Url,
         [string]$OutFile
     )
-    
+
     try {
         Write-Info "Downloading from $Url"
         Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing
@@ -82,22 +82,22 @@ function Install-MPQCLI {
         [string]$Version,
         [string]$InstallDir
     )
-    
+
     # Get version if not specified
     if ([string]::IsNullOrEmpty($Version)) {
         Write-Info "Fetching latest version..."
         $Version = Get-LatestVersion
     }
-    
+
     Write-Info "Installing mpqcli v$Version"
-    
+
     # Detect platform
     $platform = Get-Platform
     Write-Info "Detected platform: $platform"
-    
+
     # Create temp directory
     $tempDir = New-TemporaryFile | ForEach-Object { Remove-Item $_; New-Item -ItemType Directory -Path $_ }
-    
+
     try {
         # Download files
         $fileName = "$BinaryName-windows.exe"
