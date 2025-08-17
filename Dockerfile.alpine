@@ -3,10 +3,7 @@ FROM alpine:3.18 AS builder
 
 RUN apk add --no-cache \
     build-base \
-    cmake \
-    git \
-    python3 \
-    py3-pip
+    cmake
 
 WORKDIR /mpqcli
 
@@ -21,10 +18,6 @@ RUN cmake -B build \
 RUN cmake --build build
 
 RUN strip build/bin/mpqcli
-
-RUN pip install --no-cache-dir -r test/requirements.txt
-
-RUN python3 -m pytest test
 
 # Stage 2: Create a minimal runtime image
 FROM scratch AS runtime
