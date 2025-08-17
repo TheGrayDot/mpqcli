@@ -4,126 +4,67 @@ on:
   workflow_call
 
 jobs:
-  build_linux_amd64_glibc:
-    runs-on: ubuntu-22.04
+  build_linux:
+    strategy:
+      matrix:
+        include:
+          # AMD64 builds on ubuntu-24.04
+          - arch: amd64
+            libc: glibc
+            runner: ubuntu-24.04
+            dockerfile: Dockerfile.ubuntu
+            platform: linux/amd64
+            binary_path: /usr/local/bin/mpqcli
+          - arch: amd64
+            libc: musl
+            runner: ubuntu-24.04
+            dockerfile: Dockerfile.alpine
+            platform: linux/amd64
+            binary_path: /mpqcli
+          # ARM64 builds on ubuntu-24.04-arm
+          - arch: arm64
+            libc: glibc
+            runner: ubuntu-24.04-arm
+            dockerfile: Dockerfile.ubuntu
+            platform: linux/arm64
+            binary_path: /usr/local/bin/mpqcli
+          - arch: arm64
+            libc: musl
+            runner: ubuntu-24.04-arm
+            dockerfile: Dockerfile.alpine
+            platform: linux/arm64
+            binary_path: /mpqcli
+
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v5
         with:
           submodules: true
 
-      - name: Run cmake
+      - name: Build Docker image (${{ matrix.arch }} ${{ matrix.libc }})
         run: |
-          cmake -B build \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DBUILD_MPQCLI=ON \
-          -DBUILD_PYTHON_WRAPPER=OFF
+          docker build --platform ${{ matrix.platform }} -t mpqcli-${{ matrix.arch }}-${{ matrix.libc }} -f ${{ matrix.dockerfile }} .
 
-      - name: Compile project
-        run: cmake --build build
-
-      - name: Check mpqcli version
-        run: ./build/bin/mpqcli version
-
-      - name: Copy mpqcli binary
-        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-linux-amd64-glibc
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mpqcli-linux-amd64-glibc
-          path: ./build/bin/mpqcli-linux-amd64-glibc
-          retention-days: 1
-
-  build_linux_amd64_musl:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v5
-        with:
-          submodules: true
-
-      - name: Build Docker image (AMD64)
-        run: |
-          docker build --platform linux/amd64 -t mpqcli .
-
-      - name: Extract MUSL binary from Docker image
+      - name: Extract binary from Docker image
         run: |
           # Create a temporary container from the image
-          CONTAINER_ID=$(docker create mpqcli)
+          CONTAINER_ID=$(docker create mpqcli-${{ matrix.arch }}-${{ matrix.libc }})
           # Copy the binary from the container
-          docker cp $CONTAINER_ID:/mpqcli ./mpqcli-linux-amd64-musl
+          docker cp $CONTAINER_ID:${{ matrix.binary_path }} ./mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}
           # Clean up the container
           docker rm $CONTAINER_ID
 
-      - name: Save Docker image as a tar file
+      - name: Verify binary
         run: |
-          docker save mpqcli -o mpqcli-docker.tar
+          file ./mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}
+          echo "Binary created: mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}"
 
-      - name: Upload MUSL binary as artifact
+      - name: Upload binary as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mpqcli-linux-amd64-musl
-          path: mpqcli-linux-amd64-musl
-          retention-days: 1
-
-  build_linux_arm64_glibc:
-    runs-on: ubuntu-22.04-arm
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v5
-        with:
-          submodules: true
-
-      - name: Run cmake for ARM64
-        run: |
-          cmake -B build \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DBUILD_MPQCLI=ON \
-          -DBUILD_PYTHON_WRAPPER=OFF
-
-      - name: Compile project for ARM64
-        run: cmake --build build
-
-      - name: Check mpqcli version (ARM64)
-        run: ./build/bin/mpqcli version
-
-      - name: Copy ARM64 binary
-        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-linux-arm64-glibc
-
-      - name: Upload ARM64 Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mpqcli-linux-arm64-glibc
-          path: ./build/bin/mpqcli-linux-arm64-glibc
-          retention-days: 1
-
-  build_linux_arm64_musl:
-    runs-on: ubuntu-22.04-arm
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v5
-        with:
-          submodules: true
-
-      - name: Build ARM64 Docker image
-        run: |
-          docker build --platform linux/arm64 -t mpqcli-arm64 .
-
-      - name: Extract ARM64 MUSL binary from Docker image
-        run: |
-          # Create a temporary container from the ARM64 image
-          CONTAINER_ID=$(docker create mpqcli-arm64)
-          # Copy the binary from the container
-          docker cp $CONTAINER_ID:/mpqcli ./mpqcli-linux-arm64-musl
-          # Clean up the container
-          docker rm $CONTAINER_ID
-
-      - name: Upload ARM64 MUSL binary as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mpqcli-linux-arm64-musl
-          path: mpqcli-linux-arm64-musl
+          name: mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}
+          path: mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}
           retention-days: 1
 
   build_windows:
@@ -160,7 +101,7 @@ jobs:
           retention-days: 1
 
   build_docker:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v5
@@ -169,7 +110,7 @@ jobs:
 
       - name: Build Docker image (AMD64)
         run: |
-          docker build --platform linux/amd64 -t mpqcli .
+          docker build --platform linux/amd64 -t mpqcli -f Dockerfile.alpine .
 
       - name: Save Docker image as a tar file
         run: |
