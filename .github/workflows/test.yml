@@ -19,11 +19,11 @@ jobs:
       - name: Download Linux binary
         uses: actions/download-artifact@v5
         with:
-          name: mpqcli-linux
+          name: mpqcli-linux-amd64-glibc
           path: build/bin
 
       - name: Rename binary to "mpqcli"
-        run: mv build/bin/mpqcli-linux build/bin/mpqcli
+        run: mv build/bin/mpqcli-linux-amd64-glibc build/bin/mpqcli
 
       - name: Make binary executable
         run: chmod +x ./build/bin/mpqcli
@@ -57,11 +57,11 @@ jobs:
       - name: Download Windows binary
         uses: actions/download-artifact@v5
         with:
-          name: mpqcli-windows.exe
+          name: mpqcli-windows-amd64.exe
           path: build/bin/Release
 
       - name: Rename binary to "mpqcli"
-        run: mv build/bin/Release/mpqcli-windows.exe build/bin/mpqcli.exe
+        run: mv build/bin/Release/mpqcli-windows-amd64.exe build/bin/mpqcli.exe
 
       - name: Check mpqcli version
         run: ./build/bin/mpqcli.exe version
