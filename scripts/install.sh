@@ -30,7 +30,6 @@ detect_platform() {
     # Detect OS
     case "$(uname -s)" in
         Linux*)     os="linux";;
-        Darwin*)    os="darwin";;
         *)          error "Unsupported operating system: $(uname -s)";;
     esac
 
@@ -41,38 +40,30 @@ detect_platform() {
         *)              error "Unsupported architecture: $(uname -m)";;
     esac
 
-    # Determine if we should use glibc or musl (Linux only)
+    # Determine if we should use glibc or musl
     # Priority: Try glibc first (if available), fallback to musl
-    if [[ "$os" == "darwin" ]]; then
-        # macOS doesn't need libc specification
-        lib=""
-    else
-        # Check if we have ldd command
-        if command -v ldd >/dev/null 2>&1; then
-            # Check for a musl-based system (like Alpine)
-            if ldd --version 2>&1 | grep -q musl; then
-                lib="musl"
-            # Check for a glibc-based system (like Ubuntu, Debian etc.)
-            elif ldd --version 2>&1 | grep -q "GNU\|GLIBC"; then
-                lib="glibc"
-            fi
-        # If ldd is not available, check for common glibc files
-        elif [[ -f /lib/x86_64-linux-gnu/libc.so.6 ]] || \
-           [[ -f /lib64/libc.so.6 ]] || \
-           [[ -f /usr/lib/libc.so.6 ]]; then
-            lib="glibc"
-        else
-            # If ldd is not available or cannot find glibc
-            # default to musl for compatibility
+
+    # Check if we have ldd command
+    if command -v ldd >/dev/null 2>&1; then
+        # Check for a musl-based system (like Alpine)
+        if ldd --version 2>&1 | grep -q musl; then
             lib="musl"
+        # Check for a glibc-based system (like Ubuntu, Debian etc.)
+        elif ldd --version 2>&1 | grep -q "GNU\|GLIBC"; then
+            lib="glibc"
         fi
+    # If ldd is not available, check for common glibc files
+    elif [[ -f /lib/x86_64-linux-gnu/libc.so.6 ]] || \
+       [[ -f /lib64/libc.so.6 ]] || \
+       [[ -f /usr/lib/libc.so.6 ]]; then
+        lib="glibc"
+    else
+        # If ldd is not available or cannot find glibc
+        # default to musl for compatibility
+        lib="musl"
     fi
 
-    if [[ "$os" == "darwin" ]]; then
-        echo "${os}-${arch}"
-    else
-        echo "${os}-${arch}-${lib}"
-    fi
+    echo "${os}-${arch}-${lib}"
 }
 
 # Download file
@@ -116,18 +107,7 @@ get_latest_version() {
 # Main installation function
 install() {
     local version="${1:-}"
-    local install_dir="${INSTALL_DIR:-}"
-    
-    # Set default install directory based on OS and permissions
-    if [[ -z "$install_dir" ]]; then
-        if [[ -w "/usr/local/bin" ]]; then
-            install_dir="/usr/local/bin"
-        elif [[ -w "$HOME/.local/bin" ]]; then
-            install_dir="$HOME/.local/bin"
-        else
-            install_dir="/usr/local/bin"  # Will require sudo
-        fi
-    fi
+    local install_dir="${INSTALL_DIR:-/usr/local/bin}"
 
     # Get version if not specified
     if [[ -z "$version" ]]; then
@@ -144,10 +124,8 @@ install() {
     # Show appropriate message based on detected platform
     if [[ "$platform" == *"-glibc" ]]; then
         info "System appears compatible with GLIBC binaries"
-    elif [[ "$platform" == *"-musl" ]]; then
+    else
         info "Using MUSL binary for better compatibility"
-    elif [[ "$platform" == darwin-* ]]; then
-        info "Detected macOS system"
     fi
     
     info "Detected platform: ${platform}"
@@ -165,24 +143,8 @@ install() {
 
     # Install binary
     info "Installing to $install_dir"
-    
-    # Create directory if it doesn't exist
-    if [[ ! -d "$install_dir" ]]; then
-        if [[ -w "$(dirname "$install_dir")" ]]; then
-            mkdir -p "$install_dir"
-        else
-            warn "You may need to enter your password to create $install_dir..."
-            sudo mkdir -p "$install_dir"
-        fi
-    fi
-    
-    # Move binary to install directory
-    if [[ -w "$install_dir" ]]; then
-        mv "mpqcli" "$install_dir/"
-    else
-        warn "You may need to enter your password to install to $install_dir..."
-        sudo mv "mpqcli" "$install_dir/"
-    fi
+    warn "You may need to enter your password..."
+    sudo mv "mpqcli" "$install_dir/"
 
     # Verify installation
     if "${install_dir}/mpqcli" version >/dev/null 2>&1; then
@@ -210,7 +172,7 @@ USAGE:
 
 OPTIONS:
     -h, --help          Show this help message
-    -d, --dir DIR       Install directory (default: auto-detect)
+    -d, --dir DIR       Install directory (default: \$HOME/.local/bin)
     -t, --tag TAG       Install specific release tag
 
 ENVIRONMENT VARIABLES:
@@ -224,7 +186,7 @@ EXAMPLES:
     $0 0.8.0
 
     # Install to custom directory
-    INSTALL_DIR=\$HOME/.local/bin $0
+    INSTALL_DIR=$HOME/.local/bin $0
 
     # Install specific tag
     $0 --tag v0.8.0
