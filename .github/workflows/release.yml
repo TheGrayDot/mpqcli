@@ -14,15 +14,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Download Linux binary
+      - name: Download Linux GLIBC binary
         uses: actions/download-artifact@v5
         with:
-          name: mpqcli-linux
+          name: mpqcli-linux-amd64-glibc
+
+      - name: Download Linux MUSL binary
+        uses: actions/download-artifact@v5
+        with:
+          name: mpqcli-linux-amd64-musl
+
+      - name: Download Linux ARM64 GLIBC binary
+        uses: actions/download-artifact@v5
+        with:
+          name: mpqcli-linux-arm64-glibc
+
+      - name: Download Linux ARM64 MUSL binary
+        uses: actions/download-artifact@v5
+        with:
+          name: mpqcli-linux-arm64-musl
 
       - name: Download Windows binary
         uses: actions/download-artifact@v5
         with:
-          name: mpqcli-windows.exe
+          name: mpqcli-windows-amd64.exe
 
       - name: Extract latest changelog section
         id: changelog
@@ -37,8 +52,11 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            mpqcli-linux
-            mpqcli-windows.exe
+            mpqcli-linux-amd64-glibc
+            mpqcli-linux-amd64-musl
+            mpqcli-linux-arm64-glibc
+            mpqcli-linux-arm64-musl
+            mpqcli-windows-amd64.exe
           body: ${{ steps.changelog.outputs.content }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

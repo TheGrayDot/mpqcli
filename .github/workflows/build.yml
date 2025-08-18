@@ -5,34 +5,66 @@ on:
 
 jobs:
   build_linux:
-    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          # AMD64 builds on ubuntu-24.04
+          - arch: amd64
+            libc: glibc
+            runner: ubuntu-24.04
+            dockerfile: Dockerfile.glibc
+            platform: linux/amd64
+            binary_path: /usr/local/bin/mpqcli
+          - arch: amd64
+            libc: musl
+            runner: ubuntu-24.04
+            dockerfile: Dockerfile.musl
+            platform: linux/amd64
+            binary_path: /mpqcli
+          # ARM64 builds on ubuntu-24.04-arm
+          - arch: arm64
+            libc: glibc
+            runner: ubuntu-24.04-arm
+            dockerfile: Dockerfile.glibc
+            platform: linux/arm64
+            binary_path: /usr/local/bin/mpqcli
+          - arch: arm64
+            libc: musl
+            runner: ubuntu-24.04-arm
+            dockerfile: Dockerfile.musl
+            platform: linux/arm64
+            binary_path: /mpqcli
+
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v5
         with:
           submodules: true
 
-      - name: Run cmake
+      - name: Build Docker image (${{ matrix.arch }} ${{ matrix.libc }})
         run: |
-          cmake -B build \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DBUILD_MPQCLI=ON \
-          -DBUILD_PYTHON_WRAPPER=OFF
+          docker build --platform ${{ matrix.platform }} -t mpqcli-${{ matrix.arch }}-${{ matrix.libc }} -f ${{ matrix.dockerfile }} .
 
-      - name: Compile project
-        run: cmake --build build
+      - name: Extract binary from Docker image
+        run: |
+          # Create a temporary container from the image
+          CONTAINER_ID=$(docker create mpqcli-${{ matrix.arch }}-${{ matrix.libc }})
+          # Copy the binary from the container
+          docker cp $CONTAINER_ID:${{ matrix.binary_path }} ./mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}
+          # Clean up the container
+          docker rm $CONTAINER_ID
 
-      - name: Check mpqcli version
-        run: ./build/bin/mpqcli version
+      - name: Verify binary
+        run: |
+          file ./mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}
+          echo "Binary created: mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}"
 
-      - name: Copy mpqcli binary
-        run: cp ./build/bin/mpqcli ./build/bin/mpqcli-linux
-
-      - name: Upload Artifact
+      - name: Upload binary as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mpqcli-linux
-          path: ./build/bin/mpqcli-linux
+          name: mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}
+          path: mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}
           retention-days: 1
 
   build_windows:
@@ -59,26 +91,28 @@ jobs:
         run: build/bin/Release/mpqcli.exe version
 
       - name: Copy mpqcli binary
-        run: cp build/bin/Release/mpqcli.exe build/bin/mpqcli-windows.exe
+        run: cp build/bin/Release/mpqcli.exe build/bin/mpqcli-windows-amd64.exe
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mpqcli-windows.exe
-          path: build/bin/mpqcli-windows.exe
+          name: mpqcli-windows-amd64.exe
+          path: build/bin/mpqcli-windows-amd64.exe
           retention-days: 1
 
   build_docker:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v5
         with:
           submodules: true
 
-      - name: Build Docker image
+      # For the distributable Docker image we use musl
+      # This results in a smaller image size
+      - name: Build Docker image (AMD64)
         run: |
-          docker build -t mpqcli .
+          docker build --platform linux/amd64 -t mpqcli -f Dockerfile.musl .
 
       - name: Save Docker image as a tar file
         run: |

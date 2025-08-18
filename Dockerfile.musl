@@ -1,0 +1,27 @@
+# Stage 1: Build and Test
+FROM alpine:3.18 AS builder
+
+RUN apk add --no-cache \
+    build-base \
+    cmake
+
+WORKDIR /mpqcli
+
+COPY . .
+
+RUN cmake -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_MPQCLI=ON \
+    -DBUILD_PYTHON_WRAPPER=OFF \
+    -DBUILD_STATIC=ON
+
+RUN cmake --build build
+
+RUN strip build/bin/mpqcli
+
+# Stage 2: Create a minimal runtime image
+FROM scratch AS runtime
+
+COPY --from=builder /mpqcli/build/bin/mpqcli /mpqcli
+
+ENTRYPOINT ["/mpqcli"]

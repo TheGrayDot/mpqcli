@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.0 - 2025-08-19
+
+### Added
+
+- Linux binaries for amd64 and arm64
+- Linux binaries built with musl and glibc
+
+### Updated
+
+- Install script for Linux to provided better binary download options
+
+### Changed
+
+- Linux binary release naming convention
+
 ## 0.8.1 - 2025-08-15
 
 ### Added
