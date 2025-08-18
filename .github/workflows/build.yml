@@ -12,26 +12,26 @@ jobs:
           - arch: amd64
             libc: glibc
             runner: ubuntu-24.04
-            dockerfile: Dockerfile.ubuntu
+            dockerfile: Dockerfile.glibc
             platform: linux/amd64
             binary_path: /usr/local/bin/mpqcli
           - arch: amd64
             libc: musl
             runner: ubuntu-24.04
-            dockerfile: Dockerfile.alpine
+            dockerfile: Dockerfile.musl
             platform: linux/amd64
             binary_path: /mpqcli
           # ARM64 builds on ubuntu-24.04-arm
           - arch: arm64
             libc: glibc
             runner: ubuntu-24.04-arm
-            dockerfile: Dockerfile.ubuntu
+            dockerfile: Dockerfile.glibc
             platform: linux/arm64
             binary_path: /usr/local/bin/mpqcli
           - arch: arm64
             libc: musl
             runner: ubuntu-24.04-arm
-            dockerfile: Dockerfile.alpine
+            dockerfile: Dockerfile.musl
             platform: linux/arm64
             binary_path: /mpqcli
 
@@ -108,9 +108,11 @@ jobs:
         with:
           submodules: true
 
+      # For the distributable Docker image we use musl
+      # This results in a smaller image size
       - name: Build Docker image (AMD64)
         run: |
-          docker build --platform linux/amd64 -t mpqcli -f Dockerfile.alpine .
+          docker build --platform linux/amd64 -t mpqcli -f Dockerfile.musl .
 
       - name: Save Docker image as a tar file
         run: |

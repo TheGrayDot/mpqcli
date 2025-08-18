@@ -21,10 +21,16 @@ build_windows:
 build_clean:
 	rm -rf build
 
-docker_build:
-	docker build -t mpqcli:$(VERSION) .
+docker_musl_build:
+	docker build -t mpqcli:$(VERSION) -f Dockerfile.musl .
 
-docker_run:
+docker_musl_run:
+	@docker run -it mpqcli:$(VERSION) version
+
+docker_glibc_build:
+	docker build -t mpqcli:$(VERSION) -f Dockerfile.glibc .
+
+docker_glibc_run:
 	@docker run -it mpqcli:$(VERSION) version
 
 # TEST

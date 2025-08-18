@@ -40,28 +40,55 @@ detect_platform() {
         *)              error "Unsupported architecture: $(uname -m)";;
     esac
 
-    # Determine if we want glibc or musl
-    if ldd --version 2>&1 | grep -q musl; then
-        lib="musl"
-    else
+    # Determine if we should use glibc or musl
+    # Priority: Try glibc first (if available), fallback to musl
+
+    # Check if we have ldd command
+    if command -v ldd >/dev/null 2>&1; then
+        # Check for a musl-based system (like Alpine)
+        if ldd --version 2>&1 | grep -q musl; then
+            lib="musl"
+        # Check for a glibc-based system (like Ubuntu, Debian etc.)
+        elif ldd --version 2>&1 | grep -q "GNU\|GLIBC"; then
+            lib="glibc"
+        fi
+    # If ldd is not available, check for common glibc files
+    elif [[ -f /lib/x86_64-linux-gnu/libc.so.6 ]] || \
+       [[ -f /lib64/libc.so.6 ]] || \
+       [[ -f /usr/lib/libc.so.6 ]]; then
         lib="glibc"
+    else
+        # If ldd is not available or cannot find glibc
+        # default to musl for compatibility
+        lib="musl"
     fi
 
     echo "${os}-${arch}-${lib}"
 }
 
-# Download and verify file
+# Download file
 download_file() {
-    local url="$1"
-    local output="$2"
+    local version="$1"
+    local platform="$2"
+    local filename="mpqcli-${platform}"
+    local download_url="${BASE_URL}/download/v${version}/${filename}"
+    
+    # Try to download the preferred binary
+    info "Downloading from: $download_url"
 
     if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "$url" -o "$output"
+        if ! curl -fsSL "$download_url" -o "mpqcli"; then
+            return 1
+        fi
     elif command -v wget >/dev/null 2>&1; then
-        wget -q "$url" -O "$output"
+        if ! wget -q "$download_url" -O "mpqcli"; then
+            return 1
+        fi
     else
         error "Neither curl nor wget found. Please install one of them."
     fi
+    
+    error "Failed to download binary for platform: $platform"
 }
 
 # Get latest release version
@@ -94,35 +121,36 @@ install() {
     # Detect platform
     local platform
     platform=$(detect_platform)
+    
+    # Show appropriate message based on detected platform
+    if [[ "$platform" == *"-glibc" ]]; then
+        info "System appears compatible with GLIBC binaries"
+    else
+        info "Using MUSL binary for better compatibility"
+    fi
+    
     info "Detected platform: ${platform}"
 
-    # Determine binary file for download
-    local filename="mpqcli-${platform}"
-
-    # Download URL
-    local download_url="${BASE_URL}/download/v${version}/${filename}"
-    info "Downloading from: ${download_url}"
-    local binary_name="${filename%%-*}"
-    info "Binary name: ${binary_name}"
-    download_file "$download_url" "$binary_name"
+    # Download binar
+    download_file "$version" "$platform"
 
     # Ensure binary is executable
-    if [[ -f "$binary_name" ]]; then
-        info "Allowing execution to ${binary_name}..."
-        chmod +x "${binary_name}"
+    if [[ -f "mpqcli" ]]; then
+        info "Making binary executable..."
+        chmod +x "mpqcli"
     else
-        error "Binary ${binary_name} not found"
+        error "Binary mpqcli not found after download"
     fi
 
     # Install binary
     info "Installing to $install_dir"
     warn "You may need to enter your password..."
-    sudo mv "$binary_name" "$install_dir"
+    sudo mv "mpqcli" "$install_dir/"
 
     # Verify installation
-    if "${install_dir}/${binary_name}" version >/dev/null 2>&1; then
+    if "${install_dir}/mpqcli" version >/dev/null 2>&1; then
         info "Installation successful!"
-        info "Binary installed to: ${install_dir}/${binary_name}"
+        info "Binary installed to: ${install_dir}/mpqcli"
         
         # Check if install_dir is in PATH
         if ! echo "$PATH" | grep -q "$install_dir"; then
