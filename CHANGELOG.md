@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.1 - 2025-08-19
+
+### Fixed
+
+- Bug in Dockerfiles resulting in missing commit hash from version
+
 ## 0.9.0 - 2025-08-19
 
 ### Added

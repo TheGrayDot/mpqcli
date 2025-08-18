@@ -3,7 +3,8 @@ FROM alpine:3.18 AS builder
 
 RUN apk add --no-cache \
     build-base \
-    cmake
+    cmake \
+    git
 
 WORKDIR /mpqcli
 

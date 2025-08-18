@@ -73,21 +73,20 @@ download_file() {
     local filename="mpqcli-${platform}"
     local download_url="${BASE_URL}/download/v${version}/${filename}"
     
-    # Try to download the preferred binary
     info "Downloading from: $download_url"
 
     if command -v curl >/dev/null 2>&1; then
-        if ! curl -fsSL "$download_url" -o "mpqcli"; then
-            return 1
+        if curl -fsSL "$download_url" -o "mpqcli"; then
+            return 0
         fi
     elif command -v wget >/dev/null 2>&1; then
-        if ! wget -q "$download_url" -O "mpqcli"; then
-            return 1
+        if wget -q "$download_url" -O "mpqcli"; then
+            return 0
         fi
     else
         error "Neither curl nor wget found. Please install one of them."
     fi
-    
+
     error "Failed to download binary for platform: $platform"
 }
 
