@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.2 - 2025-08-21
+
+### Fixed
+
+- Bug in `create` subcommand resulting in incorrect max file count
+
 ## 0.9.1 - 2025-08-19
 
 ### Fixed
