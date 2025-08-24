@@ -1,5 +1,5 @@
 # Stage 1: Build and Test
-FROM ubuntu:22.04 AS builder
+FROM ubuntu:24.04 AS builder
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -21,7 +21,7 @@ RUN cmake --build build
 RUN strip build/bin/mpqcli
 
 # Stage 2: Create a minimal runtime image
-FROM ubuntu:22.04 AS runtime
+FROM ubuntu:24.04 AS runtime
 
 RUN apt-get update && apt-get install -y \
     libstdc++6 \
