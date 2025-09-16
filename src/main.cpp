@@ -205,7 +205,7 @@ int main(int argc, char **argv) {
             archivePath = archiveFullPath.generic_u8string();
         }
 
-        AddFile(hArchive, fileNamePath.u8string(), archivePath);
+        AddFile(hArchive, baseFile, archivePath);
         CloseMpqArchive(hArchive);
     }
 
