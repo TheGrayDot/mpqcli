@@ -205,9 +205,6 @@ int main(int argc, char **argv) {
             archivePath = archiveFullPath.generic_u8string();
         }
 
-        std::cout << "[+] Adding: " << fileNamePath.u8string()
-            << " as " << archivePath << std::endl;
-
         AddFile(hArchive, fileNamePath.u8string(), archivePath);
         CloseMpqArchive(hArchive);
     }
