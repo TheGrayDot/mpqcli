@@ -196,10 +196,10 @@ int main(int argc, char **argv) {
         // File on disk
         fs::path fileNamePath = fs::path(baseFile);
 
-        // Default: just the filename
+        // Default: use the filename as path, saves file to root of MPQ
         std::string archivePath = fileNamePath.filename().u8string();
 
-        // Optional: user-specified path inside archive
+        // Optional: specified path inside archive
         if (basePath != "default") {
             fs::path archiveFullPath = fs::path(basePath) / fileNamePath.filename();
             archivePath = archiveFullPath.generic_u8string();
