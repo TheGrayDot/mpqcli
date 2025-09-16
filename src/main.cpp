@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     add->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
-    add->add_option("--path", basePath, "Path within MPQ archive");
+    add->add_option("-p,--path", basePath, "Path within MPQ archive");
 
     // Subcommand: Remove
     CLI::App *remove = app.add_subcommand("remove", "Remove file from an existing MPQ archive");
