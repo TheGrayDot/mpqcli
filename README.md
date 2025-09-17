@@ -153,6 +153,13 @@ echo "For The Horde!" > fth.txt
 mpqcli add fth.txt wow-patch.mpq
 ```
 
+Alternatively, you can add a file to a specific subdirectory using the `-p` or `--path` argument.
+
+```
+echo "For The Alliance!" > fta.txt
+mpqcli add fta.txt wow-patch.mpq --path <path/in/archive>
+```
+
 ### Remove a file from an existing archive
 
 Remove a file from an existing MPQ archive.
