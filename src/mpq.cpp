@@ -187,9 +187,25 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
         return -1;
     }
 
+    // Verify that we are not exceeding maxFile size of the archive, and if we do, increase it
+    int32_t numberOfFiles = GetFileInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
+    int32_t maxFiles = GetFileInfo<int32_t>(hArchive, SFileMpqMaxFileCount);
+
+    if (numberOfFiles + 1 > maxFiles)
+    {
+        int32_t newMaxFiles = NextPowerOfTwo(numberOfFiles + 1);
+        bool setMaxFileCount = SFileSetMaxFileCount(hArchive, newMaxFiles);
+        if (!setMaxFileCount)
+        {
+            int32_t error = SErrGetLastError();
+            std::cerr << "[!] Error: " << error << " Failed to increase new max file count to: " << newMaxFiles << std::endl;
+            return -1;
+        }
+    }
+
     // Set file attributes in MPQ archive (compression and encryption)
     DWORD dwFlags = MPQ_FILE_COMPRESS | MPQ_FILE_ENCRYPTED;
-    DWORD dwCompression = MPQ_COMPRESSION_ZLIB;
+    DWORD dwCompression = MPQ_COMPRESSION_ZLIB; 
 
     bool addedFile = SFileAddFileEx(
         hArchive,

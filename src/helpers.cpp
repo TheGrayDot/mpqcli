@@ -92,15 +92,18 @@ int32_t CalculateMpqMaxFileValue(const std::string &directory) {
         return 32;
     }
 
-    fileCount--;
-    fileCount |= fileCount >> 1;
-    fileCount |= fileCount >> 2;
-    fileCount |= fileCount >> 4;
-    fileCount |= fileCount >> 8;
-    fileCount |= fileCount >> 16;
-    fileCount++;
+    return NextPowerOfTwo(fileCount);
+}
 
-    return fileCount;
+int32_t NextPowerOfTwo(int32_t n)
+{
+    n--;
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    return n + 1;
 }
 
 void PrintAsBinary(const char* buffer, uint32_t size) {
