@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
         // Optional: specified path inside archive
         if (basePath != "default") {
             fs::path archiveFullPath = fs::path(basePath) / filePath.filename();
-            archivePath = archiveFullPath.generic_u8string();
+            archivePath = archiveFullPath.u8string();
         }
 
         AddFile(hArchive, baseFile, archivePath);
