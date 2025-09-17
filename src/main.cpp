@@ -202,7 +202,9 @@ int main(int argc, char **argv) {
         // Optional: specified path inside archive
         if (basePath != "default") {
             fs::path archiveFullPath = fs::path(basePath) / filePath.filename();
-            archivePath = archiveFullPath.u8string();
+
+            // Normalise path for MPQ
+            archivePath = WindowsifyFilePath(archiveFullPath.u8string());
         }
 
         AddFile(hArchive, baseFile, archivePath);
