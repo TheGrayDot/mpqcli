@@ -205,7 +205,7 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
 
     // Set file attributes in MPQ archive (compression and encryption)
     DWORD dwFlags = MPQ_FILE_COMPRESS | MPQ_FILE_ENCRYPTED;
-    DWORD dwCompression = MPQ_COMPRESSION_ZLIB; 
+    DWORD dwCompression = MPQ_COMPRESSION_ZLIB;
 
     bool addedFile = SFileAddFileEx(
         hArchive,
