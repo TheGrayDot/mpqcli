@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
     // These are reused in multiple subcommands
     std::string baseTarget = "default";  // all subcommands
     std::string baseFile = "default";  // add, remove, extract, read
+    std::string basePath = "default"; // add
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     // CLI: info
@@ -78,6 +79,7 @@ int main(int argc, char **argv) {
     add->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
+    add->add_option("-p,--path", basePath, "Path within MPQ archive");
 
     // Subcommand: Remove
     CLI::App *remove = app.add_subcommand("remove", "Remove file from an existing MPQ archive");
@@ -191,11 +193,21 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        // Save the file to root of MPQ archive
-        fs::path fileNamePath = fs::path(baseFile);
-        std::string fileNameString = fileNamePath.filename().u8string();
+        // Path to file on disk
+        fs::path filePath = fs::path(baseFile);
 
-        AddFile(hArchive, baseFile, fileNameString);
+        // Default: use the filename as path, saves file to root of MPQ
+        std::string archivePath = filePath.filename().u8string();
+
+        // Optional: specified path inside archive
+        if (basePath != "default") {
+            fs::path archiveFullPath = fs::path(basePath) / filePath.filename();
+
+            // Normalise path for MPQ
+            archivePath = WindowsifyFilePath(archiveFullPath.u8string());
+        }
+
+        AddFile(hArchive, baseFile, archivePath);
         CloseMpqArchive(hArchive);
     }
 
