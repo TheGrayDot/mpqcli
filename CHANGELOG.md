@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.3 - 2025-10-03
+
+### Added
+
+- Support for `add` subcommand to have path inside MPQ archive
+
+### Fixed
+
+- Bug in `add` subcommand when exceeding max file count
+
 ## 0.9.2 - 2025-08-21
 
 ### Fixed
