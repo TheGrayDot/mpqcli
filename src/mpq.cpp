@@ -69,13 +69,13 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& 
 int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure) {
     const char *szFileName = fileName.c_str();
     if (!SFileHasFile(hArchive, szFileName)) {
-        std::cerr << "[+] Failed: File doesn't exist" << std::endl;
+        std::cerr << "[+] Failed: File doesn't exist: " << szFileName << std::endl;
         return -1;
     }
 
     HANDLE hFile;
     if (!SFileOpenFileEx(hArchive, szFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
-        std::cerr << "[+] Failed: File cannot be opened" << std::endl;
+        std::cerr << "[+] Failed: File cannot be opened: " << szFileName << std::endl;
         return -1;
     }
 
@@ -143,7 +143,7 @@ HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_
     );
 
     if (!result) {
-        std::cerr << "[+] Failed to create MPQ archive." << std::endl;
+        std::cerr << "[+] Failed to create MPQ archive: " << outputArchiveName << std::endl;
         int32_t error = SErrGetLastError();
         std::cout << "[+] Error: " << error << std::endl;
         return NULL;
@@ -229,12 +229,12 @@ int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath) {
     std::cout << "[+] Removing file: " << archiveFilePath << std::endl;
 
     if (!SFileHasFile(hArchive, archiveFilePath.c_str())) {
-        std::cerr << "[+] Failed: File doesn't exist" << std::endl;
+        std::cerr << "[+] Failed: File doesn't exist: " << archiveFilePath << std::endl;
         return -1;
     }
 
     if (!SFileRemoveFile(hArchive, archiveFilePath.c_str(), 0)) {
-        std::cerr << "[+] Failed: File cannot be removed" << std::endl;
+        std::cerr << "[+] Failed: File cannot be removed: " << archiveFilePath << std::endl;
         return -1;
     }
 
@@ -303,13 +303,13 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
 
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) {
     if (!SFileHasFile(hArchive, szFileName)) {
-        std::cerr << "[+] Failed: File doesn't exist" << std::endl;
+        std::cerr << "[+] Failed: File doesn't exist: " << szFileName << std::endl;
         return NULL;
     }
 
     HANDLE hFile;
     if (!SFileOpenFileEx(hArchive, szFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
-        std::cerr << "[+] Failed: File cannot be opened" << std::endl;
+        std::cerr << "[+] Failed: File cannot be opened: " << szFileName << std::endl;
         return NULL;
     }
 
