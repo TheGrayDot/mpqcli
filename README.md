@@ -203,7 +203,7 @@ mpqcli list -d -a wow-patch.mpq
 Older MPQ archives do not contain (complete) file paths of their content. By providing an external listfile that lists the content of the MPQ archive, the listed files will have the correct paths. Listfiles can be downloaded on [Ladislav Zezula's site](http://www.zezula.net/en/mpq/download.html).
 
 ```
-mpqcli list -l /path/to/listfile <target_mpq_archive>
+mpqcli list -l /path/to/listfile StarDat.mpq
 ```
 
 ### Extract all files from an MPQ archive
@@ -234,7 +234,7 @@ mpqcli extract -o patch-1.10 wow-patch.mpq
 Older MPQ archives do not contain (complete) file paths of their content. By providing an external listfile that lists the content of the MPQ archive, the extracted files will have the correct names and paths. Listfiles can be downloaded on [Ladislav Zezula's site](http://www.zezula.net/en/mpq/download.html).
 
 ```
-mpqcli extract -l path/to/listfile <target_mpq_archive>
+mpqcli extract -l path/to/listfile War2Dat.mpq
 ```
 
 ### Extract one specific file
@@ -313,13 +313,30 @@ The `mpqcli` tool has no native search feature - instead, it is designed to be i
 The following command lists all files in an MPQ archive, and each filename is filtered using `grep` - selecting files with `exe` in their name, which is then passed back to `mpqcli extract`. The result: search and extract all `exe` files.
 
 ```
-mpqcli list wow-patch.mpq | grep ".exe" | xargs -I@ mpqcli extract -f "@" wow-patch.mpq
+mpqcli list wow-patch.mpq | grep -i ".exe" | xargs -I@ mpqcli extract -f "@" wow-patch.mpq
 [+] Extracted: Launcher.exe
 [+] Extracted: BackgroundDownloader.exe
 [+] Extracted: WoW.exe
 [+] Extracted: BNUpdate.exe
 [+] Extracted: Repair.exe
 [+] Extracted: WowError.exe
+```
+
+Note that directories are specified with backslashes, which need to be escaped (due to how grep and xargs handles them). The following example extracts all `dat` files in the `arr` directory from the `StarDat.mpq` archive and handles escaping via `sed`.
+
+```
+mpqcli list -l scbw.txt StarDat.mpq | grep -i "arr\\\.*dat$" | sort | sed 's|\\|\\\\|g' | xargs -I@ mpqcli extract -f "@" -k StarDat.mpq
+arr\flingy.dat
+arr\images.dat
+arr\mapdata.dat
+arr\orders.dat
+arr\portdata.dat
+arr\sfxdata.dat
+arr\sprites.dat
+arr\techdata.dat
+arr\units.dat
+arr\upgrades.dat
+arr\weapons.dat
 ```
 
 ### Search and extract files on Windows
