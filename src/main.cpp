@@ -288,7 +288,7 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        uint32_t verifyResult = SFileVerifyArchive(hArchive);
+        uint32_t verifyResult = VerifyMpqArchive(hArchive);
         if (verifyResult == ERROR_WEAK_SIGNATURE_OK || verifyResult == ERROR_STRONG_SIGNATURE_OK) {
             if (verifyPrintSignature) {
                 // If printing the signature, don't print success message
