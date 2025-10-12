@@ -20,6 +20,7 @@ int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath);
 int ListFiles(HANDLE hHandle, const std::string &listfileName, bool listAll, bool listDetailed);
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize);
 void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty);
+uint32_t VerifyMpqArchive(HANDLE hArchive);
 int32_t PrintMpqSignature(HANDLE hArchive, std::string target);
 
 template <typename T>

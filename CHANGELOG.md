@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.4 - 2025-10-12
+
+### Added
+
+- Filename added to program output
+- Added simple wrapper around verify command
+
+### Fixed
+
+- Show help menu when no arguments provided
+
 ## 0.9.3 - 2025-10-03
 
 ### Added

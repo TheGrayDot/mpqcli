@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(MPQCLI VERSION 0.9.3)
+project(MPQCLI VERSION 0.9.4)
 
 # Options
 option(BUILD_MPQCLI "Build the mpqcli CLI app" ON)
@@ -63,5 +63,12 @@ if(BUILD_MPQCLI)
 endif()
 
 if(BUILD_PYTHON_WRAPPER)
+    # Generate pyproject.toml from template
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml
+        @ONLY
+    )
+
     add_subdirectory(wrappers/python)
 endif()

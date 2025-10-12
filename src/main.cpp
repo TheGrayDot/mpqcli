@@ -16,6 +16,9 @@ int main(int argc, char **argv) {
         "A command line tool to create, add, remove, list, extract, read, and verify MPQ archives "
         "using the StormLib library"
     };
+    
+    // Require at least one subcommand
+    app.require_subcommand(1);
 
     // CLI: base
     // These are reused in multiple subcommands
@@ -125,7 +128,18 @@ int main(int argc, char **argv) {
         ->check(CLI::ExistingFile);
     verify->add_flag("-p,--print", verifyPrintSignature, "Print the digital signature (in hex)");
 
-    CLI11_PARSE(app, argc, argv);
+    // Parse command line arguments and handle errors
+    try {
+        app.parse(argc, argv);
+    } catch (const CLI::ParseError &e) {
+        // If we get a "subcommand required" error, print help message
+        if (e.get_exit_code() == static_cast<int>(CLI::ExitCodes::RequiredError)) {
+            std::cout << app.help() << std::endl;
+            return 0;
+        }
+        // For other errors, use the default error handling
+        return app.exit(e);
+    }
 
     // Handle subcommand: Version
     if (app.got_subcommand(version)){
@@ -288,7 +302,7 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        uint32_t verifyResult = SFileVerifyArchive(hArchive);
+        uint32_t verifyResult = VerifyMpqArchive(hArchive);
         if (verifyResult == ERROR_WEAK_SIGNATURE_OK || verifyResult == ERROR_STRONG_SIGNATURE_OK) {
             if (verifyPrintSignature) {
                 // If printing the signature, don't print success message
