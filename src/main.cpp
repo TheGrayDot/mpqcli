@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
         }
         std::string outputFile = outputFilePath.u8string();
         
-        std::cout << "[+] Output file: " << outputFile << std::endl;
+        std::cout << "[*] Output file: " << outputFile << std::endl;
 
         // Determine number of files we are going to add
         int32_t fileCount = CalculateMpqMaxFileValue(baseTarget);
@@ -310,7 +310,7 @@ int main(int argc, char **argv) {
                 PrintMpqSignature(hArchive, baseTarget);
             } else {
                 // Just print verification success
-                std::cout << "[+] Verify success" << std::endl;
+                std::cout << "[*] Verify success" << std::endl;
             }
             
             // Return 0, because verification passed
