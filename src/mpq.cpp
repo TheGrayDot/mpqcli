@@ -226,7 +226,7 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
 }
 
 int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath) {
-    std::cout << "[+] Removing file: " << archiveFilePath << std::endl;
+    std::cout << "[-] Removing file: " << archiveFilePath << std::endl;
 
     if (!SFileHasFile(hArchive, archiveFilePath.c_str())) {
         std::cerr << "[!] Failed: File doesn't exist: " << archiveFilePath << std::endl;
