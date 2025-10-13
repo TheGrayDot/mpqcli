@@ -100,7 +100,7 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
     std::filesystem::create_directories(outputFilePathName.parent_path());
 
     if (SFileExtractFile(hArchive, szFileName, outputFileName.c_str(), 0)) {
-        std::cout << "[+] Extracted: " << fileNameString << std::endl;
+        std::cout << "[*] Extracted: " << fileNameString << std::endl;
     } else {
         int32_t error = SErrGetLastError();
         std::cerr << "[!] Failed: " << "(" << error << ") " << szFileName << std::endl;
