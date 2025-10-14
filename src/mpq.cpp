@@ -287,7 +287,7 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
             // Print the file details in a formatted way
             std::cout << std::setw(11) << fileSize << " "  // 4GB max size is 10 characters
                       << std::setw(5) << fileLocaleStr << " "  // Locale is max 4 characters
-                      << std::setw(18) << fileTimeStr << " "  // File time is formatted as "MMM DD YYYY HH:MM"
+                      << std::setw(19) << fileTimeStr << "  "  // File time is formatted as "YYYY-MM-DD HH:MM:SS"
                       << findData.cFileName << std::endl;
 
             SFileCloseFile(hFile);

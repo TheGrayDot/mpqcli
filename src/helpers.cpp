@@ -1,8 +1,6 @@
 #include <algorithm>
-#include <cctype>
 #include <filesystem>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <vector>
 #include <ctime>
@@ -15,7 +13,6 @@
 #include <StormLib.h>
 
 #include "helpers.h"
-#include "mpq.h"
 
 namespace fs = std::filesystem;
 
@@ -32,7 +29,7 @@ std::string FileTimeToLsTime(int64_t fileTime) {
 #else
     localtime_r(&unixTime, &tm_buf);
 #endif
-    strftime(buf, sizeof(buf), "%b %e %Y %H:%M", &tm_buf);
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm_buf);
     return std::string(buf);
 }
 

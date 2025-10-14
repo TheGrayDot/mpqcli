@@ -32,19 +32,19 @@ def test_list_mpq_with_detailed(binary_path):
 
     # Update expected_out to match long listing format
     expected_output = {
-        "         27  enUS                    (listfile)",
-        "        148  enUS                    (attributes)",
-        "         27  enUS  Jul 29 2025 14:31 dogs.txt",
-        "          8  enUS  Jul 29 2025 14:31 bytes",
-        "         27  enUS  Jul 29 2025 14:31 cats.txt",
+        "         27  enUS                      (listfile)",
+        "        148  enUS                      (attributes)",
+        "         27  enUS 2025-07-29 14:31:00  dogs.txt",
+        "          8  enUS 2025-07-29 14:31:00  bytes",
+        "         27  enUS 2025-07-29 14:31:00  cats.txt",
     }
 
     # Adjust filesize for Windows
     if platform.system() == "Windows":
-        expected_output.remove("         27  enUS  Jul 29 2025 14:31 dogs.txt")
-        expected_output.add("         28  enUS  Jul 29 2025 14:31 dogs.txt")
-        expected_output.remove("         27  enUS  Jul 29 2025 14:31 cats.txt")
-        expected_output.add("         28  enUS  Jul 29 2025 14:31 cats.txt")
+        expected_output.remove("         27  enUS 2025-07-29 14:31:00  dogs.txt")
+        expected_output.add("         28  enUS 2025-07-29 14:31:00  dogs.txt")
+        expected_output.remove("         27  enUS 2025-07-29 14:31:00  cats.txt")
+        expected_output.add("         28  enUS 2025-07-29 14:31:00  cats.txt")
 
     result = subprocess.run(
         [str(binary_path), "list", "-a", "-d", str(test_file)],
