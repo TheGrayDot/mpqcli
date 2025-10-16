@@ -1,10 +1,9 @@
 #include <algorithm>
-#include <cctype>
 #include <filesystem>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <vector>
+#include <map>
 #include <ctime>
 
 #ifdef _WIN32
@@ -15,7 +14,6 @@
 #include <StormLib.h>
 
 #include "helpers.h"
-#include "mpq.h"
 
 namespace fs = std::filesystem;
 
@@ -36,22 +34,55 @@ std::string FileTimeToLsTime(int64_t fileTime) {
     return std::string(buf);
 }
 
+namespace {
+    // Files in MPQs have locales with which they are associated.
+    // Multiple files can have the same file name if they have different locales.
+    // This function maps locales to language names.
+    //
+    // The mappings are from the Windows Language Code Identifier (LCID).
+    // They can be found, for example, here:
+    // https://winprotocoldoc.z19.web.core.windows.net/MS-LCID/%5bMS-LCID%5d.pdf
+
+    // Define a bidirectional map for locale-language mappings
+    const std::map<uint16_t, std::string> localeToLangMap = {
+            {0x000, "enUS"},  // Default - English (US)
+            {0x409, "enUS"},  // English (US)
+            {0x404, "zhTW"},  // Chinese (Taiwan)
+            {0x405, "csCZ"},  // Czech
+            {0x407, "deDE"},  // German
+            {0x40a, "esES"},  // Spanish (Spain)
+            {0x40c, "frFR"},  // French
+            {0x410, "itIT"},  // Italian
+            {0x411, "jaJP"},  // Japanese
+            {0x412, "koKR"},  // Korean
+            {0x415, "plPL"},  // Polish
+            {0x416, "ptPT"},  // Portuguese (Portugal)
+            {0x419, "ruRU"},  // Russian
+            {0x804, "zhCN"},  // Chinese (Simplified)
+            {0x809, "enGB"},  // English (UK)
+            {0x80A, "esMX"}   // Spanish (Mexico)
+    };
+
+    // Create a reverse map for language to locale lookups
+    const std::map<std::string, uint16_t> langToLocaleMap = []() {
+        std::map<std::string, uint16_t> reverseMap;
+        for (const auto& [locale, lang] : localeToLangMap) {
+            if (locale != 0x000) { // Skip the default entry to avoid duplication
+                reverseMap[lang] = locale;
+            }
+        }
+        return reverseMap;
+    }();
+}
+
 std::string LocaleToLang(uint16_t locale) {
-    switch (locale) {
-        case 0:  return "enUS";     // English (US/GB)
-        case 1:  return "koKR";     // Korean
-        case 2:  return "frFR";     // French
-        case 3:  return "deDE";     // German
-        case 4:  return "zhCN";     // Chinese (Simplified)
-        case 5:  return "zhTW";     // Chinese (Taiwan)
-        case 6:  return "esES";     // Spanish (Spain)
-        case 7:  return "esMX";     // Spanish (Mexico)
-        case 8:  return "ruRU";     // Russian
-        case 9:  return "jaJP";     // Japanese
-        case 10: return "ptPT";     // Portuguese (Portugal)
-        case 11: return "itIT";     // Italian
-        default: return "";         // Unknown locale
-    }
+    auto it = localeToLangMap.find(locale);
+    return it != localeToLangMap.end() ? it->second : "";
+}
+
+LCID LangToLocale(const std::string& lang) {
+    auto it = langToLocaleMap.find(lang);
+    return it != langToLocaleMap.end() ? it->second : 0;
 }
 
 std::string NormalizeFilePath(const fs::path &path) {

@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
     std::string baseTarget = "default";  // all subcommands
     std::string baseFile = "default";  // add, remove, extract, read
     std::string basePath = "default"; // add
+    std::string baseLocale = "default"; // add, remove, extract, read
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     // CLI: info
@@ -83,6 +84,7 @@ int main(int argc, char **argv) {
         ->required()
         ->check(CLI::ExistingFile);
     add->add_option("-p,--path", basePath, "Path within MPQ archive");
+    add->add_option("--locale", baseLocale, "Locale to use for added file");
 
     // Subcommand: Remove
     CLI::App *remove = app.add_subcommand("remove", "Remove file from an existing MPQ archive");
@@ -91,6 +93,7 @@ int main(int argc, char **argv) {
     remove->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
+    remove->add_option("--locale", baseLocale, "Locale of file to remove");
 
     // Subcommand: List
     CLI::App *list = app.add_subcommand("list", "List files from the MPQ archive");
@@ -112,6 +115,7 @@ int main(int argc, char **argv) {
     extract->add_flag("-k,--keep", extractKeepFolderStructure, "Keep folder structure (default false)");
     extract->add_option("-l,--listfile", baseListfileName, "File listing content of an MPQ archive")
         ->check(CLI::ExistingFile);
+    extract->add_option("--locale", baseLocale, "Preferred locale for extracted file");
 
     // Subcommand: Read
     CLI::App* read = app.add_subcommand("read", "Read a file from an MPQ archive");
@@ -120,6 +124,7 @@ int main(int argc, char **argv) {
     read->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
+    read->add_option("--locale", baseLocale, "Preferred locale for read file");
 
     // Subcommand: Verify
     CLI::App *verify = app.add_subcommand("verify", "Verify the MPQ archive");
@@ -187,7 +192,8 @@ int main(int argc, char **argv) {
         // Create the MPQ archive and add files
         HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, createMpqVersion);
         if (hArchive) {
-            AddFiles(hArchive, baseTarget);
+            LCID locale = LangToLocale(baseLocale);
+            AddFiles(hArchive, baseTarget, locale);
             if (createSignArchive) {
                 SignMpqArchive(hArchive);
             }
@@ -221,7 +227,9 @@ int main(int argc, char **argv) {
             archivePath = WindowsifyFilePath(archiveFullPath.u8string());
         }
 
-        AddFile(hArchive, baseFile, archivePath);
+        LCID locale = LangToLocale(baseLocale);
+
+        AddFile(hArchive, baseFile, archivePath, locale);
         CloseMpqArchive(hArchive);
     }
 
@@ -234,7 +242,9 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        RemoveFile(hArchive, baseFile);
+        LCID locale = LangToLocale(baseLocale);
+
+        RemoveFile(hArchive, baseFile, locale);
         CloseMpqArchive(hArchive);
     }
 
@@ -266,10 +276,11 @@ int main(int argc, char **argv) {
             return 1;
         }
 
+        LCID locale = LangToLocale(baseLocale);
         if (baseFile != "default") {
-            ExtractFile(hArchive, baseOutput, baseFile, extractKeepFolderStructure);
+            ExtractFile(hArchive, baseOutput, baseFile, extractKeepFolderStructure, locale);
         } else {
-            ExtractFiles(hArchive, baseOutput, baseListfileName);
+            ExtractFiles(hArchive, baseOutput, baseListfileName, locale);
         }
     }
 
@@ -281,8 +292,9 @@ int main(int argc, char **argv) {
             return 1;
         }
 
+        LCID locale = LangToLocale(baseLocale);
         uint32_t fileSize;
-        char* fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize);
+        char* fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize, locale);
         if (fileContent == NULL) {
             return 1;
         }

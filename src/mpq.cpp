@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <map>
 #include <functional>
+#include <set>
 #include <vector>
-
 #include <StormLib.h>
 
 #include "mpq.h"
@@ -37,7 +37,8 @@ int SignMpqArchive(HANDLE hArchive) {
     return 1;
 }
 
-int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& listfileName) {
+int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& listfileName, LCID preferredLocale) {
+    SFileSetLocale(preferredLocale);
     // Check if the user provided a listfile input
     const char *listfile = (listfileName == "default") ? NULL : listfileName.c_str();
 
@@ -54,7 +55,8 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& 
             hArchive,
             output,
             findData.cFileName,
-            true  // Keep folder structure
+            true,  // Keep folder structure
+            preferredLocale
         );
         if (result != 0) {
             return result;
@@ -66,7 +68,8 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& 
     return 0;
 }
 
-int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure) {
+int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure, LCID preferredLocale) {
+    SFileSetLocale(preferredLocale);
     const char *szFileName = fileName.c_str();
     if (!SFileHasFile(hArchive, szFileName)) {
         std::cerr << "[+] Failed: File doesn't exist: " << szFileName << std::endl;
@@ -152,7 +155,7 @@ HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_
     return hMpq;
 }
 
-int AddFiles(HANDLE hArchive, const std::string& target) {
+int AddFiles(HANDLE hArchive, const std::string& target, LCID preferredLocale) {
     // We need to "clean" the target path to ensure it is a valid directory
     // and to strip any directory structure from the files we add
     fs::path targetPath = fs::path(target);
@@ -165,14 +168,15 @@ int AddFiles(HANDLE hArchive, const std::string& target) {
             // Normalise path for MPQ
             std::string archiveFilePath = WindowsifyFilePath(inputFilePath.u8string());
 
-            AddFile(hArchive, entry.path().u8string(), archiveFilePath);
+            AddFile(hArchive, entry.path().u8string(), archiveFilePath, preferredLocale);
         }
     }
     return 0;
 }
 
-int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFilePath) {
-    std::cout << "[+] Adding file: " << archiveFilePath << std::endl;
+int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFilePath, LCID locale) {
+    SFileSetLocale(locale);
+    std::cout << "[+] Adding file: " << archiveFilePath << " for locale " << locale << std::endl;
 
     // Return if file doesn't exist on disk
     if (!fs::exists(localFile)) {
@@ -181,11 +185,15 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
     }
 
     // Check if file exists in MPQ archive
-    bool hasFile = SFileHasFile(hArchive, archiveFilePath.c_str());
-    if (hasFile) {
-        std::cerr << "[!] File already exists in MPQ archive: " << archiveFilePath << " Skipping..." << std::endl;
-        return -1;
+    HANDLE hFile;
+    if (SFileOpenFileEx(hArchive, archiveFilePath.c_str(), SFILE_OPEN_FROM_MPQ, &hFile)) {
+        int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
+        if (fileLocale == locale) {
+            std::cerr << "[!] File for locale " << locale << " already exists in MPQ archive: " << archiveFilePath << " - Skipping..." << std::endl;
+            return -1;
+        }
     }
+    SFileCloseFile(hFile);
 
     // Verify that we are not exceeding maxFile size of the archive, and if we do, increase it
     int32_t numberOfFiles = GetFileInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
@@ -225,16 +233,17 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
     return 0;
 }
 
-int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath) {
-    std::cout << "[+] Removing file: " << archiveFilePath << std::endl;
+int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath, LCID locale) {
+    SFileSetLocale(locale);
+    std::cout << "[-] Removing file: " << archiveFilePath << " for locale " << locale << std::endl;
 
     if (!SFileHasFile(hArchive, archiveFilePath.c_str())) {
-        std::cerr << "[+] Failed: File doesn't exist: " << archiveFilePath << std::endl;
+        std::cerr << "[!] Failed: File doesn't exist: " << archiveFilePath << " for locale " << locale << std::endl;
         return -1;
     }
 
     if (!SFileRemoveFile(hArchive, archiveFilePath.c_str(), 0)) {
-        std::cerr << "[+] Failed: File cannot be removed: " << archiveFilePath << std::endl;
+        std::cerr << "[!] Failed: File cannot be removed: " << archiveFilePath << " for locale " << locale << std::endl;
         return -1;
     }
 
@@ -261,7 +270,8 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
         "(attributes)"
     };
 
-    // Loop through all files in MPQ archive
+    std::set<std::string> seenFileNames; // Used to prevent printing the same file name multiple times
+    // Loop through all files in the MPQ archive
     do {
         // Skip special files unless user wants to list all (like ls -a)
         if (!listAll && std::find(specialFiles.begin(), specialFiles.end(), findData.cFileName) != specialFiles.end()) {
@@ -277,20 +287,55 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
                 std::cerr << "[+] Failed to open file: " << findData.cFileName << std::endl;
                 continue; // Skip to the next file
             }
-
-            int32_t fileSize = GetFileInfo<int32_t>(hFile, SFileInfoFileSize);
-            int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
-            std::string fileLocaleStr = LocaleToLang(fileLocale);
-            int64_t fileTime = GetFileInfo<int64_t>(hFile, SFileInfoFileTime);
-            std::string fileTimeStr = FileTimeToLsTime(fileTime);
-
-            // Print the file details in a formatted way
-            std::cout << std::setw(11) << fileSize << " "  // 4GB max size is 10 characters
-                      << std::setw(5) << fileLocaleStr << " "  // Locale is max 4 characters
-                      << std::setw(18) << fileTimeStr << " "  // File time is formatted as "MMM DD YYYY HH:MM"
-                      << findData.cFileName << std::endl;
-
             SFileCloseFile(hFile);
+
+            if (seenFileNames.find(findData.cFileName) != seenFileNames.end()) {
+                // Filename has been seen before, and thus printed before. Skip over it.
+                continue;
+            }
+            seenFileNames.insert(findData.cFileName);
+
+
+            // Multiple files can be stored with identical filenames under different locales.
+            // Loop over all locales and print the file details for each locale.
+            DWORD maxLocales = 32; // This will be updated in the call to SFileEnumLocales
+            LCID * fileLocales = (LCID *)malloc(maxLocales * sizeof(LCID));
+
+            if (fileLocales == NULL) {
+                std::cerr << "[!] Unable to allocate memory for locales for file: " << findData.cFileName << std::endl;
+                continue;
+            }
+            DWORD result = SFileEnumLocales(hArchive, findData.cFileName, fileLocales, &maxLocales, 0);
+
+            if (result == ERROR_INSUFFICIENT_BUFFER) {
+                std::cerr << "[!] There are more than " << maxLocales << " locales for the file: " << findData.cFileName <<
+                          ". Will only list the " << maxLocales << " first files." << std::endl;
+            }
+
+            // Loop through all found locales
+            for (DWORD i = 0; i < maxLocales; i++) {
+                LCID locale = fileLocales[i];
+                SFileSetLocale(locale);
+                if (!SFileOpenFileEx(hArchive, findData.cFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
+                    std::cerr << "[!] Failed to open file: " << findData.cFileName << std::endl;
+                    continue; // Skip to the next file
+                }
+
+                int32_t fileSize = GetFileInfo<int32_t>(hFile, SFileInfoFileSize);
+                int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
+                std::string fileLocaleStr = LocaleToLang(fileLocale);
+                int64_t fileTime = GetFileInfo<int64_t>(hFile, SFileInfoFileTime);
+                std::string fileTimeStr = FileTimeToLsTime(fileTime);
+
+                // Print the file details in a formatted way
+                std::cout << std::setw(11) << fileSize << " "      // 4GB max size is 10 characters
+                          << std::setw(5)  << fileLocaleStr << " " // Locale is max 4 characters
+                          << std::setw(19) << fileTimeStr << "  "  // File time is formatted as "YYYY-MM-DD HH:MM:SS"
+                          << findData.cFileName << std::endl;
+                SFileCloseFile(hFile);
+            }
+            SFileSetLocale(defaultLocale); // Reset locale to default after changing it
+            free(fileLocales);
         } else {
             // Print just the filename (like default ls command output)
             std::cout << findData.cFileName << std::endl;
@@ -301,7 +346,8 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
     return 0;
 }
 
-char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) {
+char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize, LCID preferredLocale) {
+    SFileSetLocale(preferredLocale);
     if (!SFileHasFile(hArchive, szFileName)) {
         std::cerr << "[+] Failed: File doesn't exist: " << szFileName << std::endl;
         return NULL;
@@ -435,7 +481,7 @@ int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
     } else if (signatureType == SIGNATURE_TYPE_WEAK) {
         const char* szFileName = "(signature)";
         uint32_t fileSize;
-        char* fileContent = ReadFile(hArchive, szFileName, &fileSize);
+        char* fileContent = ReadFile(hArchive, szFileName, &fileSize, defaultLocale);
 
         if (fileContent == NULL) {
             std::cerr << "[+] Failed to read weak signature file." << std::endl;

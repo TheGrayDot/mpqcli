@@ -8,6 +8,7 @@ namespace fs = std::filesystem;
 
 std::string FileTimeToLsTime(int64_t fileTime);
 std::string LocaleToLang(uint16_t locale);
+LCID LangToLocale(const std::string &lang);
 std::string NormalizeFilePath(const fs::path &path);
 std::string WindowsifyFilePath(const fs::path &path);
 int32_t CalculateMpqMaxFileValue(const std::string &directory);
