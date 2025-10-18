@@ -171,7 +171,7 @@ int AddFiles(HANDLE hArchive, const std::string& target) {
     return 0;
 }
 
-int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFilePath) {
+int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath) {
     std::cout << "[+] Adding file: " << archiveFilePath << std::endl;
 
     // Return if file doesn't exist on disk

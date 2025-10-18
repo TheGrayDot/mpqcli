@@ -149,15 +149,25 @@ mpqcli create --version 1 --sign <target_directory>
 Add a local file to an already existing MPQ archive.
 
 ```
-echo "For The Horde!" > fth.txt
-mpqcli add fth.txt wow-patch.mpq
+$ echo "For The Horde" > fth.txt
+$ mpqcli add fth.txt wow-patch.mpq
+[+] Adding file: fth.txt
 ```
 
-Alternatively, you can add a file to a specific subdirectory using the `-p` or `--path` argument.
+Alternatively, you can add a file under a specific file name using the `--filename` argument.
 
 ```
-echo "For The Alliance!" > fta.txt
-mpqcli add fta.txt wow-patch.mpq --path <path/in/archive>
+$ echo "For The Alliance" > fta.txt
+$ mpqcli add fta.txt wow-patch.mpq --filename "texts\\alliance.txt"
+[+] Adding file: texts\alliance.txt
+```
+
+Alternatively, you can add a file to a specific subdirectory using the `--dir` argument.
+
+```
+$ echo "For The Swarm" > fts.txt
+$ mpqcli add fts.txt wow-patch.mpq --dir texts
+[+] Adding file: texts\fts.txt
 ```
 
 ### Remove a file from an existing archive
