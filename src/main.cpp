@@ -212,7 +212,7 @@ int main(int argc, char **argv) {
         // Path to file on disk
         fs::path filePath = fs::path(baseFile);
 
-        std::string archivePath = filePath; // Default: use the filename as path, saves file to root of MPQ
+        std::string archivePath = filePath.filename().u8string(); // Default: use the filename as path, saves file to root of MPQ
         if (baseFilename != "default" && baseDir != "default") {
             // Return error since providing both arguments makes no sense and is a user error
             std::cerr << "[!] Cannot specify both --filename and --dir." << std::endl;
@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
         } else if (baseFilename != "default") { // Optional: specified filename inside archive
             archivePath = fs::path(baseFilename);
         } else if (baseDir != "default") { // Optional: specified directory inside archive
-            archivePath = fs::path(baseDir) / filePath.filename().u8string();
+            archivePath = fs::path(baseDir) / archivePath;
         }
 
         // Normalise path for MPQ
