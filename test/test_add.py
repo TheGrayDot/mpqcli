@@ -89,12 +89,12 @@ def test_add_file_to_mpq_archive(binary_path, generate_test_files):
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
 
 
-def test_add_file_with_filename_and_dir_to_mpq_archive(binary_path, generate_test_files):
+def test_add_file_with_nameinarchive_and_dirinarchive_to_mpq_archive(binary_path, generate_test_files):
     """
-    Test MPQ file addition with filename and dir.
+    Test MPQ file addition with name-in-archive and dir-in-archive arguments.
 
     This test checks:
-    - If the application correctly handles adding a file to an MPQ archive using the filename and dir arguments.
+    - If the application correctly handles adding a file to an MPQ archive using the name-in-archive and dir-in-archive arguments.
     """
     _ = generate_test_files
     script_dir = Path(__file__).parent
@@ -111,7 +111,7 @@ def test_add_file_with_filename_and_dir_to_mpq_archive(binary_path, generate_tes
 
 
     result = subprocess.run(
-        [str(binary_path), "add", str(test_file0), str(target_file), "--dir", "directory"],
+        [str(binary_path), "add", str(test_file0), str(target_file), "--dir-in-archive", "directory"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
@@ -119,7 +119,7 @@ def test_add_file_with_filename_and_dir_to_mpq_archive(binary_path, generate_tes
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
 
     result = subprocess.run(
-        [str(binary_path), "add", str(test_file1), str(target_file), "--filename", "important\\message.txt"],
+        [str(binary_path), "add", str(test_file1), str(target_file), "--name-in-archive", "important\\message.txt"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True

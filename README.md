@@ -154,19 +154,19 @@ $ mpqcli add fth.txt wow-patch.mpq
 [+] Adding file: fth.txt
 ```
 
-Alternatively, you can add a file under a specific file name using the `--filename` argument.
+Alternatively, you can add a file under a specific file name using the `--name-in-archive` argument.
 
 ```
 $ echo "For The Alliance" > fta.txt
-$ mpqcli add fta.txt wow-patch.mpq --filename "texts\\alliance.txt"
+$ mpqcli add fta.txt wow-patch.mpq --name-in-archive "texts\\alliance.txt"
 [+] Adding file: texts\alliance.txt
 ```
 
-Alternatively, you can add a file to a specific subdirectory using the `--dir` argument.
+Alternatively, you can add a file to a specific subdirectory using the `--dir-in-archive` argument.
 
 ```
 $ echo "For The Swarm" > fts.txt
-$ mpqcli add fts.txt wow-patch.mpq --dir texts
+$ mpqcli add fts.txt wow-patch.mpq --dir-in-archive texts
 [+] Adding file: texts\fts.txt
 ```
 

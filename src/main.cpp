@@ -24,8 +24,8 @@ int main(int argc, char **argv) {
     // These are reused in multiple subcommands
     std::string baseTarget = "default";  // all subcommands
     std::string baseFile = "default";  // add, remove, extract, read
-    std::string baseDir = "default"; // add
-    std::string baseFilename = "default"; // add
+    std::string baseDirInArchive = "default"; // add
+    std::string baseNameInArchive = "default"; // add
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     // CLI: info
@@ -85,8 +85,8 @@ int main(int argc, char **argv) {
     add->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
-    add->add_option("--dir", baseDir, "Directory to put file inside within MPQ archive");
-    add->add_option("--filename", baseFilename, "Filename inside MPQ archive");
+    add->add_option("--dir-in-archive", baseDirInArchive, "Directory to put file inside within MPQ archive");
+    add->add_option("--name-in-archive", baseNameInArchive, "Filename inside MPQ archive");
     add->add_flag("--overwrite", addOverwrite, "Overwrite file if it already is in MPQ archive");
 
     // Subcommand: Remove
@@ -216,17 +216,17 @@ int main(int argc, char **argv) {
         fs::path filePath = fs::path(baseFile);
 
         std::string archivePath = filePath.filename().u8string(); // Default: use the filename as path, saves file to root of MPQ
-        if (baseFilename != "default" && baseDir != "default") {
+        if (baseNameInArchive != "default" && baseDirInArchive != "default") {
             // Return error since providing both arguments makes no sense and is a user error
             std::cerr << "[!] Cannot specify both --filename and --dir." << std::endl;
             return 1;
 
-        } else if (baseFilename != "default") { // Optional: specified filename inside archive
-            filePath = fs::path(baseFilename);
+        } else if (baseNameInArchive != "default") { // Optional: specified filename inside archive
+            filePath = fs::path(baseNameInArchive);
             archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
 
-        } else if (baseDir != "default") { // Optional: specified directory inside archive
-            filePath = fs::path(baseDir) / archivePath;
+        } else if (baseDirInArchive != "default") { // Optional: specified directory inside archive
+            filePath = fs::path(baseDirInArchive) / archivePath;
             archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
         }
 
