@@ -29,9 +29,11 @@ int main(int argc, char **argv) {
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     // CLI: info
-    std::string infoProperty = "default";    
+    std::string infoProperty = "default";
     // CLI: extract
     bool extractKeepFolderStructure = false;
+    // CLI: add
+    bool addOverwrite = false;
     // CLI: create
     bool createSignArchive = false;
     int32_t createMpqVersion = 1;
@@ -85,6 +87,7 @@ int main(int argc, char **argv) {
         ->check(CLI::ExistingFile);
     add->add_option("--dir", baseDir, "Directory to put file inside within MPQ archive");
     add->add_option("--filename", baseFilename, "Filename inside MPQ archive");
+    add->add_flag("--overwrite", addOverwrite, "Overwrite file if it already is in MPQ archive");
 
     // Subcommand: Remove
     CLI::App *remove = app.add_subcommand("remove", "Remove file from an existing MPQ archive");
@@ -226,7 +229,7 @@ int main(int argc, char **argv) {
         // Normalise path for MPQ
         archivePath = WindowsifyFilePath(archivePath);
 
-        AddFile(hArchive, baseFile, archivePath);
+        AddFile(hArchive, baseFile, archivePath, addOverwrite);
         CloseMpqArchive(hArchive);
     }
 
