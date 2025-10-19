@@ -170,6 +170,23 @@ $ mpqcli add fts.txt wow-patch.mpq --dir texts
 [+] Adding file: texts\fts.txt
 ```
 
+To overwrite a file in an MPQ archive, set the `--overwrite` flag:
+
+```
+$ echo "For The Horde" > allegiance.txt
+$ mpqcli add allegiance.txt wow-patch.mpq
+[+] Adding file: allegiance.txt
+
+$ echo "For The Alliance" > allegiance.txt
+$ mpqcli add allegiance.txt wow-patch.mpq
+[+] Adding file: allegiance.txt
+[!] File already exists in MPQ archive: allegiance.txt. Skipping...
+
+$ mpqcli add allegiance.txt wow-patch.mpq --overwrite
+[+] Adding file: allegiance.txt
+[*] File already exists in MPQ archive: allegiance.txt. Overwriting...
+```
+
 ### Remove a file from an existing archive
 
 Remove a file from an existing MPQ archive.
