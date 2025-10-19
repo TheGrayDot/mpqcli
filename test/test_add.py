@@ -246,6 +246,49 @@ def test_add_existing_file_with_overwrite_should_succeed(binary_path, generate_t
     verify_file_in_mpq_has_content(binary_path, target_file, "cats.txt", { "This file is suddenly about dogs." })
 
 
+def test_add_nonexisting_file_with_overwrite_should_succeed(binary_path, generate_test_files):
+    """
+    Test adding a non-existing file to MPQ archive with the overwrite flag.
+
+    This test checks:
+    - If the application correctly adds a non-existing file to an MPQ archive with the overwrite flag set.
+    """
+    _ = generate_test_files
+    script_dir = Path(__file__).parent
+    target_file = script_dir / "data" / "files.mpq"
+
+    # Start by creating an MPQ archive for this test
+    create_mpq_archive_for_test(binary_path, script_dir)
+
+
+    # Create new test files on the fly
+    test_file = script_dir / "data" / "test.txt"
+    test_file.write_text("This file is newly added.")
+
+    result = subprocess.run(
+        [str(binary_path), "add", str(test_file), str(target_file), "--overwrite"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    output_lines = set(result.stdout.splitlines())
+    expected_stdout_output = {
+        "[+] Adding file: test.txt",
+    }
+    assert output_lines == expected_stdout_output, f"Unexpected output: {output_lines}"
+
+    output_lines = set(result.stderr.splitlines())
+    expected_stderr_output = set()
+    assert output_lines == expected_stderr_output, f"Unexpected output: {output_lines}"
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+
+
+    # Verify that file has the expected content
+    verify_file_in_mpq_has_content(binary_path, target_file, "test.txt", { "This file is newly added." })
+
+
 def create_mpq_archive_for_test(binary_path, script_dir):
     target_dir = script_dir / "data" / "files"
     target_file = target_dir.with_suffix(".mpq")
