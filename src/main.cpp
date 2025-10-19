@@ -220,14 +220,15 @@ int main(int argc, char **argv) {
             // Return error since providing both arguments makes no sense and is a user error
             std::cerr << "[!] Cannot specify both --filename and --dir." << std::endl;
             return 1;
-        } else if (baseFilename != "default") { // Optional: specified filename inside archive
-            archivePath = fs::path(baseFilename);
-        } else if (baseDir != "default") { // Optional: specified directory inside archive
-            archivePath = fs::path(baseDir) / archivePath;
-        }
 
-        // Normalise path for MPQ
-        archivePath = WindowsifyFilePath(archivePath);
+        } else if (baseFilename != "default") { // Optional: specified filename inside archive
+            filePath = fs::path(baseFilename);
+            archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
+
+        } else if (baseDir != "default") { // Optional: specified directory inside archive
+            filePath = fs::path(baseDir) / archivePath;
+            archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
+        }
 
         AddFile(hArchive, baseFile, archivePath, addOverwrite);
         CloseMpqArchive(hArchive);
