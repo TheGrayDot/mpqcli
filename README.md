@@ -179,12 +179,10 @@ $ mpqcli add allegiance.txt wow-patch.mpq
 
 $ echo "For The Alliance" > allegiance.txt
 $ mpqcli add allegiance.txt wow-patch.mpq
-[+] Adding file: allegiance.txt
 [!] File already exists in MPQ archive: allegiance.txt. Skipping...
 
 $ mpqcli add allegiance.txt wow-patch.mpq --overwrite
-[+] Adding file: allegiance.txt
-[*] File already exists in MPQ archive: allegiance.txt. Overwriting...
+[+] File already exists in MPQ archive: allegiance.txt. Overwriting...
 ```
 
 ### Remove a file from an existing archive

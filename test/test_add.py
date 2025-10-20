@@ -12,7 +12,7 @@ def test_add_target_mpq_does_not_exist(binary_path, generate_test_files):
     _ = generate_test_files
     script_dir = Path(__file__).parent
     target_dir = script_dir / "does" / "not" / "exist"
-    target_file = script_dir / "data" / "files" / "cats.txt" 
+    target_file = script_dir / "data" / "files" / "cats.txt"
 
     result = subprocess.run(
         [str(binary_path), "add", str(target_file), str(target_dir)],
@@ -181,10 +181,7 @@ def test_add_existing_file_without_overwrite_should_fail(binary_path, generate_t
     )
 
     output_lines = set(result.stdout.splitlines())
-    expected_stdout_output = {
-        "[+] Adding file: cats.txt",
-    }
-    assert output_lines == expected_stdout_output, f"Unexpected output: {output_lines}"
+    assert output_lines == set(), f"Unexpected output: {output_lines}"
 
     output_lines = set(result.stderr.splitlines())
     expected_stderr_output = {
@@ -230,8 +227,7 @@ def test_add_existing_file_with_overwrite_should_succeed(binary_path, generate_t
 
     output_lines = set(result.stdout.splitlines())
     expected_stdout_output = {
-        "[+] Adding file: cats.txt",
-        "[*] File already exists in MPQ archive: cats.txt. Overwriting...",
+        "[+] File already exists in MPQ archive: cats.txt. Overwriting...",
     }
     assert output_lines == expected_stdout_output, f"Unexpected output: {output_lines}"
 

@@ -172,8 +172,6 @@ int AddFiles(HANDLE hArchive, const std::string& target) {
 }
 
 int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, bool overwrite) {
-    std::cout << "[+] Adding file: " << archiveFilePath << std::endl;
-
     // Return if file doesn't exist on disk
     if (!fs::exists(localFile)) {
         std::cerr << "[!] File doesn't exist on disk: " << localFile << std::endl;
@@ -186,7 +184,9 @@ int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archi
         std::cerr << "[!] File already exists in MPQ archive: " << archiveFilePath << ". Skipping..." << std::endl;
         return -1;
     } else if (hasFile) {
-        std::cout << "[*] File already exists in MPQ archive: " << archiveFilePath << ". Overwriting..." << std::endl;
+        std::cout << "[+] File already exists in MPQ archive: " << archiveFilePath << ". Overwriting..." << std::endl;
+    } else {
+        std::cout << "[+] Adding file: " << archiveFilePath << std::endl;
     }
 
     // Verify that we are not exceeding maxFile size of the archive, and if we do, increase it
