@@ -111,6 +111,14 @@ def test_add_file_with_nameinarchive_and_dirinarchive_to_mpq_archive(binary_path
 
 
     result = subprocess.run(
+        [str(binary_path), "add", str(test_file0), str(target_file), "--dir-in-archive", "directory", "--name-in-archive", "important.txt"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
+
+    result = subprocess.run(
         [str(binary_path), "add", str(test_file0), str(target_file), "--dir-in-archive", "directory"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
