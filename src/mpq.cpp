@@ -15,7 +15,7 @@ namespace fs = std::filesystem;
 
 int OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags) {
     if (!SFileOpenArchive(filename.c_str(), 0, flags, hArchive)) {
-        std::cerr << "[+] Failed to open: " << filename << std::endl;
+        std::cerr << "[!] Failed to open: " << filename << std::endl;
         return 0;
     }
     return 1;
@@ -23,7 +23,7 @@ int OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags)
 
 int CloseMpqArchive(HANDLE hArchive) {
     if (!SFileCloseArchive(hArchive)) {
-        std::cerr << "[+] Failed to close MPQ archive." << std::endl;
+        std::cerr << "[!] Failed to close MPQ archive." << std::endl;
         return 0;
     }
     return 1;
@@ -31,7 +31,7 @@ int CloseMpqArchive(HANDLE hArchive) {
 
 int SignMpqArchive(HANDLE hArchive) {
     if (!SFileSignArchive(hArchive, SIGNATURE_TYPE_WEAK)) {
-        std::cerr << "[+] Failed to sign MPQ archive." << std::endl;
+        std::cerr << "[!] Failed to sign MPQ archive." << std::endl;
         return 0;
     }
     return 1;
@@ -44,7 +44,7 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& 
     SFILE_FIND_DATA findData;
     HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, listfile);
     if (findHandle == NULL) {
-        std::cerr << "[+] Failed to find first file in MPQ archive." << std::endl;
+        std::cerr << "[!] Failed to find first file in MPQ archive." << std::endl;
         SFileCloseArchive(hArchive);
         return -1;
     }
@@ -69,13 +69,13 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& 
 int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure) {
     const char *szFileName = fileName.c_str();
     if (!SFileHasFile(hArchive, szFileName)) {
-        std::cerr << "[+] Failed: File doesn't exist: " << szFileName << std::endl;
+        std::cerr << "[!] Failed: File doesn't exist: " << szFileName << std::endl;
         return -1;
     }
 
     HANDLE hFile;
     if (!SFileOpenFileEx(hArchive, szFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
-        std::cerr << "[+] Failed: File cannot be opened: " << szFileName << std::endl;
+        std::cerr << "[!] Failed: File cannot be opened: " << szFileName << std::endl;
         return -1;
     }
 
@@ -100,10 +100,10 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
     std::filesystem::create_directories(outputFilePathName.parent_path());
 
     if (SFileExtractFile(hArchive, szFileName, outputFileName.c_str(), 0)) {
-        std::cout << "[+] Extracted: " << fileNameString << std::endl;
+        std::cout << "[*] Extracted: " << fileNameString << std::endl;
     } else {
         int32_t error = SErrGetLastError();
-        std::cerr << "[+] Failed: " << "(" << error << ") " << szFileName << std::endl;
+        std::cerr << "[!] Failed: " << "(" << error << ") " << szFileName << std::endl;
         return error;
     }
 
@@ -113,7 +113,7 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
 HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_t mpqVersion) {
     // Check if file already exists
     if (fs::exists(outputArchiveName)) {
-        std::cerr << "[+] File already exists: " << outputArchiveName << " Exiting..." << std::endl;
+        std::cerr << "[!] File already exists: " << outputArchiveName << " Exiting..." << std::endl;
         return NULL;
     }
 
@@ -143,9 +143,9 @@ HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_
     );
 
     if (!result) {
-        std::cerr << "[+] Failed to create MPQ archive: " << outputArchiveName << std::endl;
+        std::cerr << "[!] Failed to create MPQ archive: " << outputArchiveName << std::endl;
         int32_t error = SErrGetLastError();
-        std::cout << "[+] Error: " << error << std::endl;
+        std::cout << "[!] Error: " << error << std::endl;
         return NULL;
     }
 
@@ -226,15 +226,15 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
 }
 
 int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath) {
-    std::cout << "[+] Removing file: " << archiveFilePath << std::endl;
+    std::cout << "[-] Removing file: " << archiveFilePath << std::endl;
 
     if (!SFileHasFile(hArchive, archiveFilePath.c_str())) {
-        std::cerr << "[+] Failed: File doesn't exist: " << archiveFilePath << std::endl;
+        std::cerr << "[!] Failed: File doesn't exist: " << archiveFilePath << std::endl;
         return -1;
     }
 
     if (!SFileRemoveFile(hArchive, archiveFilePath.c_str(), 0)) {
-        std::cerr << "[+] Failed: File cannot be removed: " << archiveFilePath << std::endl;
+        std::cerr << "[!] Failed: File cannot be removed: " << archiveFilePath << std::endl;
         return -1;
     }
 
@@ -248,7 +248,7 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
     SFILE_FIND_DATA findData;
     HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, listfile);
     if (findHandle == NULL) {
-        std::cerr << "[+] Failed to find first file in MPQ archive." << std::endl;
+        std::cerr << "[!] Failed to find first file in MPQ archive." << std::endl;
         SFileCloseArchive(hArchive);
         return -1;
     }
@@ -274,7 +274,7 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
             // Use our custom GetFileInfo function
             HANDLE hFile;
             if (!SFileOpenFileEx(hArchive, findData.cFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
-                std::cerr << "[+] Failed to open file: " << findData.cFileName << std::endl;
+                std::cerr << "[!] Failed to open file: " << findData.cFileName << std::endl;
                 continue; // Skip to the next file
             }
 
@@ -303,19 +303,19 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
 
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) {
     if (!SFileHasFile(hArchive, szFileName)) {
-        std::cerr << "[+] Failed: File doesn't exist: " << szFileName << std::endl;
+        std::cerr << "[!] Failed: File doesn't exist: " << szFileName << std::endl;
         return NULL;
     }
 
     HANDLE hFile;
     if (!SFileOpenFileEx(hArchive, szFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
-        std::cerr << "[+] Failed: File cannot be opened: " << szFileName << std::endl;
+        std::cerr << "[!] Failed: File cannot be opened: " << szFileName << std::endl;
         return NULL;
     }
 
     *fileSize = SFileGetFileSize(hFile, NULL);
     if (*fileSize == SFILE_INVALID_SIZE) {
-        std::cerr << "[+] Failed: Invalid file size for: " << szFileName << std::endl;
+        std::cerr << "[!] Failed: Invalid file size for: " << szFileName << std::endl;
         SFileCloseFile(hFile);
         return NULL;
     }
@@ -323,7 +323,7 @@ char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) 
     char* fileContent = new char[*fileSize];
     DWORD dwBytesRead;
     if (!SFileReadFile(hFile, fileContent, *fileSize, &dwBytesRead, NULL)) {
-        std::cerr << "[+] Failed: Cannot read file contents for: " << szFileName << std::endl;
+        std::cerr << "[!] Failed: Cannot read file contents for: " << szFileName << std::endl;
         delete[] fileContent;
         SFileCloseFile(hFile);
         return NULL;
@@ -413,7 +413,7 @@ T GetFileInfo(HANDLE hFile, SFileInfoClass infoClass) {
     T value{};
     if (!SFileGetFileInfo(hFile, infoClass, &value, sizeof(T), NULL)) {
         int32_t error = SErrGetLastError();
-        // std::cerr << "[+] GetFileInfo failed (Error: " << error << ")" << std::endl;
+        // std::cerr << "[!] GetFileInfo failed (Error: " << error << ")" << std::endl;
         return T{}; // Return default value for the type
     }
     return value;
@@ -438,7 +438,7 @@ int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
         char* fileContent = ReadFile(hArchive, szFileName, &fileSize);
 
         if (fileContent == NULL) {
-            std::cerr << "[+] Failed to read weak signature file." << std::endl;
+            std::cerr << "[!] Failed to read weak signature file." << std::endl;
             return -1;
         }
         signatureContent.resize(fileSize);

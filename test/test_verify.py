@@ -42,7 +42,7 @@ def test_verify_weak_signature(binary_path):
     test_file = script_dir / "data" / "mpq_with_weak_signature.mpq"
 
     expected_output = {
-        "[+] Verify success",
+        "[*] Verify success",
     }
 
     result = subprocess.run(

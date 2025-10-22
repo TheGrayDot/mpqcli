@@ -54,7 +54,7 @@ def test_extract_mpq_default_options(binary_path, generate_test_files):
     output_lines = set(result.stdout.splitlines())
 
     # Create expected_lines set based on expected output with prefix
-    expected_lines = {f"[+] Extracted: {line}" for line in expected_output}
+    expected_lines = {f"[*] Extracted: {line}" for line in expected_output}
 
     # Create output_file path without suffix (default extract behavior is MPQ without extension)
     output_file = test_file.with_suffix("")
@@ -100,7 +100,7 @@ def test_extract_mpq_output_directory_specified(binary_path, generate_test_files
     output_lines = set(result.stdout.splitlines())
 
     # Create expected_lines set based on expected output with prefix
-    expected_lines = {f"[+] Extracted: {line}" for line in expected_output}
+    expected_lines = {f"[*] Extracted: {line}" for line in expected_output}
 
     # Create output_file path without suffix (default extract behavior is MPQ without extension)
     output_file = output_dir.with_suffix("")
@@ -143,7 +143,7 @@ def test_extract_file_from_mpq_output_directory_specified(binary_path, generate_
     output_lines = set(result.stdout.splitlines())
 
     # Create expected_lines set based on expected output with prefix
-    expected_lines = {f"[+] Extracted: {line}" for line in expected_output}
+    expected_lines = {f"[*] Extracted: {line}" for line in expected_output}
 
     # Create output_file path without suffix (default extract behavior is MPQ without extension)
     output_file = output_dir.with_suffix("")

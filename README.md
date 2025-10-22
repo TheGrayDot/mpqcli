@@ -212,13 +212,13 @@ The output will be saved in a folder with the same name as the target MPQ file, 
 
 ```
 mpqcli extract wow-patch.mpq
-[+] Extracted: BM_COKETENT01.BLP
-[+] Extracted: Blizzard_CraftUI.xml
-[+] Extracted: CreatureSoundData.dbc
+[*] Extracted: BM_COKETENT01.BLP
+[*] Extracted: Blizzard_CraftUI.xml
+[*] Extracted: CreatureSoundData.dbc
 ...
-[+] Extracted: Blizzard_CraftUI.lua
-[+] Extracted: 30ee7bd3959906e358eff01332cf045e.blp
-[+] Extracted: realmlist.wtf
+[*] Extracted: Blizzard_CraftUI.lua
+[*] Extracted: 30ee7bd3959906e358eff01332cf045e.blp
+[*] Extracted: realmlist.wtf
 ```
 
 ### Extract all files to a target directory
@@ -286,7 +286,7 @@ Check the digital signature of an MPQ archive, by verifying the signature in the
 
 ```
 mpqcli verify wow-patch.mpq
-[+] Verify success
+[*] Verify success
 ```
 
 If verification passes, a zero (`0`) exit status will be returned. This can be helpful to verify a large number of MPQ archives without the need to review the status message that is printed out.
@@ -314,29 +314,29 @@ The following command lists all files in an MPQ archive, and each filename is fi
 
 ```
 mpqcli list wow-patch.mpq | grep -i ".exe" | xargs -I@ mpqcli extract -f "@" wow-patch.mpq
-[+] Extracted: Launcher.exe
-[+] Extracted: BackgroundDownloader.exe
-[+] Extracted: WoW.exe
-[+] Extracted: BNUpdate.exe
-[+] Extracted: Repair.exe
-[+] Extracted: WowError.exe
+[*] Extracted: Launcher.exe
+[*] Extracted: BackgroundDownloader.exe
+[*] Extracted: WoW.exe
+[*] Extracted: BNUpdate.exe
+[*] Extracted: Repair.exe
+[*] Extracted: WowError.exe
 ```
 
 Note that directories are specified with backslashes, which need to be escaped (due to how grep and xargs handles them). The following example extracts all `dat` files in the `arr` directory from the `StarDat.mpq` archive and handles escaping via `sed`.
 
 ```
 mpqcli list -l scbw.txt StarDat.mpq | grep -i "arr\\\.*dat$" | sort | sed 's|\\|\\\\|g' | xargs -I@ mpqcli extract -f "@" -k StarDat.mpq
-arr\flingy.dat
-arr\images.dat
-arr\mapdata.dat
-arr\orders.dat
-arr\portdata.dat
-arr\sfxdata.dat
-arr\sprites.dat
-arr\techdata.dat
-arr\units.dat
-arr\upgrades.dat
-arr\weapons.dat
+[*] Extracted: arr/flingy.dat
+[*] Extracted: arr/images.dat
+[*] Extracted: arr/mapdata.dat
+[*] Extracted: arr/orders.dat
+[*] Extracted: arr/portdata.dat
+[*] Extracted: arr/sfxdata.dat
+[*] Extracted: arr/sprites.dat
+[*] Extracted: arr/techdata.dat
+[*] Extracted: arr/units.dat
+[*] Extracted: arr/upgrades.dat
+[*] Extracted: arr/weapons.dat
 ```
 
 ### Search and extract files on Windows
