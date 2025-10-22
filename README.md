@@ -189,13 +189,13 @@ Similar to the `ls` command with the `-l` and `-a` options, additional detailed 
 
 ```
 mpqcli list -d -a wow-patch.mpq 
-      88604  enUS  Mar 29 2006 12:02 BM_COKETENT01.BLP
-        243  enUS  Apr  5 2006 07:28 Blizzard_CraftUI.xml
-        388  enUS  Mar 30 2006 05:32 CreatureSoundData.dbc
+      88604  enUS 2006-03-29 02:02:37  BM_COKETENT01.BLP
+        243  enUS 2006-04-04 21:28:14  Blizzard_CraftUI.xml
+        388  enUS 2006-03-29 19:32:46  CreatureSoundData.dbc
         ...
-        184  enUS  Apr  5 2006 07:28 Blizzard_CraftUI.lua
-      44900  enUS  Mar 29 2006 12:01 30ee7bd3959906e358eff01332cf045e.blp
-         68  enUS  Apr  7 2006 10:58 realmlist.wtf
+        184  enUS 2006-04-04 21:28:14  Blizzard_CraftUI.lua
+      44900  enUS 2006-03-29 02:01:02  30ee7bd3959906e358eff01332cf045e.blp
+         68  enUS 2006-04-07 00:58:44  realmlist.wtf
 ```
 
 ### List all files with an external listfile
