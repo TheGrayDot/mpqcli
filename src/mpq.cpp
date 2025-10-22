@@ -165,15 +165,13 @@ int AddFiles(HANDLE hArchive, const std::string& target) {
             // Normalise path for MPQ
             std::string archiveFilePath = WindowsifyFilePath(inputFilePath.u8string());
 
-            AddFile(hArchive, entry.path().u8string(), archiveFilePath);
+            AddFile(hArchive, entry.path().u8string(), archiveFilePath, false);
         }
     }
     return 0;
 }
 
-int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFilePath) {
-    std::cout << "[+] Adding file: " << archiveFilePath << std::endl;
-
+int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, bool overwrite) {
     // Return if file doesn't exist on disk
     if (!fs::exists(localFile)) {
         std::cerr << "[!] File doesn't exist on disk: " << localFile << std::endl;
@@ -182,21 +180,23 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
 
     // Check if file exists in MPQ archive
     bool hasFile = SFileHasFile(hArchive, archiveFilePath.c_str());
-    if (hasFile) {
-        std::cerr << "[!] File already exists in MPQ archive: " << archiveFilePath << " Skipping..." << std::endl;
+    if (hasFile && !overwrite) {
+        std::cerr << "[!] File already exists in MPQ archive: " << archiveFilePath << ". Skipping..." << std::endl;
         return -1;
+    } else if (hasFile) {
+        std::cout << "[+] File already exists in MPQ archive: " << archiveFilePath << ". Overwriting..." << std::endl;
+    } else {
+        std::cout << "[+] Adding file: " << archiveFilePath << std::endl;
     }
 
     // Verify that we are not exceeding maxFile size of the archive, and if we do, increase it
     int32_t numberOfFiles = GetFileInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
     int32_t maxFiles = GetFileInfo<int32_t>(hArchive, SFileMpqMaxFileCount);
 
-    if (numberOfFiles + 1 > maxFiles)
-    {
+    if (numberOfFiles + 1 > maxFiles) {
         int32_t newMaxFiles = NextPowerOfTwo(numberOfFiles + 1);
         bool setMaxFileCount = SFileSetMaxFileCount(hArchive, newMaxFiles);
-        if (!setMaxFileCount)
-        {
+        if (!setMaxFileCount) {
             int32_t error = SErrGetLastError();
             std::cerr << "[!] Error: " << error << " Failed to increase new max file count to: " << newMaxFiles << std::endl;
             return -1;
@@ -206,6 +206,10 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
     // Set file attributes in MPQ archive (compression and encryption)
     DWORD dwFlags = MPQ_FILE_COMPRESS | MPQ_FILE_ENCRYPTED;
     DWORD dwCompression = MPQ_COMPRESSION_ZLIB;
+
+    if (overwrite) {
+        dwFlags += MPQ_FILE_REPLACEEXISTING;
+    }
 
     bool addedFile = SFileAddFileEx(
         hArchive,

@@ -24,13 +24,16 @@ int main(int argc, char **argv) {
     // These are reused in multiple subcommands
     std::string baseTarget = "default";  // all subcommands
     std::string baseFile = "default";  // add, remove, extract, read
-    std::string basePath = "default"; // add
+    std::string baseDirInArchive = "default"; // add
+    std::string baseNameInArchive = "default"; // add
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     // CLI: info
-    std::string infoProperty = "default";    
+    std::string infoProperty = "default";
     // CLI: extract
     bool extractKeepFolderStructure = false;
+    // CLI: add
+    bool addOverwrite = false;
     // CLI: create
     bool createSignArchive = false;
     int32_t createMpqVersion = 1;
@@ -82,7 +85,9 @@ int main(int argc, char **argv) {
     add->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
-    add->add_option("-p,--path", basePath, "Path within MPQ archive");
+    add->add_option("--dir-in-archive", baseDirInArchive, "Directory to put file inside within MPQ archive");
+    add->add_option("--name-in-archive", baseNameInArchive, "Filename inside MPQ archive");
+    add->add_flag("--overwrite", addOverwrite, "Overwrite file if it already is in MPQ archive");
 
     // Subcommand: Remove
     CLI::App *remove = app.add_subcommand("remove", "Remove file from an existing MPQ archive");
@@ -210,18 +215,22 @@ int main(int argc, char **argv) {
         // Path to file on disk
         fs::path filePath = fs::path(baseFile);
 
-        // Default: use the filename as path, saves file to root of MPQ
-        std::string archivePath = filePath.filename().u8string();
+        std::string archivePath = filePath.filename().u8string(); // Default: use the filename as path, saves file to root of MPQ
+        if (baseNameInArchive != "default" && baseDirInArchive != "default") {
+            // Return error since providing both arguments makes no sense and is a user error
+            std::cerr << "[!] Cannot specify both --name-in-archive and --dir-in-archive." << std::endl;
+            return 1;
 
-        // Optional: specified path inside archive
-        if (basePath != "default") {
-            fs::path archiveFullPath = fs::path(basePath) / filePath.filename();
+        } else if (baseNameInArchive != "default") { // Optional: specified filename inside archive
+            filePath = fs::path(baseNameInArchive);
+            archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
 
-            // Normalise path for MPQ
-            archivePath = WindowsifyFilePath(archiveFullPath.u8string());
+        } else if (baseDirInArchive != "default") { // Optional: specified directory inside archive
+            filePath = fs::path(baseDirInArchive) / archivePath;
+            archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
         }
 
-        AddFile(hArchive, baseFile, archivePath);
+        AddFile(hArchive, baseFile, archivePath, addOverwrite);
         CloseMpqArchive(hArchive);
     }
 
