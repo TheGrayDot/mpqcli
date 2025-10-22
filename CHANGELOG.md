@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.5 - 2025-10-23
+
+### Changed
+
+- Lond (detailed) list format to output ISO 8601 timestamps
+
+### Fixed
+
+- Message prefix format consistency
+
 ## 0.9.4 - 2025-10-12
 
 ### Added
