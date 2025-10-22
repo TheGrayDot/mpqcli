@@ -17,7 +17,7 @@ HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_
 int AddFiles(HANDLE hArchive, const std::string& inputPath);
 int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFilePath);
 int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath);
-int ListFiles(HANDLE hHandle, const std::string &listfileName, bool listAll, bool listDetailed);
+int ListFiles(HANDLE hHandle, const std::string &listfileName, bool listAll, bool listDetailed, std::vector<std::string>& propertiesToPrint);
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize);
 void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty);
 uint32_t VerifyMpqArchive(HANDLE hArchive);

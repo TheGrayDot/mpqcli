@@ -28,7 +28,9 @@ int main(int argc, char **argv) {
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     // CLI: info
-    std::string infoProperty = "default";    
+    std::string infoProperty = "default";
+    // CLI: list
+    std::vector<std::string> listProperties;
     // CLI: extract
     bool extractKeepFolderStructure = false;
     // CLI: create
@@ -41,13 +43,28 @@ int main(int argc, char **argv) {
     bool verifyPrintSignature = false;
 
     std::set<std::string> validInfoProperties = {
-        "format-version",
-        "header-offset",
-        "header-size",
-        "archive-size",
-        "file-count",
-        "max-files",
-        "signature-type"
+            "format-version",
+            "header-offset",
+            "header-size",
+            "archive-size",
+            "file-count",
+            "max-files",
+            "signature-type",
+    };
+    std::set<std::string> validFileListProperties = {
+            "hash-index",
+            "name-hash1",
+            "name-hash2",
+            "name-hash3",
+            "locale",
+            "file-index",
+            "byte-offset",
+            "file-time",
+            "file-size",
+            "compressed-size",
+            "flags",
+            "encryption-key",
+            "encryption-key-raw",
     };
 
     // Subcommand: Version
@@ -101,6 +118,8 @@ int main(int argc, char **argv) {
         ->check(CLI::ExistingFile);
     list->add_flag("-d,--detailed", listDetailed, "File listing with additional columns (default false)");
     list->add_flag("-a,--all", listAll, "File listing including hidden files (default true)");
+    list->add_option("-p,--property", listProperties, "Prints only specific property values")
+        ->check(CLI::IsMember(validFileListProperties));
 
     // Subcommand: Extract
     CLI::App *extract = app.add_subcommand("extract", "Extract files from the MPQ archive");
@@ -245,7 +264,7 @@ int main(int argc, char **argv) {
             std::cerr << "[!] Failed to open MPQ archive." << std::endl;
             return 1;
         }
-        ListFiles(hArchive, baseListfileName, listAll, listDetailed);
+        ListFiles(hArchive, baseListfileName, listAll, listDetailed, listProperties);
     }
 
     // Handle subcommand: Extract
