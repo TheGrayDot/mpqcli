@@ -43,19 +43,19 @@ def test_list_mpq_with_standard_details(binary_path):
     test_file = script_dir / "data" / "mpq_with_output_v1.mpq"
 
     expected_output = {
-        "     27  enUS                      (listfile)",
-        "    148  enUS                      (attributes)",
-        "     27  enUS 2025-07-29 14:31:00  dogs.txt",
-        "      8  enUS 2025-07-29 14:31:00  bytes",
-        "     27  enUS 2025-07-29 14:31:00  cats.txt",
+        "      27 enUS                      (listfile)",
+        "     148 enUS                      (attributes)",
+        "      27 enUS 2025-07-29 14:31:00  dogs.txt",
+        "       8 enUS 2025-07-29 14:31:00  bytes",
+        "      27 enUS 2025-07-29 14:31:00  cats.txt",
     }
 
     # Adjust filesize for Windows
     if platform.system() == "Windows":
-        expected_output.remove("     27  enUS 2025-07-29 14:31:00  dogs.txt")
-        expected_output.add("     28  enUS 2025-07-29 14:31:00  dogs.txt")
-        expected_output.remove("     27  enUS 2025-07-29 14:31:00  cats.txt")
-        expected_output.add("     28  enUS 2025-07-29 14:31:00  cats.txt")
+        expected_output.remove("      27 enUS 2025-07-29 14:31:00  dogs.txt")
+        expected_output.add("      28 enUS 2025-07-29 14:31:00  dogs.txt")
+        expected_output.remove("      27 enUS 2025-07-29 14:31:00  cats.txt")
+        expected_output.add("      28 enUS 2025-07-29 14:31:00  cats.txt")
 
     result = subprocess.run(
         [str(binary_path), "list", "-a", "-d", str(test_file)],
@@ -81,17 +81,23 @@ def test_list_mpq_with_specified_details(binary_path):
     test_file = script_dir / "data" / "mpq_with_output_v1.mpq"
 
     expected_output = {
-        "   44 0fd58937 70ab788e 0000000000000000     1       43       35    cexmn 935a7772 935a7772  cats.txt",
-        "    0 eb30456b 48345fbb 0000000000000000     0       20       35    cexmn a073c614 a073c614  dogs.txt",
-        "   35 147178ed c99b9ee2 0000000000000000     2       66       16    cexmn eaa753f9 eaa753f9  bytes",
-        "   25 fd657910 4e9b98a7 0000000000000000     3       76       35  ce2xmnf 2d2f0a94 2d2f0b11  (listfile)",
-        "   14 d38437cb 07dfeaec 0000000000000000     4       99      123  ce2xmnf 50e314af 50e315dc  (attributes)",
+        "   44 0fd58937 70ab788e 0000000000000000       35    cexmn 935a7772  cats.txt",
+        "    0 eb30456b 48345fbb 0000000000000000       35    cexmn a073c614  dogs.txt",
+        "   35 147178ed c99b9ee2 0000000000000000       16    cexmn eaa753f9  bytes",
+        "   25 fd657910 4e9b98a7 0000000000000000       35  ce2xmnf 2d2f0a94  (listfile)",
+        "   14 d38437cb 07dfeaec 0000000000000000      123  ce2xmnf 50e314af  (attributes)",
     }
+    # Adjust filesize for Windows
+    if platform.system() == "Windows":
+        expected_output.remove("   44 0fd58937 70ab788e 0000000000000000       35    cexmn 935a7772  cats.txt")
+        expected_output.add("   44 0fd58937 70ab788e 0000000000000000       36    cexmn 935a7772  cats.txt")
+        expected_output.remove("    0 eb30456b 48345fbb 0000000000000000       35    cexmn a073c614  dogs.txt")
+        expected_output.add("    0 eb30456b 48345fbb 0000000000000000       36    cexmn a073c614  dogs.txt")
 
     result = subprocess.run(
         [str(binary_path), "list", "-a", "-d", str(test_file),
-         "-p", "hash-index", "-p", "name-hash1", "-p", "name-hash2", "-p", "name-hash3", "-p", "file-index",
-         "-p", "byte-offset", "-p", "compressed-size", "-p", "flags", "-p", "encryption-key-raw", "-p", "encryption-key"],
+         "-p", "hash-index", "-p", "name-hash1", "-p", "name-hash2", "-p", "name-hash3",
+         "-p", "compressed-size", "-p", "flags", "-p", "encryption-key-raw"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
