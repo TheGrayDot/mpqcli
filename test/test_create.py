@@ -1,6 +1,5 @@
 import subprocess
 from pathlib import Path
-import platform
 
 
 def test_create_mpq_target_does_not_exist(binary_path, generate_test_files):
