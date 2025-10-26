@@ -3,6 +3,7 @@ import os
 import platform
 from pathlib import Path
 import urllib.request
+import subprocess
 
 import pytest
 
@@ -58,6 +59,65 @@ def generate_test_files():
         created_files.append(file_path)
 
     yield created_files
+
+
+@pytest.fixture(scope="session")
+def generate_locales_mpq_test_files(binary_path):
+    script_dir = Path(__file__).parent
+
+    data_dir = script_dir / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    locales_files_dir = data_dir / "locale_files"
+    locales_files_dir.mkdir(parents=True, exist_ok=True)
+
+    mpq_many_locales_file_name = data_dir / "mpq_with_many_locales.mpq"
+    mpq_one_locale_file_name = data_dir / "mpq_with_one_locale.mpq"
+    text_file_name = "cats.txt"
+    mpq_many_locales_file_name.unlink(missing_ok=True)
+    mpq_one_locale_file_name.unlink(missing_ok=True)
+
+    locale_files = {
+        "": "This is a file about cats.", # Default locale
+        "deDE": "Dies ist eine Datei über Katzen.",
+        "esES": "Este es un archivo sobre gatos.",
+    }
+
+    # Put all items into mpq_many_locales_file_name with their locale
+    for locale, content in locale_files.items():
+        file_path = locales_files_dir / text_file_name
+        file_path.write_text(content, newline="\n")
+
+        if locale == "": # Default locale - create a new MPQ file
+            result = subprocess.run(
+                [str(binary_path), "create", "-v", "1", "-o", str(mpq_many_locales_file_name), str(locales_files_dir)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+
+        else: # Explicit locale - add to existing MPQ file
+            result = subprocess.run(
+                [str(binary_path), "add", str(file_path), str(mpq_many_locales_file_name), "--locale", locale],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+
+    # Put the last item into mpq_one_locale_file_name with its locale
+    locale, content = list(locale_files.items())[-1]
+    file_path = locales_files_dir / text_file_name
+    file_path.write_text(content, newline="\n")
+
+    result = subprocess.run(
+        [str(binary_path), "create", "-v", "1", "-o", str(mpq_one_locale_file_name), str(locales_files_dir), "--locale", locale],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
 
 
 @pytest.fixture(scope="session")

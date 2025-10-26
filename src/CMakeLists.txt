@@ -15,6 +15,7 @@ add_executable(mpqcli
     main.cpp 
     mpq.cpp 
     helpers.cpp
+    locales.cpp
 )
 
 # Add dependencies
