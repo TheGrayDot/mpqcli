@@ -18,7 +18,7 @@ int AddFiles(HANDLE hArchive, const std::string& inputPath, LCID locale);
 int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, LCID locale);
 int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath);
 int ListFiles(HANDLE hHandle, const std::string &listfileName, bool listAll, bool listDetailed, std::vector<std::string>& propertiesToPrint);
-char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize);
+char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize, LCID preferredLocale);
 void PrintMpqInfo(HANDLE hArchive, const std::string& infoProperty);
 uint32_t VerifyMpqArchive(HANDLE hArchive);
 int32_t PrintMpqSignature(HANDLE hArchive, std::string target);
