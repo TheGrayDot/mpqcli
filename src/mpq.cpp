@@ -287,6 +287,7 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
         "(attributes)"
     };
 
+    std::set<std::string> seenFileNames; // Used to prevent printing the same file name multiple times
     // Loop through all files in the MPQ archive
     do {
         // Skip special files unless user wants to list all (like ls -a)
@@ -296,84 +297,114 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
 
         // Print the detailed (long) file listing (like ls -l)
         if (listDetailed) {
-            // We need to open the file to get detailed information
-            // Use our custom GetFileInfo function
-            HANDLE hFile;
-            if (!SFileOpenFileEx(hArchive, findData.cFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
-                std::cerr << "[!] Failed to open file: " << findData.cFileName << std::endl;
-                continue; // Skip to the next file
+            if (seenFileNames.find(findData.cFileName) != seenFileNames.end()) {
+                // Filename has been seen before, and thus printed before. Skip over it.
+                continue;
+            }
+            seenFileNames.insert(findData.cFileName);
+
+
+            // Multiple files can be stored with identical filenames under different locales.
+            // Loop over all locales and print the file details for each locale.
+            DWORD maxLocales = 32; // This will be updated in the call to SFileEnumLocales
+            LCID * fileLocales = (LCID *)malloc(maxLocales * sizeof(LCID));
+
+            if (fileLocales == NULL) {
+                std::cerr << "[!] Unable to allocate memory for locales for file: " << findData.cFileName << std::endl;
+                continue;
+            }
+            DWORD result = SFileEnumLocales(hArchive, findData.cFileName, fileLocales, &maxLocales, 0);
+
+            if (result == ERROR_INSUFFICIENT_BUFFER) {
+                std::cerr << "[!] There are more than " << maxLocales << " locales for the file: " << findData.cFileName <<
+                          ". Will only list the " << maxLocales << " first files." << std::endl;
             }
 
-            std::vector<std::pair<std::string, std::function<void()>>> propertyActions = {
-                    {"hash-index", [&]() {
-                        std::cout << std::setw(5) << GetFileInfo<int32_t>(hFile, SFileInfoHashIndex) << " " ;
-                    }},
-                    {"name-hash1", [&]() {
-                        std::cout << std::setfill('0') << std::hex << std::setw(8) <<
-                            GetFileInfo<int32_t>(hFile, SFileInfoNameHash1) <<
-                            std::setfill(' ') << std::dec << " ";
-                    }},
-                    {"name-hash2", [&]() {
-                        std::cout << std::setfill('0') << std::hex << std::setw(8) <<
-                            GetFileInfo<int32_t>(hFile, SFileInfoNameHash2) <<
-                            std::setfill(' ') << std::dec << " ";
-                    }},
-                    {"name-hash3", [&]() {
-                        std::cout << std::setfill('0') << std::hex << std::setw(16) <<
-                            GetFileInfo<int64_t>(hFile, SFileInfoNameHash3) <<
-                            std::setfill(' ') << std::dec << " ";
-                    }},
-                    {"locale", [&]() {
-                        int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
-                        std::string fileLocaleStr = LocaleToLang(fileLocale);
-                        std::cout << std::setw(4) << fileLocaleStr << " ";
-                    }},
-                    {"file-index", [&]() {
-                        std::cout << std::setw(5) << GetFileInfo<int32_t>(hFile, SFileInfoFileIndex) << " ";
-                    }},
-                    {"byte-offset", [&]() {
-                        std::cout << std::hex << std::setw(8) <<
-                            GetFileInfo<int64_t>(hFile, SFileInfoByteOffset) <<
-                            std::dec << " ";
-                    }},
-                    {"file-time", [&]() {
-                        int64_t fileTime = GetFileInfo<int64_t>(hFile, SFileInfoFileTime);
-                        std::string fileTimeStr = FileTimeToLsTime(fileTime);
-                        std::cout << std::setw(19) << fileTimeStr << " ";
-                    }},
-                    {"file-size", [&]() {
-                        std::cout << std::setw(8) << GetFileInfo<int32_t>(hFile, SFileInfoFileSize) << " ";
-                    }},
-                    {"compressed-size", [&]() {
-                        std::cout << std::setw(8) << GetFileInfo<int32_t>(hFile, SFileInfoCompressedSize) << " ";
-                    }},
-                    {"flags", [&]() {
-                        int32_t flags = GetFileInfo<int32_t>(hFile, SFileInfoFlags);
-                        std::cout << std::setw(8) << GetFlagString(flags) << " ";
-                    }},
-                    {"encryption-key", [&]() {
-                        std::cout << std::setfill('0') << std::hex << std::setw(8) <<
-                            GetFileInfo<int64_t>(hFile, SFileInfoEncryptionKey) <<
-                            std::setfill(' ') << std::dec << " ";
-                    }},
-                    {"encryption-key-raw", [&]() {
-                        std::cout << std::setfill('0') << std::hex << std::setw(8) <<
-                            GetFileInfo<int64_t>(hFile, SFileInfoEncryptionKeyRaw) <<
-                            std::setfill(' ') << std::dec << " ";
-                    }},
-            };
+            // Loop through all found locales
+            for (DWORD i = 0; i < maxLocales; i++) {
+                LCID locale = fileLocales[i];
+                SFileSetLocale(locale);
+                HANDLE hFile;
 
-            for (const auto& prop : propertiesToPrint) {
-                for (const auto &[key, action]: propertyActions) {
-                    if (prop == key) {
-                        action();  // Print property
+                // We need to open the file to get detailed information
+                // Use our custom GetFileInfo function
+                if (!SFileOpenFileEx(hArchive, findData.cFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
+                    std::cerr << "[!] Failed to open file: " << findData.cFileName << std::endl;
+                    continue; // Skip to the next file
+                }
+
+                std::vector<std::pair<std::string, std::function<void()>>> propertyActions = {
+                        {"hash-index", [&]() {
+                            std::cout << std::setw(5) << GetFileInfo<int32_t>(hFile, SFileInfoHashIndex) << " " ;
+                        }},
+                        {"name-hash1", [&]() {
+                            std::cout << std::setfill('0') << std::hex << std::setw(8) <<
+                                GetFileInfo<int32_t>(hFile, SFileInfoNameHash1) <<
+                                std::setfill(' ') << std::dec << " ";
+                        }},
+                        {"name-hash2", [&]() {
+                            std::cout << std::setfill('0') << std::hex << std::setw(8) <<
+                                GetFileInfo<int32_t>(hFile, SFileInfoNameHash2) <<
+                                std::setfill(' ') << std::dec << " ";
+                        }},
+                        {"name-hash3", [&]() {
+                            std::cout << std::setfill('0') << std::hex << std::setw(16) <<
+                                GetFileInfo<int64_t>(hFile, SFileInfoNameHash3) <<
+                                std::setfill(' ') << std::dec << " ";
+                        }},
+                        {"locale", [&]() {
+                            int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
+                            std::string fileLocaleStr = LocaleToLang(fileLocale);
+                            std::cout << std::setw(4) << fileLocaleStr << " ";
+                        }},
+                        {"file-index", [&]() {
+                            std::cout << std::setw(5) << GetFileInfo<int32_t>(hFile, SFileInfoFileIndex) << " ";
+                        }},
+                        {"byte-offset", [&]() {
+                            std::cout << std::hex << std::setw(8) <<
+                                GetFileInfo<int64_t>(hFile, SFileInfoByteOffset) <<
+                                std::dec << " ";
+                        }},
+                        {"file-time", [&]() {
+                            int64_t fileTime = GetFileInfo<int64_t>(hFile, SFileInfoFileTime);
+                            std::string fileTimeStr = FileTimeToLsTime(fileTime);
+                            std::cout << std::setw(19) << fileTimeStr << " ";
+                        }},
+                        {"file-size", [&]() {
+                            std::cout << std::setw(8) << GetFileInfo<int32_t>(hFile, SFileInfoFileSize) << " ";
+                        }},
+                        {"compressed-size", [&]() {
+                            std::cout << std::setw(8) << GetFileInfo<int32_t>(hFile, SFileInfoCompressedSize) << " ";
+                        }},
+                        {"flags", [&]() {
+                            int32_t flags = GetFileInfo<int32_t>(hFile, SFileInfoFlags);
+                            std::cout << std::setw(8) << GetFlagString(flags) << " ";
+                        }},
+                        {"encryption-key", [&]() {
+                            std::cout << std::setfill('0') << std::hex << std::setw(8) <<
+                                GetFileInfo<int64_t>(hFile, SFileInfoEncryptionKey) <<
+                                std::setfill(' ') << std::dec << " ";
+                        }},
+                        {"encryption-key-raw", [&]() {
+                            std::cout << std::setfill('0') << std::hex << std::setw(8) <<
+                                GetFileInfo<int64_t>(hFile, SFileInfoEncryptionKeyRaw) <<
+                                std::setfill(' ') << std::dec << " ";
+                        }},
+                };
+
+                for (const auto& prop : propertiesToPrint) {
+                    for (const auto &[key, action]: propertyActions) {
+                        if (prop == key) {
+                            action();  // Print property
+                        }
                     }
                 }
+
+                std::cout << " " << findData.cFileName << std::endl;
+                SFileCloseFile(hFile);
             }
-
-            std::cout << " " << findData.cFileName << std::endl;
-
-            SFileCloseFile(hFile);
+            SFileSetLocale(defaultLocale); // Reset locale to default after changing it
+            free(fileLocales);
         } else {
             // Print just the filename (like default ls command output)
             std::cout << findData.cFileName << std::endl;
