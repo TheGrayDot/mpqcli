@@ -38,7 +38,8 @@ int SignMpqArchive(HANDLE hArchive) {
     return 1;
 }
 
-int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& listfileName) {
+int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& listfileName, LCID preferredLocale) {
+    SFileSetLocale(preferredLocale);
     // Check if the user provided a listfile input
     const char *listfile = (listfileName == "default") ? NULL : listfileName.c_str();
 
@@ -55,7 +56,8 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& 
             hArchive,
             output,
             findData.cFileName,
-            true  // Keep folder structure
+            true,  // Keep folder structure
+            preferredLocale
         );
         if (result != 0) {
             return result;
@@ -67,7 +69,8 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& 
     return 0;
 }
 
-int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure) {
+int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure, LCID preferredLocale) {
+    SFileSetLocale(preferredLocale);
     const char *szFileName = fileName.c_str();
     if (!SFileHasFile(hArchive, szFileName)) {
         std::cerr << "[!] Failed: File doesn't exist: " << szFileName << std::endl;

@@ -310,6 +310,15 @@ Extract a single file using the `-f` option. If the target file in the MPQ archi
 mpqcli extract -f "Documentation\Layout\Greeting.html" "World of Warcraft_1.12.1.5875/Data/base.MPQ"
 ```
 
+### Extract one specific file with locale
+
+Use the `--locale` argument to specify the locale of the file to extract. If there is no file with the requested name and locale, the default locale will be used instead.
+
+```
+mpqcli extract -f "rez\gluBNRes.res" Patch_rt.mpq --locale deDE
+```
+
+
 ### Read a specific file from an MPQ archive
 
 Read the `patch.cmd` file from an MPQ archive and print the file contents to stdout. Even though the subcommand always outputs bytes, plaintext files will be human-readable.

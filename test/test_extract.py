@@ -127,6 +127,8 @@ def test_extract_file_from_mpq_output_directory_specified(binary_path, generate_
     script_dir = Path(__file__).parent
     test_file = script_dir / "data" / "mpq_with_output_v1.mpq"
     output_dir = script_dir / "data" / "extracted_file"
+    for fi in output_dir.glob("*"):
+        fi.unlink(missing_ok=True)
 
 
     expected_output = {
@@ -155,3 +157,234 @@ def test_extract_file_from_mpq_output_directory_specified(binary_path, generate_
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
     assert output_file.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"
+
+
+def test_extract_file_from_mpq_with_locale(binary_path, generate_locales_mpq_test_files):
+    """
+    Test MPQ archive file extraction with a specified locale.
+
+    This test checks:
+    - If the file with the given locale is extracted correctly.
+    - If the output files match the expected files.
+    """
+    _ = generate_locales_mpq_test_files
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_with_many_locales.mpq"
+    output_dir = script_dir / "data" / "extracted_file"
+    file_to_extract = "cats.txt"
+    locale = "esES"
+    for fi in output_dir.glob("*"):
+        fi.unlink(missing_ok=True)
+
+    result = subprocess.run(
+        [str(binary_path), "extract", "-o", str(output_dir), "-f", file_to_extract, str(test_file), "--locale", locale],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    expected_stdout = {
+        "[*] Extracted: " + file_to_extract
+    }
+    output_file = output_dir / file_to_extract
+    expected_content = "Este es un archivo sobre gatos."
+
+    output_lines = set(result.stdout.splitlines())
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_stdout, f"Unexpected output: {output_lines}"
+    assert output_file.exists(), "Output directory was not created"
+    assert output_file.read_text(encoding="utf-8") == expected_content, "Unexpected file content"
+
+
+def test_extract_file_from_mpq_with_default_locale(binary_path, generate_locales_mpq_test_files):
+    """
+    Test MPQ archive file extraction with no specified locale but many matching file names.
+
+    This test checks:
+    - If the file with the default locale is extracted correctly.
+    - If the output files match the expected files.
+    """
+    _ = generate_locales_mpq_test_files
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_with_many_locales.mpq"
+    output_dir = script_dir / "data" / "extracted_file"
+    file_to_extract = "cats.txt"
+    for fi in output_dir.glob("*"):
+        fi.unlink(missing_ok=True)
+
+
+    result = subprocess.run(
+        [str(binary_path), "extract", "-o", str(output_dir), "-f", file_to_extract, str(test_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    expected_stdout = {
+        "[*] Extracted: " + file_to_extract
+    }
+    output_file = output_dir / file_to_extract
+    expected_content = "This is a file about cats."
+
+    output_lines = set(result.stdout.splitlines())
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_stdout, f"Unexpected output: {output_lines}"
+    assert output_file.exists(), "Output directory was not created"
+    assert output_file.read_text(encoding="utf-8") == expected_content, "Unexpected file content"
+
+
+def test_extract_file_from_mpq_with_illegal_locale(binary_path, generate_locales_mpq_test_files):
+    """
+    Test MPQ archive file extraction with an illegal locale.
+
+    This test checks:
+    - When a locale is given that does not exist in the file, the file with the default locale is extracted.
+    - If the output files match the expected files.
+    """
+    _ = generate_locales_mpq_test_files
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_with_many_locales.mpq"
+    output_dir = script_dir / "data" / "extracted_file"
+    file_to_extract = "cats.txt"
+    locale = "nosuchlocale"
+    for fi in output_dir.glob("*"):
+        fi.unlink(missing_ok=True)
+
+
+    result = subprocess.run(
+        [str(binary_path), "extract", "-o", str(output_dir), "-f", file_to_extract, str(test_file), "--locale", locale],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    expected_stdout = {
+        "[!] Warning: The locale 'nosuchlocale' is unknown. Will use default locale instead.",
+        "[*] Extracted: " + file_to_extract
+    }
+    output_file = output_dir / file_to_extract
+    expected_content = "This is a file about cats."
+
+    output_lines = set(result.stdout.splitlines())
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_stdout, f"Unexpected output: {output_lines}"
+    assert output_file.exists(), "Output directory was not created"
+    assert output_file.read_text(encoding="utf-8") == expected_content, "Unexpected file content"
+
+
+def test_extract_file_from_mpq_with_locale_not_in_file(binary_path, generate_locales_mpq_test_files):
+    """
+    Test MPQ archive file extraction with a specified locale that is not in the file.
+
+    This test checks:
+    - When a locale is given that does not exist in the file, the file with the default locale is extracted.
+    - If the output files match the expected files.
+    """
+    _ = generate_locales_mpq_test_files
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_with_many_locales.mpq"
+    output_dir = script_dir / "data" / "extracted_file"
+    file_to_extract = "cats.txt"
+    locale = "ptPT"  # There is no file for this locale
+    for fi in output_dir.glob("*"):
+        fi.unlink(missing_ok=True)
+
+    result = subprocess.run(
+        [str(binary_path), "extract", "-o", str(output_dir), "-f", file_to_extract, str(test_file), "--locale", locale],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    expected_stdout = {
+        "[*] Extracted: " + file_to_extract
+    }
+    output_file = output_dir / file_to_extract
+    expected_content = "This is a file about cats."
+
+    output_lines = set(result.stdout.splitlines())
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_stdout, f"Unexpected output: {output_lines}"
+    assert output_file.exists(), "Output directory was not created"
+    assert output_file.read_text(encoding="utf-8") == expected_content, "Unexpected file content"
+
+
+def test_extract_file_from_mpq_with_no_locale_argument_and_no_default_locale(binary_path, generate_locales_mpq_test_files):
+    """
+    Test MPQ archive file extraction without a specified locale, and no file with the default locale.
+
+    This test checks:
+    - When no locale is given, and no file by that name exists for the default locale,
+    but one does for a different one, no file is extracted.
+    """
+    _ = generate_locales_mpq_test_files
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_with_one_locale.mpq"
+    output_dir = script_dir / "data" / "extracted_file"
+    file_to_extract = "cats.txt"  # There is a file by this name, but for locale esES
+    for fi in output_dir.glob("*"):
+        fi.unlink(missing_ok=True)
+
+
+    result = subprocess.run(
+        [str(binary_path), "extract", "-o", str(output_dir), "-f", file_to_extract, str(test_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    expected_stdout_output = set()
+    expected_stderr_output = {
+        "[!] Failed: File doesn't exist: " + file_to_extract,
+    }
+
+    stdout_output_lines = set(result.stdout.splitlines())
+    stderr_output_lines = set(result.stderr.splitlines())
+
+    output_file = output_dir / file_to_extract
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert stdout_output_lines == expected_stdout_output, f"Unexpected output: {stdout_output_lines}"
+    assert stderr_output_lines == expected_stderr_output, f"Unexpected output: {stderr_output_lines}"
+    assert not output_file.exists(), "Output directory was not created"
+
+
+def test_extract_file_from_mpq_with_wrong_locale_argument_and_no_default_locale(binary_path, generate_locales_mpq_test_files):
+    """
+    Test MPQ archive file extraction with a specified locale, and no file with the default locale.
+
+    This test checks:
+    - When no locale is given, and no file by that name exists for the default locale,
+    but one does for a different one, no file is extracted.
+    """
+    _ = generate_locales_mpq_test_files
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_with_one_locale.mpq"
+    output_dir = script_dir / "data" / "extracted_file"
+    file_to_extract = "cats.txt"  # There is a file by this name, but for locale esES
+    locale = "deDE"
+    for fi in output_dir.glob("*"):
+        fi.unlink(missing_ok=True)
+
+
+    result = subprocess.run(
+        [str(binary_path), "extract", "-o", str(output_dir), "-f", file_to_extract, str(test_file), "--locale", locale],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    expected_stdout_output = set()
+    expected_stderr_output = {
+        "[!] Failed: File doesn't exist: " + file_to_extract,
+    }
+
+    stdout_output_lines = set(result.stdout.splitlines())
+    stderr_output_lines = set(result.stderr.splitlines())
+
+    output_file = output_dir / file_to_extract
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert stdout_output_lines == expected_stdout_output, f"Unexpected output: {stdout_output_lines}"
+    assert stderr_output_lines == expected_stderr_output, f"Unexpected output: {stderr_output_lines}"
+    assert not output_file.exists(), "Output directory was not created"
