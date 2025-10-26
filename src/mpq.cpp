@@ -230,16 +230,17 @@ int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archi
     return 0;
 }
 
-int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath) {
-    std::cout << "[-] Removing file: " << archiveFilePath << std::endl;
+int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath, LCID locale) {
+    SFileSetLocale(locale);
+    std::cout << "[-] Removing file for locale " << locale <<": " << archiveFilePath << std::endl;
 
     if (!SFileHasFile(hArchive, archiveFilePath.c_str())) {
-        std::cerr << "[!] Failed: File doesn't exist: " << archiveFilePath << std::endl;
+        std::cerr << "[!] Failed: File doesn't exist for locale " << locale << ": " << archiveFilePath << std::endl;
         return -1;
     }
 
     if (!SFileRemoveFile(hArchive, archiveFilePath.c_str(), 0)) {
-        std::cerr << "[!] Failed: File cannot be removed: " << archiveFilePath << std::endl;
+        std::cerr << "[!] Failed: File cannot be removed for locale " << locale << ": " << archiveFilePath << std::endl;
         return -1;
     }
 

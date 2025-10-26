@@ -61,7 +61,7 @@ def generate_test_files():
     yield created_files
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def generate_locales_mpq_test_files(binary_path):
     script_dir = Path(__file__).parent
 
