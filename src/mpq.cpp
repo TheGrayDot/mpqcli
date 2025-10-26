@@ -10,6 +10,7 @@
 
 #include "mpq.h"
 #include "helpers.h"
+#include "locales.h"
 
 namespace fs = std::filesystem;
 

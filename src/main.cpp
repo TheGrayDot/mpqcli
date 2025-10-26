@@ -7,6 +7,7 @@
 
 #include "mpq.h"
 #include "helpers.h"
+#include "locales.h"
 #include "mpqcli.h"
 
 namespace fs = std::filesystem;
@@ -16,7 +17,7 @@ int main(int argc, char **argv) {
         "A command line tool to create, add, remove, list, extract, read, and verify MPQ archives "
         "using the StormLib library"
     };
-    
+
     // Require at least one subcommand
     app.require_subcommand(1);
 
@@ -25,6 +26,7 @@ int main(int argc, char **argv) {
     std::string baseTarget = "default";  // all subcommands
     std::string baseFile = "default";  // add, remove, extract, read
     std::string basePath = "default"; // add
+    std::string baseLocale = "default"; // create, add, remove, extract, read
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     // CLI: info
@@ -166,7 +168,7 @@ int main(int argc, char **argv) {
     }
 
     // Handle subcommand: About
-    if (app.got_subcommand(about)){
+    if (app.got_subcommand(about)) {
         std::cout << "Name: mpqcli" << std::endl;
         std::cout << "Version: " << MPQCLI_VERSION << "-" << GIT_COMMIT_HASH << std::endl;
         std::cout << "Author: Thomas Laurenson" << std::endl;
@@ -175,10 +177,10 @@ int main(int argc, char **argv) {
         std::cout << "Dependencies:" << std::endl;
         std::cout << " - StormLib (https://github.com/ladislav-zezula/StormLib)" << std::endl;
         std::cout << " - CLI11 (https://github.com/CLIUtils/CLI11)" << std::endl;
-    };
+    }
 
     // Handle subcommand: Info
-    if (app.got_subcommand(info)){
+    if (app.got_subcommand(info)) {
         HANDLE hArchive;
         if (!OpenMpqArchive(baseTarget, &hArchive, MPQ_OPEN_READ_ONLY)) {
             std::cerr << "[!] Failed to open MPQ archive." << std::endl;
