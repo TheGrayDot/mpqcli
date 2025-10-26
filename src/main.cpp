@@ -199,12 +199,12 @@ int main(int argc, char **argv) {
             outputFilePath.replace_extension(".mpq");
         }
         std::string outputFile = outputFilePath.u8string();
-        
+
         std::cout << "[*] Output file: " << outputFile << std::endl;
 
-        // Determine number of files we are going to add
+        // Determine the number of files we are going to add
         int32_t fileCount = CalculateMpqMaxFileValue(baseTarget);
-    
+
         // Create the MPQ archive and add files
         HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, createMpqVersion);
         if (hArchive) {

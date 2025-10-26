@@ -172,7 +172,7 @@ int AddFiles(HANDLE hArchive, const std::string& target) {
     return 0;
 }
 
-int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFilePath) {
+int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath) {
     std::cout << "[+] Adding file: " << archiveFilePath << std::endl;
 
     // Return if file doesn't exist on disk
@@ -192,12 +192,10 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
     int32_t numberOfFiles = GetFileInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
     int32_t maxFiles = GetFileInfo<int32_t>(hArchive, SFileMpqMaxFileCount);
 
-    if (numberOfFiles + 1 > maxFiles)
-    {
+    if (numberOfFiles + 1 > maxFiles) {
         int32_t newMaxFiles = NextPowerOfTwo(numberOfFiles + 1);
         bool setMaxFileCount = SFileSetMaxFileCount(hArchive, newMaxFiles);
-        if (!setMaxFileCount)
-        {
+        if (!setMaxFileCount) {
             int32_t error = SErrGetLastError();
             std::cerr << "[!] Error: " << error << " Failed to increase new max file count to: " << newMaxFiles << std::endl;
             return -1;
@@ -289,7 +287,7 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
         "(attributes)"
     };
 
-    // Loop through all files in MPQ archive
+    // Loop through all files in the MPQ archive
     do {
         // Skip special files unless user wants to list all (like ls -a)
         if (!listAll && std::find(specialFiles.begin(), specialFiles.end(), findData.cFileName) != specialFiles.end()) {
