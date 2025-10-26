@@ -10,6 +10,7 @@
 
 #include "mpq.h"
 #include "helpers.h"
+#include "locales.h"
 
 namespace fs = std::filesystem;
 
@@ -171,7 +172,7 @@ int AddFiles(HANDLE hArchive, const std::string& target) {
     return 0;
 }
 
-int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFilePath) {
+int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath) {
     std::cout << "[+] Adding file: " << archiveFilePath << std::endl;
 
     // Return if file doesn't exist on disk
@@ -191,12 +192,10 @@ int AddFile(HANDLE hArchive, fs::path localFile, const std::string& archiveFileP
     int32_t numberOfFiles = GetFileInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
     int32_t maxFiles = GetFileInfo<int32_t>(hArchive, SFileMpqMaxFileCount);
 
-    if (numberOfFiles + 1 > maxFiles)
-    {
+    if (numberOfFiles + 1 > maxFiles) {
         int32_t newMaxFiles = NextPowerOfTwo(numberOfFiles + 1);
         bool setMaxFileCount = SFileSetMaxFileCount(hArchive, newMaxFiles);
-        if (!setMaxFileCount)
-        {
+        if (!setMaxFileCount) {
             int32_t error = SErrGetLastError();
             std::cerr << "[!] Error: " << error << " Failed to increase new max file count to: " << newMaxFiles << std::endl;
             return -1;
@@ -241,7 +240,27 @@ int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath) {
     return 0;
 }
 
-int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bool listDetailed) {
+std::string GetFlagString(uint32_t flags) {
+    std::string result;
+
+    if (flags & MPQ_FILE_IMPLODE)            result += 'i';
+    if (flags & MPQ_FILE_COMPRESS)           result += 'c';
+    if (flags & MPQ_FILE_ENCRYPTED)          result += 'e';
+    if (flags & MPQ_FILE_KEY_V2)             result += '2';
+    if (flags & MPQ_FILE_PATCH_FILE)         result += 'p';
+    if (flags & MPQ_FILE_SINGLE_UNIT)        result += 'u';
+    if (flags & MPQ_FILE_DELETE_MARKER)      result += 'd';
+    if (flags & MPQ_FILE_SECTOR_CRC)         result += 'r';
+    if (flags & MPQ_FILE_SIGNATURE)          result += 's';
+    if (flags & MPQ_FILE_EXISTS)             result += 'x';
+    if (flags & MPQ_FILE_COMPRESS_MASK)      result += 'm';
+    if (flags & MPQ_FILE_DEFAULT_INTERNAL)   result += 'n';
+    if (flags & MPQ_FILE_FIX_KEY)            result += 'f';
+
+    return result;
+}
+
+int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bool listDetailed, std::vector<std::string>& propertiesToPrint) {
     // Check if the user provided a listfile input
     const char *listfile = (listfileName == "default") ? NULL : listfileName.c_str();
 
@@ -253,6 +272,13 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
         return -1;
     }
 
+    if (propertiesToPrint.empty()) {
+        propertiesToPrint = {
+            // Default properties, if the user didn't specify any
+            "file-size", "locale", "file-time",
+        };
+    }
+
     // "Special" files are base files used by MPQ file format
     // These are skipped, unless "-a" or "--all" are specified
     std::vector<std::string> specialFiles = {
@@ -261,7 +287,8 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
         "(attributes)"
     };
 
-    // Loop through all files in MPQ archive
+    std::set<std::string> seenFileNames; // Used to prevent printing the same file name multiple times
+    // Loop through all files in the MPQ archive
     do {
         // Skip special files unless user wants to list all (like ls -a)
         if (!listAll && std::find(specialFiles.begin(), specialFiles.end(), findData.cFileName) != specialFiles.end()) {
@@ -270,27 +297,114 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
 
         // Print the detailed (long) file listing (like ls -l)
         if (listDetailed) {
-            // We need to open the file to get detailed information
-            // Use our custom GetFileInfo function
-            HANDLE hFile;
-            if (!SFileOpenFileEx(hArchive, findData.cFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
-                std::cerr << "[!] Failed to open file: " << findData.cFileName << std::endl;
-                continue; // Skip to the next file
+            if (seenFileNames.find(findData.cFileName) != seenFileNames.end()) {
+                // Filename has been seen before, and thus printed before. Skip over it.
+                continue;
+            }
+            seenFileNames.insert(findData.cFileName);
+
+
+            // Multiple files can be stored with identical filenames under different locales.
+            // Loop over all locales and print the file details for each locale.
+            DWORD maxLocales = 32; // This will be updated in the call to SFileEnumLocales
+            LCID * fileLocales = (LCID *)malloc(maxLocales * sizeof(LCID));
+
+            if (fileLocales == NULL) {
+                std::cerr << "[!] Unable to allocate memory for locales for file: " << findData.cFileName << std::endl;
+                continue;
+            }
+            DWORD result = SFileEnumLocales(hArchive, findData.cFileName, fileLocales, &maxLocales, 0);
+
+            if (result == ERROR_INSUFFICIENT_BUFFER) {
+                std::cerr << "[!] There are more than " << maxLocales << " locales for the file: " << findData.cFileName <<
+                          ". Will only list the " << maxLocales << " first files." << std::endl;
             }
 
-            int32_t fileSize = GetFileInfo<int32_t>(hFile, SFileInfoFileSize);
-            int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
-            std::string fileLocaleStr = LocaleToLang(fileLocale);
-            int64_t fileTime = GetFileInfo<int64_t>(hFile, SFileInfoFileTime);
-            std::string fileTimeStr = FileTimeToLsTime(fileTime);
+            // Loop through all found locales
+            for (DWORD i = 0; i < maxLocales; i++) {
+                LCID locale = fileLocales[i];
+                SFileSetLocale(locale);
+                HANDLE hFile;
 
-            // Print the file details in a formatted way
-            std::cout << std::setw(11) << fileSize << " "  // 4GB max size is 10 characters
-                      << std::setw(5) << fileLocaleStr << " "  // Locale is max 4 characters
-                      << std::setw(19) << fileTimeStr << "  "  // File time is formatted as "YYYY-MM-DD HH:MM:SS"
-                      << findData.cFileName << std::endl;
+                // We need to open the file to get detailed information
+                // Use our custom GetFileInfo function
+                if (!SFileOpenFileEx(hArchive, findData.cFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
+                    std::cerr << "[!] Failed to open file: " << findData.cFileName << std::endl;
+                    continue; // Skip to the next file
+                }
 
-            SFileCloseFile(hFile);
+                std::vector<std::pair<std::string, std::function<void()>>> propertyActions = {
+                        {"hash-index", [&]() {
+                            std::cout << std::setw(5) << GetFileInfo<int32_t>(hFile, SFileInfoHashIndex) << " " ;
+                        }},
+                        {"name-hash1", [&]() {
+                            std::cout << std::setfill('0') << std::hex << std::setw(8) <<
+                                GetFileInfo<int32_t>(hFile, SFileInfoNameHash1) <<
+                                std::setfill(' ') << std::dec << " ";
+                        }},
+                        {"name-hash2", [&]() {
+                            std::cout << std::setfill('0') << std::hex << std::setw(8) <<
+                                GetFileInfo<int32_t>(hFile, SFileInfoNameHash2) <<
+                                std::setfill(' ') << std::dec << " ";
+                        }},
+                        {"name-hash3", [&]() {
+                            std::cout << std::setfill('0') << std::hex << std::setw(16) <<
+                                GetFileInfo<int64_t>(hFile, SFileInfoNameHash3) <<
+                                std::setfill(' ') << std::dec << " ";
+                        }},
+                        {"locale", [&]() {
+                            int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
+                            std::string fileLocaleStr = LocaleToLang(fileLocale);
+                            std::cout << std::setw(4) << fileLocaleStr << " ";
+                        }},
+                        {"file-index", [&]() {
+                            std::cout << std::setw(5) << GetFileInfo<int32_t>(hFile, SFileInfoFileIndex) << " ";
+                        }},
+                        {"byte-offset", [&]() {
+                            std::cout << std::hex << std::setw(8) <<
+                                GetFileInfo<int64_t>(hFile, SFileInfoByteOffset) <<
+                                std::dec << " ";
+                        }},
+                        {"file-time", [&]() {
+                            int64_t fileTime = GetFileInfo<int64_t>(hFile, SFileInfoFileTime);
+                            std::string fileTimeStr = FileTimeToLsTime(fileTime);
+                            std::cout << std::setw(19) << fileTimeStr << " ";
+                        }},
+                        {"file-size", [&]() {
+                            std::cout << std::setw(8) << GetFileInfo<int32_t>(hFile, SFileInfoFileSize) << " ";
+                        }},
+                        {"compressed-size", [&]() {
+                            std::cout << std::setw(8) << GetFileInfo<int32_t>(hFile, SFileInfoCompressedSize) << " ";
+                        }},
+                        {"flags", [&]() {
+                            int32_t flags = GetFileInfo<int32_t>(hFile, SFileInfoFlags);
+                            std::cout << std::setw(8) << GetFlagString(flags) << " ";
+                        }},
+                        {"encryption-key", [&]() {
+                            std::cout << std::setfill('0') << std::hex << std::setw(8) <<
+                                GetFileInfo<int64_t>(hFile, SFileInfoEncryptionKey) <<
+                                std::setfill(' ') << std::dec << " ";
+                        }},
+                        {"encryption-key-raw", [&]() {
+                            std::cout << std::setfill('0') << std::hex << std::setw(8) <<
+                                GetFileInfo<int64_t>(hFile, SFileInfoEncryptionKeyRaw) <<
+                                std::setfill(' ') << std::dec << " ";
+                        }},
+                };
+
+                for (const auto& prop : propertiesToPrint) {
+                    for (const auto &[key, action]: propertyActions) {
+                        if (prop == key) {
+                            action();  // Print property
+                        }
+                    }
+                }
+
+                std::cout << " " << findData.cFileName << std::endl;
+                SFileCloseFile(hFile);
+            }
+            SFileSetLocale(defaultLocale); // Reset locale to default after changing it
+            free(fileLocales);
         } else {
             // Print just the filename (like default ls command output)
             std::cout << findData.cFileName << std::endl;
