@@ -71,10 +71,10 @@ The `mpqcli` program has the following subcommands:
 
 - `version`: Print the tool version number
 - `about`: Print information about the tool
-- `info`: Print information about an MPQ archive properties
+- `info`: Print information about MPQ archive properties
 - `create`: Create an MPQ archive from a target directory
-- `add`: Add a file to an existing MPQ archive (not implemented)
-- `remove`: Remove a file from an existing MPQ archive (not implemented)
+- `add`: Add a file to an existing MPQ archive
+- `remove`: Remove a file from an existing MPQ archive
 - `list`: List files in a target MPQ archive
 - `extract`: Extract one/all files from a target MPQ archive
 - `read`: Read a specific file to stdout
@@ -144,21 +144,41 @@ Use the `-s` or `--sign` argument to cryptographically sign an MPQ archive with 
 mpqcli create --version 1 --sign <target_directory>
 ```
 
+### Create an MPQ archive with a given locale
+
+Use the `--locale` argument to specify the locale that all added files will have in the archive. Note that subsequent added files will have the default locale unless the `--locale` argument is specified again.
+
+```
+mpqcli create <target_directory> --locale koKR
+```
+
 ### Add a file to an existing archive
 
 Add a local file to an already existing MPQ archive.
 
 ```
-echo "For The Horde!" > fth.txt
-mpqcli add fth.txt wow-patch.mpq
+$ echo "For The Horde" > fth.txt
+$ mpqcli add fth.txt wow-patch.mpq
+[+] Adding file for locale 0: fth.txt
 ```
 
 Alternatively, you can add a file to a specific subdirectory using the `-p` or `--path` argument.
 
 ```
-echo "For The Alliance!" > fta.txt
-mpqcli add fta.txt wow-patch.mpq --path <path/in/archive>
+$ echo "For The Alliance" > fta.txt
+$ mpqcli add fta.txt wow-patch.mpq --path texts
+[+] Adding file for locale 0: texts\fta.txt
 ```
+
+### Add files to an MPQ archive with a given locale
+
+Use the `--locale` argument to specify the locale that the added file will have in the archive. Note that subsequent added files will have the default locale unless the `--locale` argument is specified again.
+
+```
+$ mpqcli add allianz.txt --locale deDE
+[+] Adding file for locale 1031: allianz.txt
+```
+
 
 ### Remove a file from an existing archive
 
