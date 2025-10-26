@@ -114,6 +114,8 @@ int main(int argc, char **argv) {
     remove->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
+    remove->add_option("--locale", baseLocale, "Locale of file to remove")
+        ->check(LocaleValid);
 
     // Subcommand: List
     CLI::App *list = app.add_subcommand("list", "List files from the MPQ archive");
@@ -264,7 +266,8 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        RemoveFile(hArchive, baseFile);
+        LCID locale = LangToLocale(baseLocale);
+        RemoveFile(hArchive, baseFile, locale);
         CloseMpqArchive(hArchive);
     }
 
