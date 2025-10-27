@@ -15,27 +15,27 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Download Linux GLIBC binary
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: mpqcli-linux-amd64-glibc
 
       - name: Download Linux MUSL binary
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: mpqcli-linux-amd64-musl
 
       - name: Download Linux ARM64 GLIBC binary
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: mpqcli-linux-arm64-glibc
 
       - name: Download Linux ARM64 MUSL binary
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: mpqcli-linux-arm64-musl
 
       - name: Download Windows binary
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: mpqcli-windows-amd64.exe
 
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download Docker image artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: mpqcli-docker
 
