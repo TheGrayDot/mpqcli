@@ -345,6 +345,15 @@ mpqcli read "WoW.exe" wow-patch.mpq | xxd
 00000030: 4504 8080 0280 9002 8098 0281 d801 0585  E...............
 ```
 
+### Read one specific file with locale
+
+Use the `--locale` argument to specify the locale of the file to read. If there is no file with the requested name and locale, the default locale will be used instead.
+
+```
+mpqcli read "rez\stat_txt.tbl" Patch_rt.mpq --locale ptPT
+```
+
+
 ### Verify an MPQ archive
 
 Check the digital signature of an MPQ archive, by verifying the signature in the archive with a collection of known Blizzard public keys (bundled in Stormlib library). The tool will print if verification is successful or fails, as well as return `0` for success and any other value for failure.

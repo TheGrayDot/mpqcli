@@ -145,6 +145,7 @@ int main(int argc, char **argv) {
     read->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
+    read->add_option("--locale", baseLocale, "Preferred locale for read file");
 
     // Subcommand: Verify
     CLI::App *verify = app.add_subcommand("verify", "Verify the MPQ archive");
@@ -310,8 +311,13 @@ int main(int argc, char **argv) {
             return 1;
         }
 
+        LCID locale = LangToLocale(baseLocale);
+        if (baseLocale != "default" && locale == defaultLocale) {
+            std::cout << "[!] Warning: The locale '" << baseLocale << "' is unknown. Will use default locale instead." << std::endl;
+        }
+
         uint32_t fileSize;
-        char* fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize);
+        char* fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize, locale);
         if (fileContent == NULL) {
             return 1;
         }

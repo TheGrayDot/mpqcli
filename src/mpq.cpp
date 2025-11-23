@@ -422,7 +422,8 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
     return 0;
 }
 
-char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) {
+char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize, LCID preferredLocale) {
+    SFileSetLocale(preferredLocale);
     if (!SFileHasFile(hArchive, szFileName)) {
         std::cerr << "[!] Failed: File doesn't exist: " << szFileName << std::endl;
         return NULL;
@@ -556,7 +557,7 @@ int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
     } else if (signatureType == SIGNATURE_TYPE_WEAK) {
         const char* szFileName = "(signature)";
         uint32_t fileSize;
-        char* fileContent = ReadFile(hArchive, szFileName, &fileSize);
+        char* fileContent = ReadFile(hArchive, szFileName, &fileSize, defaultLocale);
 
         if (fileContent == NULL) {
             std::cerr << "[!] Failed to read weak signature file." << std::endl;
