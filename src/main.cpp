@@ -7,6 +7,7 @@
 
 #include "mpq.h"
 #include "helpers.h"
+#include "locales.h"
 #include "mpqcli.h"
 
 namespace fs = std::filesystem;
@@ -16,7 +17,7 @@ int main(int argc, char **argv) {
         "A command line tool to create, add, remove, list, extract, read, and verify MPQ archives "
         "using the StormLib library"
     };
-    
+
     // Require at least one subcommand
     app.require_subcommand(1);
 
@@ -25,10 +26,13 @@ int main(int argc, char **argv) {
     std::string baseTarget = "default";  // all subcommands
     std::string baseFile = "default";  // add, remove, extract, read
     std::string basePath = "default"; // add
+    std::string baseLocale = "default"; // create, add, remove, extract, read
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     // CLI: info
-    std::string infoProperty = "default";    
+    std::string infoProperty = "default";
+    // CLI: list
+    std::vector<std::string> listProperties;
     // CLI: extract
     bool extractKeepFolderStructure = false;
     // CLI: create
@@ -41,13 +45,28 @@ int main(int argc, char **argv) {
     bool verifyPrintSignature = false;
 
     std::set<std::string> validInfoProperties = {
-        "format-version",
-        "header-offset",
-        "header-size",
-        "archive-size",
-        "file-count",
-        "max-files",
-        "signature-type"
+            "format-version",
+            "header-offset",
+            "header-size",
+            "archive-size",
+            "file-count",
+            "max-files",
+            "signature-type",
+    };
+    std::set<std::string> validFileListProperties = {
+            "hash-index",
+            "name-hash1",
+            "name-hash2",
+            "name-hash3",
+            "locale",
+            "file-index",
+            "byte-offset",
+            "file-time",
+            "file-size",
+            "compressed-size",
+            "flags",
+            "encryption-key",
+            "encryption-key-raw",
     };
 
     // Subcommand: Version
@@ -101,6 +120,8 @@ int main(int argc, char **argv) {
         ->check(CLI::ExistingFile);
     list->add_flag("-d,--detailed", listDetailed, "File listing with additional columns (default false)");
     list->add_flag("-a,--all", listAll, "File listing including hidden files (default true)");
+    list->add_option("-p,--property", listProperties, "Prints only specific property values")
+        ->check(CLI::IsMember(validFileListProperties));
 
     // Subcommand: Extract
     CLI::App *extract = app.add_subcommand("extract", "Extract files from the MPQ archive");
@@ -147,7 +168,7 @@ int main(int argc, char **argv) {
     }
 
     // Handle subcommand: About
-    if (app.got_subcommand(about)){
+    if (app.got_subcommand(about)) {
         std::cout << "Name: mpqcli" << std::endl;
         std::cout << "Version: " << MPQCLI_VERSION << "-" << GIT_COMMIT_HASH << std::endl;
         std::cout << "Author: Thomas Laurenson" << std::endl;
@@ -156,10 +177,10 @@ int main(int argc, char **argv) {
         std::cout << "Dependencies:" << std::endl;
         std::cout << " - StormLib (https://github.com/ladislav-zezula/StormLib)" << std::endl;
         std::cout << " - CLI11 (https://github.com/CLIUtils/CLI11)" << std::endl;
-    };
+    }
 
     // Handle subcommand: Info
-    if (app.got_subcommand(info)){
+    if (app.got_subcommand(info)) {
         HANDLE hArchive;
         if (!OpenMpqArchive(baseTarget, &hArchive, MPQ_OPEN_READ_ONLY)) {
             std::cerr << "[!] Failed to open MPQ archive." << std::endl;
@@ -178,12 +199,12 @@ int main(int argc, char **argv) {
             outputFilePath.replace_extension(".mpq");
         }
         std::string outputFile = outputFilePath.u8string();
-        
+
         std::cout << "[*] Output file: " << outputFile << std::endl;
 
-        // Determine number of files we are going to add
+        // Determine the number of files we are going to add
         int32_t fileCount = CalculateMpqMaxFileValue(baseTarget);
-    
+
         // Create the MPQ archive and add files
         HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, createMpqVersion);
         if (hArchive) {
@@ -245,7 +266,7 @@ int main(int argc, char **argv) {
             std::cerr << "[!] Failed to open MPQ archive." << std::endl;
             return 1;
         }
-        ListFiles(hArchive, baseListfileName, listAll, listDetailed);
+        ListFiles(hArchive, baseListfileName, listAll, listDetailed, listProperties);
     }
 
     // Handle subcommand: Extract
