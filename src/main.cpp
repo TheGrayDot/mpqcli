@@ -92,6 +92,8 @@ int main(int argc, char **argv) {
     create->add_flag("-s,--sign", createSignArchive, "Sign the MPQ archive (default false)");
     create->add_option("-v,--version", createMpqVersion, "Set the MPQ archive version (default 1)")
         ->check(CLI::Range(1, 2));
+    create->add_option("--locale", baseLocale, "Locale to use for added files")
+        ->check(LocaleValid);
 
     // Subcommand: Add
     CLI::App *add = app.add_subcommand("add", "Add a file to an existing MPQ archive");
@@ -102,6 +104,8 @@ int main(int argc, char **argv) {
         ->required()
         ->check(CLI::ExistingFile);
     add->add_option("-p,--path", basePath, "Path within MPQ archive");
+    add->add_option("--locale", baseLocale, "Locale to use for added file")
+        ->check(LocaleValid);
 
     // Subcommand: Remove
     CLI::App *remove = app.add_subcommand("remove", "Remove file from an existing MPQ archive");
@@ -141,6 +145,7 @@ int main(int argc, char **argv) {
     read->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
+    read->add_option("--locale", baseLocale, "Preferred locale for read file");
 
     // Subcommand: Verify
     CLI::App *verify = app.add_subcommand("verify", "Verify the MPQ archive");
@@ -208,7 +213,9 @@ int main(int argc, char **argv) {
         // Create the MPQ archive and add files
         HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, createMpqVersion);
         if (hArchive) {
-            AddFiles(hArchive, baseTarget);
+            LCID locale = LangToLocale(baseLocale);
+            AddFiles(hArchive, baseTarget, locale);
+
             if (createSignArchive) {
                 SignMpqArchive(hArchive);
             }
@@ -242,7 +249,9 @@ int main(int argc, char **argv) {
             archivePath = WindowsifyFilePath(archiveFullPath.u8string());
         }
 
-        AddFile(hArchive, baseFile, archivePath);
+        LCID locale = LangToLocale(baseLocale);
+
+        AddFile(hArchive, baseFile, archivePath, locale);
         CloseMpqArchive(hArchive);
     }
 
@@ -302,8 +311,13 @@ int main(int argc, char **argv) {
             return 1;
         }
 
+        LCID locale = LangToLocale(baseLocale);
+        if (baseLocale != "default" && locale == defaultLocale) {
+            std::cout << "[!] Warning: The locale '" << baseLocale << "' is unknown. Will use default locale instead." << std::endl;
+        }
+
         uint32_t fileSize;
-        char* fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize);
+        char* fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize, locale);
         if (fileContent == NULL) {
             return 1;
         }

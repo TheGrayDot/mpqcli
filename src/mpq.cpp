@@ -153,7 +153,7 @@ HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_
     return hMpq;
 }
 
-int AddFiles(HANDLE hArchive, const std::string& target) {
+int AddFiles(HANDLE hArchive, const std::string& target, LCID locale) {
     // We need to "clean" the target path to ensure it is a valid directory
     // and to strip any directory structure from the files we add
     fs::path targetPath = fs::path(target);
@@ -166,14 +166,13 @@ int AddFiles(HANDLE hArchive, const std::string& target) {
             // Normalise path for MPQ
             std::string archiveFilePath = WindowsifyFilePath(inputFilePath.u8string());
 
-            AddFile(hArchive, entry.path().u8string(), archiveFilePath);
+            AddFile(hArchive, entry.path().u8string(), archiveFilePath, locale);
         }
     }
     return 0;
 }
 
-int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath) {
-    std::cout << "[+] Adding file: " << archiveFilePath << std::endl;
+int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, LCID locale) {
 
     // Return if file doesn't exist on disk
     if (!fs::exists(localFile)) {
@@ -182,11 +181,18 @@ int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archi
     }
 
     // Check if file exists in MPQ archive
-    bool hasFile = SFileHasFile(hArchive, archiveFilePath.c_str());
-    if (hasFile) {
-        std::cerr << "[!] File already exists in MPQ archive: " << archiveFilePath << " Skipping..." << std::endl;
-        return -1;
+    SFileSetLocale(locale);
+    HANDLE hFile;
+    if (SFileOpenFileEx(hArchive, archiveFilePath.c_str(), SFILE_OPEN_FROM_MPQ, &hFile)) {
+        int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
+        if (fileLocale == locale) {
+            std::cerr << "[!] File for locale " << locale << " already exists in MPQ archive: " << archiveFilePath
+                      << " - Skipping..." << std::endl;
+            return -1;
+        }
     }
+    SFileCloseFile(hFile);
+    std::cout << "[+] Adding file for locale " << locale << ": " << archiveFilePath << std::endl;
 
     // Verify that we are not exceeding maxFile size of the archive, and if we do, increase it
     int32_t numberOfFiles = GetFileInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
@@ -202,7 +208,7 @@ int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archi
         }
     }
 
-    // Set file attributes in MPQ archive (compression and encryption)
+    // Set file attributes in the MPQ archive (compression and encryption)
     DWORD dwFlags = MPQ_FILE_COMPRESS | MPQ_FILE_ENCRYPTED;
     DWORD dwCompression = MPQ_COMPRESSION_ZLIB;
 
@@ -415,7 +421,8 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
     return 0;
 }
 
-char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize) {
+char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize, LCID preferredLocale) {
+    SFileSetLocale(preferredLocale);
     if (!SFileHasFile(hArchive, szFileName)) {
         std::cerr << "[!] Failed: File doesn't exist: " << szFileName << std::endl;
         return NULL;
@@ -549,7 +556,7 @@ int32_t PrintMpqSignature(HANDLE hArchive, std::string target) {
     } else if (signatureType == SIGNATURE_TYPE_WEAK) {
         const char* szFileName = "(signature)";
         uint32_t fileSize;
-        char* fileContent = ReadFile(hArchive, szFileName, &fileSize);
+        char* fileContent = ReadFile(hArchive, szFileName, &fileSize, defaultLocale);
 
         if (fileContent == NULL) {
             std::cerr << "[!] Failed to read weak signature file." << std::endl;

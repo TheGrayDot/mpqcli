@@ -139,3 +139,57 @@ def test_create_mpq_already_exists(binary_path, generate_test_files):
     )
 
     assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
+
+
+def test_create_mpq_with_illegal_locale(binary_path, generate_test_files):
+    """
+    Test MPQ file creation with illegal locale.
+
+    This test checks:
+    - That the MPQ archive is not created
+    """
+    _ = generate_test_files
+    script_dir = Path(__file__).parent
+    target_dir = script_dir / "data" / "files"
+
+    output_file = script_dir / "data" / "new_mpq.mpq"
+
+    result = subprocess.run(
+        [str(binary_path), "create", "-v", "1", "-o", str(output_file), str(target_dir), "--locale", "illegal_locale"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert result.returncode == 105, f"mpqcli failed with error: {result.stderr}"
+    assert not output_file.exists(), "MPQ file was created"
+
+
+def test_create_mpq_with_locale(binary_path, generate_locales_mpq_test_files):
+    """
+    Test MPQ file creation with a given locale.
+
+    This test checks:
+    - That the MPQ archive contains the expected file with the expected locale.
+    """
+
+    # Creating an MPQ with a given locale happens in conftest.py. This test only checks the output.
+    _ = generate_locales_mpq_test_files
+    script_dir = Path(__file__).parent
+    output_file = script_dir / "data" / "mpq_with_one_locale.mpq"
+
+    verify_archive_file_content(binary_path, output_file, {"esES  cats.txt"})
+
+
+def verify_archive_file_content(binary_path, test_file, expected_output):
+    result = subprocess.run(
+        [str(binary_path), "list", str(test_file), "-d", "-p", "locale"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    output_lines = set(result.stdout.splitlines())
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_output, f"Unexpected output: {output_lines}"
