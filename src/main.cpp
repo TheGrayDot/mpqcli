@@ -137,6 +137,7 @@ int main(int argc, char **argv) {
     extract->add_flag("-k,--keep", extractKeepFolderStructure, "Keep folder structure (default false)");
     extract->add_option("-l,--listfile", baseListfileName, "File listing content of an MPQ archive")
         ->check(CLI::ExistingFile);
+    extract->add_option("--locale", baseLocale, "Preferred locale for extracted file");
 
     // Subcommand: Read
     CLI::App* read = app.add_subcommand("read", "Read a file from an MPQ archive");
@@ -296,10 +297,15 @@ int main(int argc, char **argv) {
             return 1;
         }
 
+        LCID locale = LangToLocale(baseLocale);
+        if (baseLocale != "default" && locale == defaultLocale) {
+            std::cout << "[!] Warning: The locale '" << baseLocale << "' is unknown. Will use default locale instead." << std::endl;
+        }
+
         if (baseFile != "default") {
-            ExtractFile(hArchive, baseOutput, baseFile, extractKeepFolderStructure);
+            ExtractFile(hArchive, baseOutput, baseFile, extractKeepFolderStructure, locale);
         } else {
-            ExtractFiles(hArchive, baseOutput, baseListfileName);
+            ExtractFiles(hArchive, baseOutput, baseListfileName, locale);
         }
     }
 
