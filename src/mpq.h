@@ -15,7 +15,7 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string &
 int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure, LCID preferredLocale);
 HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_t mpqVersion);
 int AddFiles(HANDLE hArchive, const std::string& inputPath, LCID locale);
-int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, LCID locale);
+int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, LCID locale, bool overwrite);
 int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath, LCID locale);
 int ListFiles(HANDLE hHandle, const std::string &listfileName, bool listAll, bool listDetailed, std::vector<std::string>& propertiesToPrint);
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize, LCID preferredLocale);
