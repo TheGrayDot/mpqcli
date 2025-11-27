@@ -14,7 +14,7 @@ A command line tool to create, add, remove, list, extract, read, and verify MPQ 
 
 **This is a command-line tool, designed for automation and built with the Unix philosophy in mind.**  It is designed to work seamlessly with other command-line tools, supporting piping, redirection, and integration into shell scripts and workflows. For example:
 
-- Run one command to create an MPQ archive from a directory of files
+- Run one command to create an MPQ archive from a directory of files or a single file
 - Run one command to list all files in an MPQ archive
 - Pipe the output to `grep` or other tools to search, filter, or process files
 - Redirect output to files or other commands for further automation
@@ -72,7 +72,7 @@ The `mpqcli` program has the following subcommands:
 - `version`: Print the tool version number
 - `about`: Print information about the tool
 - `info`: Print information about MPQ archive properties
-- `create`: Create an MPQ archive from a target directory
+- `create`: Create an MPQ archive from a target directory or a single file
 - `add`: Add a file to an existing MPQ archive
 - `remove`: Remove a file from an existing MPQ archive
 - `list`: List files in a target MPQ archive
@@ -126,6 +126,16 @@ mpqcli create <target_directory>
 ```
 
 The default mode of operation for the `create` subcommand is to take everything from the "target" directory (and below) and recursively add it to the archive. The directory structure is retained. Windows-style backslash path separators are used (`\`), as per the observed behavior in most MPQ archives.
+
+### Create an MPQ archive from a single file
+
+Create an MPQ file from a single file. Automatically adds `(listfile)` to the archive.
+
+```
+mpqcli create <target_file>
+```
+
+This will put the given file in the root of the MPQ archive. By optionally providing a path in the `--name-in-archive` parameter, the name that the file has in the MPQ archive can be changed, and it can be put in a directory.
 
 ### Create an MPQ archive using a specific version
 
