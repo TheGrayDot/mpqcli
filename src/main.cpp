@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
     std::string baseFile = "default";  // add, remove, extract, read
     std::string basePath = "default"; // add
     std::string baseLocale = "default"; // create, add, remove, extract, read
+    std::string baseNameInArchive = "default"; // add, create
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     // CLI: info
@@ -84,16 +85,17 @@ int main(int argc, char **argv) {
         ->check(CLI::IsMember(validInfoProperties));
 
     // Subcommand: Create
-    CLI::App *create = app.add_subcommand("create", "Create an MPQ archive from target directory");
-    create->add_option("target", baseTarget, "Target directory")
+    CLI::App *create = app.add_subcommand("create", "Create an MPQ archive from target file or directory");
+    create->add_option("target", baseTarget, "Directory or file to put in MPQ archive")
         ->required()
-        ->check(CLI::ExistingDirectory);
+        ->check(CLI::ExistingPath);
     create->add_option("-o,--output", baseOutput, "Output MPQ archive");
     create->add_flag("-s,--sign", createSignArchive, "Sign the MPQ archive (default false)");
     create->add_option("-v,--version", createMpqVersion, "Set the MPQ archive version (default 1)")
         ->check(CLI::Range(1, 2));
     create->add_option("--locale", baseLocale, "Locale to use for added files")
         ->check(LocaleValid);
+    create->add_option("-n,--name-in-archive", baseNameInArchive, "Filename inside MPQ archive");
 
     // Subcommand: Add
     CLI::App *add = app.add_subcommand("add", "Add a file to an existing MPQ archive");
@@ -199,6 +201,10 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Create
     if (app.got_subcommand(create)) {
+        if (!fs::is_regular_file(baseTarget) && baseNameInArchive != "default") {
+            std::cerr << "[!] Cannot specify --name-in-archive when adding a directory." << std::endl;
+            return 1;
+        }
         fs::path outputFilePath;
         if (baseOutput != "default") {
             outputFilePath = fs::absolute(baseOutput);
@@ -217,8 +223,19 @@ int main(int argc, char **argv) {
         HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, createMpqVersion);
         if (hArchive) {
             LCID locale = LangToLocale(baseLocale);
-            AddFiles(hArchive, baseTarget, locale);
+            if (fs::is_regular_file(baseTarget)) {
+                // Default: use the filename as path, saves file to root of MPQ
+                fs::path filePath = fs::path(baseTarget);
+                std::string archivePath = filePath.filename().u8string();
+                if (baseNameInArchive != "default") { // Optional: specified filename inside archive
+                    filePath = fs::path(baseNameInArchive);
+                    archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
+                }
 
+                AddFile(hArchive, baseTarget, archivePath, locale);
+            } else {
+                AddFiles(hArchive, baseTarget, locale);
+            }
             if (createSignArchive) {
                 SignMpqArchive(hArchive);
             }
@@ -327,7 +344,7 @@ int main(int argc, char **argv) {
 
         uint32_t fileSize;
         char* fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize, locale);
-        if (fileContent == NULL) {
+        if (fileContent == nullptr) {
             return 1;
         }
 
