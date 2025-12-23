@@ -176,7 +176,6 @@ int AddFiles(HANDLE hArchive, const std::string& target, LCID locale) {
 }
 
 int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, LCID locale) {
-
     // Return if file doesn't exist on disk
     if (!fs::exists(localFile)) {
         std::cerr << "[!] File doesn't exist on disk: " << localFile << std::endl;

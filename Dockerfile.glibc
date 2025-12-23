@@ -14,7 +14,7 @@ COPY . .
 RUN cmake -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_MPQCLI=ON \
-    -DBUILD_PYTHON_WRAPPER=OFF
+    -DBUILD_STATIC=ON
 
 RUN cmake --build build
 
