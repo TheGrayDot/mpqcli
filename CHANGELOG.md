@@ -1,10 +1,20 @@
 # Changelog
 
+## 0.9.6 - 2025-12-23
+
+### Added
+
+- Proper support for locales in MPQ files
+
+### Fixed
+
+- Fixed bug where MPQ signature only printed on success
+
 ## 0.9.5 - 2025-10-23
 
 ### Changed
 
-- Lond (detailed) list format to output ISO 8601 timestamps
+- Long (detailed) list format to output ISO 8601 timestamps
 
 ### Fixed
 
