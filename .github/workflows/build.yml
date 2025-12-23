@@ -61,7 +61,7 @@ jobs:
           echo "Binary created: mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}"
 
       - name: Upload binary as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}
           path: mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}
@@ -93,7 +93,7 @@ jobs:
         run: cp build/bin/Release/mpqcli.exe build/bin/mpqcli-windows-amd64.exe
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: mpqcli-windows-amd64.exe
           path: build/bin/mpqcli-windows-amd64.exe
@@ -118,7 +118,7 @@ jobs:
           docker save mpqcli -o mpqcli-docker.tar
 
       - name: Upload Docker image as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: mpqcli-docker
           path: mpqcli-docker.tar
