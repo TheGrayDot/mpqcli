@@ -176,7 +176,6 @@ int AddFiles(HANDLE hArchive, const std::string& target, LCID locale) {
 }
 
 int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, LCID locale) {
-
     // Return if file doesn't exist on disk
     if (!fs::exists(localFile)) {
         std::cerr << "[!] File doesn't exist on disk: " << localFile << std::endl;
@@ -327,7 +326,19 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
             }
             DWORD result = SFileEnumLocales(hArchive, findData.cFileName, fileLocales, &maxLocales, 0);
 
-            if (result == ERROR_INSUFFICIENT_BUFFER) {
+            if (result == ERROR_INVALID_PARAMETER) {
+                // This ought to mean that the file name is unknown, whereupon `SFileEnumLocales` exits early
+                // since its check for `IsPseudoFileName` returns true. If that is the case, it will not have
+                // populated `fileLocales` or have updated `maxLocales`.
+                // Just set the maxLocales to 1 and list the file with the unknown name once.
+                maxLocales = 1;
+                fileLocales[0] = defaultLocale;
+
+            } else if (result == ERROR_INVALID_HANDLE || result == ERROR_NOT_SUPPORTED) {
+                std::cerr << "[!] Internal error for file: " << findData.cFileName << std::endl;
+                continue;
+
+            } else if (result == ERROR_INSUFFICIENT_BUFFER) {
                 std::cerr << "[!] There are more than " << maxLocales << " locales for the file: " << findData.cFileName <<
                           ". Will only list the " << maxLocales << " first files." << std::endl;
             }

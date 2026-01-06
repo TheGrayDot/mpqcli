@@ -35,7 +35,7 @@ jobs:
           submodules: false
 
       - name: Download Linux binary (${{ matrix.arch }} ${{ matrix.libc }})
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: mpqcli-linux-${{ matrix.arch }}-${{ matrix.libc }}
           path: build/bin
@@ -73,7 +73,7 @@ jobs:
           submodules: false
 
       - name: Download Windows binary
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: mpqcli-windows-amd64.exe
           path: build/bin/Release

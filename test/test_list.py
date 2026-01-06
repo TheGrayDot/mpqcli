@@ -27,7 +27,7 @@ def test_list_mpq_with_output_v1(binary_path):
     )
 
     output_lines = set(result.stdout.splitlines())
-
+    assert len(result.stdout.splitlines()) == len(expected_output)
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_output, f"Unexpected output: {output_lines}"
 
@@ -65,7 +65,7 @@ def test_list_mpq_with_standard_details(binary_path):
     )
 
     output_lines = set(result.stdout.splitlines())
-
+    assert len(result.stdout.splitlines()) == len(expected_output)
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_output, f"Unexpected output: {output_lines}"
 
@@ -104,7 +104,7 @@ def test_list_mpq_with_specified_details(binary_path):
     )
 
     output_lines = set(result.stdout.splitlines())
-
+    assert len(result.stdout.splitlines()) == len(expected_output)
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_output, f"Unexpected output: {output_lines}"
 
@@ -136,6 +136,197 @@ def test_list_mpq_with_weak_signature(binary_path):
     )
 
     output_lines = set(result.stdout.splitlines())
+    assert len(result.stdout.splitlines()) == len(expected_output)
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_output, f"Unexpected output: {output_lines}"
 
+
+def test_list_mpq_without_providing_listfile(binary_path):
+    """
+    Test MPQ file listing of MPQ that contains no internal listfile.
+
+    This test checks:
+    - That handling MPQs with no internal listfile generates the expected output.
+    """
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
+
+    ## No flags
+    expected_output = {
+        "File00000000.xxx",
+        "File00000001.xxx",
+        "File00000002.xxx",
+    }
+    result = subprocess.run(
+        [str(binary_path), "list", str(test_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    output_lines = set(result.stdout.splitlines())
+    assert len(result.stdout.splitlines()) == len(expected_output)
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_output, f"Unexpected output: {output_lines}"
+
+    ## --all flag
+    expected_output = {
+        "File00000000.xxx",
+        "File00000001.xxx",
+        "File00000002.xxx",
+    }
+    result = subprocess.run(
+        [str(binary_path), "list", "-a", str(test_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    output_lines = set(result.stdout.splitlines())
+    assert len(result.stdout.splitlines()) == len(expected_output)
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_output, f"Unexpected output: {output_lines}"
+
+    ## --all, --detailed flag
+    expected_output = {
+        "      27 enUS                      File00000000.xxx",
+        "      27 enUS                      File00000001.xxx",
+        "      72 enUS                      File00000002.xxx",
+    }
+    result = subprocess.run(
+        [str(binary_path), "list", "-ad", str(test_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    output_lines = set(result.stdout.splitlines())
+    assert len(result.stdout.splitlines()) == len(expected_output)
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_output, f"Unexpected output: {output_lines}"
+
+
+def test_list_mpq_providing_partial_external_listfile(binary_path):
+    """
+    Test MPQ file listing of MPQ that contains no internal listfile, when providing a partially compete external listfile.
+
+    This test checks:
+    - That handling MPQs with no internal listfile generates the expected output.
+    - That providing a partially complete external listfile shows the files it lists.
+    - That the files not listed in the external listfile still show up in the output.
+    """
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
+    listfile = script_dir / "data" / "listfile.txt"
+    listfile.write_text("cats.txt")
+
+    ## No flags
+    expected_output = {
+        "File00000000.xxx",
+        "cats.txt",
+    }
+    result = subprocess.run(
+        [str(binary_path), "list", str(test_file), "--listfile", str(listfile)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    output_lines = set(result.stdout.splitlines())
+    assert len(result.stdout.splitlines()) == len(expected_output)
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_output, f"Unexpected output: {output_lines}"
+
+    ## --all flag
+    expected_output = {
+        "File00000000.xxx",
+        "cats.txt",
+        "(signature)",
+    }
+    result = subprocess.run(
+        [str(binary_path), "list", "-a", str(test_file), "--listfile", str(listfile)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    output_lines = set(result.stdout.splitlines())
+    assert len(result.stdout.splitlines()) == len(expected_output)
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_output, f"Unexpected output: {output_lines}"
+
+    ## --all, --detailed flag
+    expected_output = {
+        "      27 enUS                      File00000000.xxx",
+        "      27 enUS                      cats.txt",
+        "      72 enUS                      (signature)",
+    }
+    result = subprocess.run(
+        [str(binary_path), "list", "-ad", str(test_file), "--listfile", str(listfile)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    output_lines = set(result.stdout.splitlines())
+    assert len(result.stdout.splitlines()) == len(expected_output)
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_output, f"Unexpected output: {output_lines}"
+
+
+def test_list_mpq_providing_complete_external_listfile(binary_path):
+    """
+    Test MPQ file listing of MPQ that contains no internal listfile, when providing a compete external listfile.
+
+    This test checks:
+    - That handling MPQs with no internal listfile generates the expected output.
+    - That providing a complete external listfile shows the files it lists.
+    """
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
+    listfile = script_dir / "data" / "listfile.txt"
+    listfile.write_text("cats.txt\ndogs.txt")
+
+    ## No flags
+    expected_output = {
+        "dogs.txt",
+        "cats.txt",
+    }
+    result = subprocess.run(
+        [str(binary_path), "list", str(test_file), "--listfile", str(listfile)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    output_lines = set(result.stdout.splitlines())
+    assert len(result.stdout.splitlines()) == len(expected_output)
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_output, f"Unexpected output: {output_lines}"
+
+    ## --all flag
+    expected_output = {
+        "dogs.txt",
+        "cats.txt",
+        "(signature)",
+    }
+    result = subprocess.run(
+        [str(binary_path), "list", "-a", str(test_file), "--listfile", str(listfile)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    output_lines = set(result.stdout.splitlines())
+    assert len(result.stdout.splitlines()) == len(expected_output)
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_output, f"Unexpected output: {output_lines}"
+
+    ## --all, --detailed flag
+    expected_output = {
+        "      27 enUS                      dogs.txt",
+        "      27 enUS                      cats.txt",
+        "      72 enUS                      (signature)",
+    }
+    result = subprocess.run(
+        [str(binary_path), "list", "-ad", str(test_file), "--listfile", str(listfile)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    output_lines = set(result.stdout.splitlines())
+    assert len(result.stdout.splitlines()) == len(expected_output)
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_output, f"Unexpected output: {output_lines}"

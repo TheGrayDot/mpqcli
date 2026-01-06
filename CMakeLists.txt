@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(MPQCLI VERSION 0.9.5)
+project(MPQCLI VERSION 0.9.6)
 
 # Options
 option(BUILD_MPQCLI "Build the mpqcli CLI app" ON)
 option(BUILD_STATIC "Build static binary" OFF)
-option(BUILD_PYTHON_WRAPPER "Build the Python wrapper" OFF)
 
 # Set project defaults
 set(CMAKE_CXX_STANDARD 17)
@@ -31,7 +30,7 @@ execute_process (
     OUTPUT_VARIABLE GIT_COMMIT_HASH
 )
 
-# Handle StormLib dependency (always needed for both CLI and Python wrapper)
+# Handle StormLib dependency
 if (NOT EXISTS "${CMAKE_SOURCE_DIR}/extern/StormLib/CMakeLists.txt")
     message(FATAL_ERROR
 "Missing dependency: StormLib
@@ -44,7 +43,7 @@ endif()
 
 add_subdirectory(extern/StormLib)
 
-# Handle CLI11 dependency (only needed for CLI app)
+# Handle CLI11 dependency
 if(BUILD_MPQCLI)
     if (NOT EXISTS "${CMAKE_SOURCE_DIR}/extern/CLI11/CMakeLists.txt")
         message(FATAL_ERROR
@@ -60,15 +59,4 @@ if(BUILD_MPQCLI)
 
     # Add the main application
     add_subdirectory(src)
-endif()
-
-if(BUILD_PYTHON_WRAPPER)
-    # Generate pyproject.toml from template
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml.in
-        ${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml
-        @ONLY
-    )
-
-    add_subdirectory(wrappers/python)
 endif()
