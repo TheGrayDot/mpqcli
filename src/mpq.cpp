@@ -11,6 +11,7 @@
 #include "mpq.h"
 #include "helpers.h"
 #include "locales.h"
+#include "gamerules.h"
 
 namespace fs = std::filesystem;
 
@@ -114,35 +115,38 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
     return 0;
 }
 
-HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_t mpqVersion) {
+HANDLE CreateMpqArchive(
+    const std::string &outputArchiveName,
+    const int32_t fileCount,
+    const GameRules& gameRules
+) {
     // Check if file already exists
     if (fs::exists(outputArchiveName)) {
         std::cerr << "[!] File already exists: " << outputArchiveName << " Exiting..." << std::endl;
         return NULL;
     }
 
-    // Configure flags for MPQ file, this includes:
-    // If we store attributes such as filetime
-    // The MPQ archive version
-    int32_t dwCreateFlags = 0;
-
-    if (mpqVersion == 1) {
-        dwCreateFlags += MPQ_CREATE_ARCHIVE_V1;
-    } else if (mpqVersion == 2) {
-        dwCreateFlags += MPQ_CREATE_ARCHIVE_V2;
-    } else {
-        dwCreateFlags += MPQ_CREATE_ARCHIVE_V1;
-    };
-
-    // Always include attributes
-    // This is needed for filetime, locale, CRC32 and MD5
-    dwCreateFlags += MPQ_CREATE_ATTRIBUTES;
-
     HANDLE hMpq;
-    bool result = SFileCreateArchive(
+
+    // Use game-specific create settings
+    const MpqCreateSettings& settings = gameRules.GetCreateSettings();
+
+    SFILE_CREATE_MPQ createInfo = {};
+    // All logic for defaults and dependencies is handled in GameRules::OverrideCreateSettings
+    createInfo.cbSize = sizeof(SFILE_CREATE_MPQ);
+    createInfo.dwMpqVersion = settings.mpqVersion;
+    createInfo.dwStreamFlags = settings.streamFlags;
+    createInfo.dwFileFlags1 = settings.fileFlags1;
+    createInfo.dwFileFlags2 = settings.fileFlags2;
+    createInfo.dwFileFlags3 = settings.fileFlags3;
+    createInfo.dwAttrFlags = settings.attrFlags;
+    createInfo.dwSectorSize = settings.sectorSize;
+    createInfo.dwRawChunkSize = settings.rawChunkSize;
+    createInfo.dwMaxFileCount = fileCount;
+
+    const bool result = SFileCreateArchive2(
         outputArchiveName.c_str(),
-        dwCreateFlags,
-        fileCount,
+        &createInfo,
         &hMpq
     );
 
@@ -156,12 +160,12 @@ HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_
     return hMpq;
 }
 
-int AddFiles(HANDLE hArchive, const std::string& target, LCID locale) {
+int AddFiles(HANDLE hArchive, const std::string& inputPath, LCID locale, const GameRules& gameRules, const CompressionSettingsOverrides& overrides) {
     // We need to "clean" the target path to ensure it is a valid directory
     // and to strip any directory structure from the files we add
-    fs::path targetPath = fs::path(target);
+    fs::path targetPath = fs::path(inputPath);
 
-    for (const auto &entry : fs::recursive_directory_iterator(target)) {
+    for (const auto &entry : fs::recursive_directory_iterator(inputPath)) {
         if (fs::is_regular_file(entry.path())) {
             // Strip the target path from the file name
             fs::path inputFilePath = fs::relative(entry, targetPath);
@@ -169,13 +173,21 @@ int AddFiles(HANDLE hArchive, const std::string& target, LCID locale) {
             // Normalise path for MPQ
             std::string archiveFilePath = WindowsifyFilePath(inputFilePath.u8string());
 
-            AddFile(hArchive, entry.path().u8string(), archiveFilePath, locale);
+            AddFile(hArchive, entry.path().u8string(), archiveFilePath, locale, gameRules, overrides);
         }
     }
     return 0;
 }
 
-int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, LCID locale) {
+int AddFile(
+    HANDLE hArchive,
+    const fs::path& localFile,
+    const std::string& archiveFilePath,
+    const LCID locale,
+    const GameRules& gameRules,
+    const CompressionSettingsOverrides& overrides
+) {
+
     // Return if file doesn't exist on disk
     if (!fs::exists(localFile)) {
         std::cerr << "[!] File doesn't exist on disk: " << localFile << std::endl;
@@ -210,9 +222,17 @@ int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archi
         }
     }
 
-    // Set file attributes in the MPQ archive (compression and encryption)
-    DWORD dwFlags = MPQ_FILE_COMPRESS | MPQ_FILE_ENCRYPTED;
-    DWORD dwCompression = MPQ_COMPRESSION_ZLIB;
+    // Get file size for rule matching
+    const auto fileSize = static_cast<DWORD>(fs::file_size(localFile));
+
+    // Get game-specific rules
+    auto [flags, compressionFirst, compressionNext] =
+        gameRules.GetCompressionSettings(archiveFilePath, fileSize);
+
+    // Apply overrides where specified, otherwise use game rules
+    DWORD dwFlags = overrides.dwFlags.value_or(flags);
+    DWORD dwCompression = overrides.dwCompression.value_or(compressionFirst);
+    DWORD dwCompressionNext = overrides.dwCompressionNext.value_or(compressionNext);
 
     bool addedFile = SFileAddFileEx(
         hArchive,
@@ -220,7 +240,7 @@ int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archi
         archiveFilePath.c_str(),
         dwFlags,
         dwCompression,
-        MPQ_COMPRESSION_NEXT_SAME
+        dwCompressionNext
     );
 
     if (!addedFile) {

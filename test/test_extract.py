@@ -149,15 +149,12 @@ def test_extract_file_from_mpq_output_directory_specified(binary_path, generate_
     # Create expected_lines set based on expected output with prefix
     expected_lines = {f"[*] Extracted: {line}" for line in expected_output}
 
-    # Create output_file path without suffix (default extract behavior is MPQ without extension)
-    output_file = output_dir.with_suffix("")
-
     # Create output_files set based on directory contents (not full path)
-    output_files = set(fi.name for fi in output_file.glob("*"))
+    output_files = set(fi.name for fi in output_dir.glob("*"))
 
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
-    assert output_file.exists(), "Output directory was not created"
+    assert output_dir.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"
 
 
