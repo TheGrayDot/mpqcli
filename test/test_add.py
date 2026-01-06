@@ -186,6 +186,167 @@ def test_create_mpq_with_locale(binary_path, generate_test_files):
     verify_archive_file_content(binary_path, target_file, expected_content)
 
 
+def test_add_file_with_game_profile(binary_path, generate_test_files):
+    """
+    Test adding a file to an MPQ archive with different game profiles.
+
+    This test checks:
+    - If files can be added with various game profiles.
+    - If the game profile is accepted and applied.
+    - If the correct compression flags are applied to added files.
+    """
+    _ = generate_test_files
+    script_dir = Path(__file__).parent
+    target_file = script_dir / "data" / "files.mpq"
+
+    # Test profiles with their expected flags for .txt files
+    test_cases = [
+        ("generic", "ce"),      # Generic: compressed + encrypted
+        ("diablo1", "ie"),      # Diablo1: imploded + encrypted
+        ("starcraft1", "ce2"),  # StarCraft: compressed + encrypted + key v2
+        ("wow1", "c"),          # WoW 1.x: compressed
+        ("wow2", "cr"),         # WoW 2.x: compressed + sector CRC
+        ("starcraft2", "c"),    # StarCraft2: compressed (small files use single unit)
+        ("diablo3", "c"),       # Diablo3: compressed
+    ]
+
+    for profile, expected_flags in test_cases:
+        # Create a fresh MPQ archive for each test
+        create_mpq_archive_for_test(binary_path, script_dir)
+
+        # Create a test file
+        test_file = script_dir / "data" / f"test_{profile}.txt"
+        test_file.write_text(f"Test file for {profile} profile.")
+
+        result = subprocess.run(
+            [str(binary_path), "add", str(test_file), str(target_file), "--game", profile],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        assert result.returncode == 0, f"mpqcli failed for profile {profile}: {result.stderr}"
+        assert f"Using game profile: {profile}" in result.stdout, f"Game profile message not found for {profile}"
+        assert f"Adding file for locale 0: test_{profile}.txt" in result.stdout
+
+        # Verify compression flags on the added file
+        list_result = subprocess.run(
+            [str(binary_path), "list", str(target_file), "-d", "-p", "flags"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        assert list_result.returncode == 0, f"Failed to list files for {profile}"
+
+        # Check that the added file has the expected flags
+        found_test_file = False
+        for line in list_result.stdout.splitlines():
+            if f"test_{profile}.txt" in line:
+                found_test_file = True
+                flags = line.split()[0]  # Extract flags
+                # Check that expected flags are present in the actual flags
+                for flag in expected_flags:
+                    assert flag in flags, f"Profile {profile}: expected flag '{flag}' in '{flags}' for added file"
+
+        assert found_test_file, f"Profile {profile}: added file not found in archive"
+
+
+def test_add_file_with_invalid_game_profile(binary_path, generate_test_files):
+    """
+    Test adding a file with an invalid game profile.
+
+    This test checks:
+    - If the application exits correctly when an invalid game profile is provided.
+    """
+    _ = generate_test_files
+    script_dir = Path(__file__).parent
+    target_file = script_dir / "data" / "files.mpq"
+
+    # Create a fresh MPQ archive
+    create_mpq_archive_for_test(binary_path, script_dir)
+
+    # Create a test file
+    test_file = script_dir / "data" / "test_invalid.txt"
+    test_file.write_text("Test file for invalid profile.")
+
+    result = subprocess.run(
+        [str(binary_path), "add", str(test_file), str(target_file), "-g", "invalid_profile"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert result.returncode != 0, "mpqcli should have failed with invalid game profile"
+
+
+def test_add_file_with_all_game_profiles(binary_path, generate_test_files):
+    """
+    Test adding files with all available game profiles.
+
+    This test checks:
+    - If all game profiles work with the add command.
+    - If files are actually added to the archive with compression applied.
+    """
+    _ = generate_test_files
+    script_dir = Path(__file__).parent
+    target_file = script_dir / "data" / "files.mpq"
+
+    # All profiles should be accepted
+    all_profiles = [
+        "generic", "diablo1", "lordsofmagic", "starcraft1", "warcraft2", "diablo2",
+        "warcraft3", "warcraft3-map", "wow1", "wow2", "wow3", "wow4", "wow5",
+        "starcraft2", "diablo3"
+    ]
+
+    for profile in all_profiles:
+        # Create a fresh MPQ archive for each test
+        create_mpq_archive_for_test(binary_path, script_dir)
+
+        # Create a test file
+        test_file = script_dir / "data" / f"test_all_{profile}.txt"
+        test_file.write_text(f"Test file for {profile} profile.")
+
+        result = subprocess.run(
+            [str(binary_path), "add", str(test_file), str(target_file), "-g", profile],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        assert result.returncode == 0, f"mpqcli failed for profile {profile}: {result.stderr}"
+        assert f"Using game profile: {profile}" in result.stdout, f"Game profile message not found for {profile}"
+
+        # Verify the file was actually added
+        list_result = subprocess.run(
+            [str(binary_path), "list", str(target_file)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        assert list_result.returncode == 0, f"Failed to list files for {profile}"
+        assert f"test_all_{profile}.txt" in list_result.stdout, f"Profile {profile}: added file not found in archive"
+
+        # Verify that some compression flag is set (at least 'c' for compressed or 'i' for imploded)
+        flags_result = subprocess.run(
+            [str(binary_path), "list", str(target_file), "-d", "-p", "flags"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        assert flags_result.returncode == 0, f"Failed to get flags for {profile}"
+
+        found_with_compression = False
+        for line in flags_result.stdout.splitlines():
+            if f"test_all_{profile}.txt" in line:
+                flags = line.split()[0]
+                # Check that either compressed or imploded flag is present
+                if 'c' in flags or 'i' in flags:
+                    found_with_compression = True
+                break
+
+        assert found_with_compression, f"Profile {profile}: no compression flag found on added file"
+
+
 def create_mpq_archive_for_test(binary_path, script_dir):
     target_dir = script_dir / "data" / "files"
     target_file = target_dir.with_suffix(".mpq")
@@ -194,7 +355,7 @@ def create_mpq_archive_for_test(binary_path, script_dir):
     # test_create_mpq_already_exists
     target_file.unlink(missing_ok=True)
     result = subprocess.run(
-        [str(binary_path), "create", "-v", "1", str(target_dir)],
+        [str(binary_path), "create", "--version", "1", str(target_dir)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True

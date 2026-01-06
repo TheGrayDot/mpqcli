@@ -44,7 +44,7 @@ def test_list_mpq_with_standard_details(binary_path):
 
     expected_output = {
         "      27 enUS                      (listfile)",
-        "     148 enUS                      (attributes)",
+        "     149 enUS                      (attributes)",
         "      27 enUS 2025-07-29 14:31:00  dogs.txt",
         "       8 enUS 2025-07-29 14:31:00  bytes",
         "      27 enUS 2025-07-29 14:31:00  cats.txt",
@@ -85,7 +85,7 @@ def test_list_mpq_with_specified_details(binary_path):
         "    0 eb30456b 48345fbb 0000000000000000       35    cexmn a073c614  dogs.txt",
         "   35 147178ed c99b9ee2 0000000000000000       16    cexmn eaa753f9  bytes",
         "   25 fd657910 4e9b98a7 0000000000000000       35  ce2xmnf 2d2f0a94  (listfile)",
-        "   14 d38437cb 07dfeaec 0000000000000000      123  ce2xmnf 50e314af  (attributes)",
+        "   14 d38437cb 07dfeaec 0000000000000000      124  ce2xmnf 50e314af  (attributes)",
     }
     # Adjust filesize for Windows
     if platform.system() == "Windows":
