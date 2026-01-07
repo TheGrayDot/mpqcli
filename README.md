@@ -19,8 +19,6 @@ A command line tool to create, add, remove, list, extract, read, and verify MPQ 
 - Pipe the output to `grep` or other tools to search, filter, or process files
 - Redirect output to files or other commands for further automation
 
-**This project is primarily for older World of Warcraft MPQ archives**. This means it has been authored for MPQ archives versions 1 and 2, which include the following World of Warcraft (WoW) versions: Vanilla (1.12.1), TBC (2.4.3), and WoTLK (3.3.5). It has only been tested on WoW MPQ archives/patches that use MPQ versions 1 or 2. No testing has been performed on other MPQ versions or archives from other games. However, the tool will most likely work on other MPQ archive versions, as the underlying Stormlib library supports all MPQ archive versions.
-
 If you require an MPQ tool with a graphical interface (GUI) and explicit support for more MPQ archive versions - I would recommend using [Ladik's MPQ Editor](http://www.zezula.net/en/mpq/download.html).
 
 ## Download
@@ -127,13 +125,13 @@ mpqcli create <target_directory>
 
 The default mode of operation for the `create` subcommand is to take everything from the "target" directory (and below) and recursively add it to the archive. The directory structure is retained. Windows-style backslash path separators are used (`\`), as per the observed behavior in most MPQ archives.
 
-### Create an MPQ archive using a specific version
+### Create an MPQ archive for a specific game
 
-Support for creating an MPQ archive version 1 or version 2 by using the `-v` or `--version` argument.
+Target a specific game version by using the `-g` or `--game` argument. This will automatically set the correct archive format version and settings, although they can be overridden.
 
 ```
-mpqcli create -v 1 <target_directory>
-mpqcli create --version 2 <target_directory>
+mpqcli create -g starcraft <target_directory>
+mpqcli create --game wow-wotlk --sector-size 16384 --version 3 <target_directory>    # World of WarCraft - Wrath of the Lich King, but with non-standard sector size and MPQ version
 ```
 
 ### Create and sign an MPQ archive
@@ -177,6 +175,15 @@ Use the `--locale` argument to specify the locale that the added file will have 
 ```
 $ mpqcli add allianz.txt --locale deDE
 [+] Adding file for locale 1031: allianz.txt
+```
+
+### Add a file with game-specific properties
+
+Target a specific game version by using the `-g` or `--game` argument. This will automatically set the correct encryption rules and MPQ flags, although they can be overridden.
+
+```
+$ mpqcli add khwhat1.wav archive.mpq --game wc2   # In StarCraft and WarCraft II MPQs, wav files are compressed in ADPCM form
+[+] Adding file for locale 0: khwhat1.wav
 ```
 
 
