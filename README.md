@@ -82,7 +82,7 @@ The `mpqcli` program has the following subcommands:
 
 ## Command Examples
 
-All of the examples use the MPQ archive file, named `wow-patch.mpq`, from a Vanilla World of Warcraft patch file, named `WoW-1.10.0-to-1.10.1-enGB-patch.zip`. If you want to replicate these examples, you can [download the `wow-patch.mpq` file](https://archive.org/download/World_of_Warcraft_Client_and_Installation_Archive/Patches/1.x/WoW-1.10.0-to-1.10.1-enGB-patch.zip/wow-patch.mpq) from the Internet Archive.
+Many of the examples use the MPQ archive file, named `wow-patch.mpq`, from a Vanilla World of Warcraft patch file, named `WoW-1.10.0-to-1.10.1-enGB-patch.zip`. If you want to replicate these examples, you can [download the `wow-patch.mpq` file](https://archive.org/download/World_of_Warcraft_Client_and_Installation_Archive/Patches/1.x/WoW-1.10.0-to-1.10.1-enGB-patch.zip/wow-patch.mpq) from the Internet Archive.
 
 ### Print information about an MPQ archive
 
@@ -175,7 +175,7 @@ $ mpqcli add fta.txt wow-patch.mpq --path texts
 Use the `--locale` argument to specify the locale that the added file will have in the archive. Note that subsequent added files will have the default locale unless the `--locale` argument is specified again.
 
 ```
-$ mpqcli add allianz.txt --locale deDE
+$ mpqcli add allianz.txt wow-patch.mpq --locale deDE
 [+] Adding file for locale 1031: allianz.txt
 ```
 
@@ -263,15 +263,18 @@ The `list` subcommand supports listing the following properties:
 You can use the `-p` or `--property` argument with the `list` subcommand to print the given properties. Many properties can be given, and they will be printed in the order given.
 
 ```
-$ mpqcli list -d -a War2Patch.mpq -p hash-index -p locale -p flags
- 3028 enUS    iexmn  Rez\gluchat.bin
- 8926 enUS    iexmn  Rez\Gateways.txt
- 9078 enUS    iexmn  Rez\mltiplay.bin
-10329 enUS  ce2xmnf  (listfile)
-14213 enUS    iexmn  Rez\mltiplay_ita.bin
-14472 enUS    iexmn  Rez\mltiplay_esp.bin
-15278 enUS    iexmn  Rez\mltiplay_fra.bin
-15731 enUS    iexmn  Rez\mltiplay_deu.bin
+$ mpqcli list -d -a Patch_rt.mpq -p hash-index -p locale -p flags
+...
+10893 enUS     ixmn  glue\ScorePv\pMain.pcx
+11173 enUS     ixmn  rez\gluAll.tbl
+11174 deDE     ixmn  rez\gluAll.tbl
+11175 esES     ixmn  rez\gluAll.tbl
+11176 frFR     ixmn  rez\gluAll.tbl
+11177 itIT     ixmn  rez\gluAll.tbl
+11178 ptBR     ixmn  rez\gluAll.tbl
+11726 enUS     cxmn  (attributes)
+11884 enUS     ixmn  glue\ScoreTd\pMain.pcx
+...
 ```
 
 ### List all files with an external listfile
