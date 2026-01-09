@@ -74,7 +74,7 @@ def test_add_file_to_mpq_archive(binary_path, generate_test_files):
 
     output_lines = set(result.stdout.splitlines())
     expected_stdout_output = {
-        "[+] Adding file for locale 0: test.txt",
+        "[+] Adding file: test.txt",
     }
     assert output_lines == expected_stdout_output, f"Unexpected output: {output_lines}"
 
@@ -165,7 +165,7 @@ def test_create_mpq_with_locale(binary_path, generate_test_files):
 
     output_lines = set(result.stdout.splitlines())
     expected_stdout_output = {
-        "[+] Adding file for locale 1034: cats.txt",
+        "[+] Adding file for locale esES: cats.txt",
     }
     assert output_lines == expected_stdout_output, f"Unexpected output: {output_lines}"
 
@@ -227,7 +227,7 @@ def test_add_file_with_game_profile(binary_path, generate_test_files):
 
         assert result.returncode == 0, f"mpqcli failed for profile {profile}: {result.stderr}"
         assert f"Using game profile: {profile}" in result.stdout, f"Game profile message not found for {profile}"
-        assert f"Adding file for locale 0: test_{profile}.txt" in result.stdout
+        assert f"Adding file: test_{profile}.txt" in result.stdout
 
         # Verify compression flags on the added file
         list_result = subprocess.run(
