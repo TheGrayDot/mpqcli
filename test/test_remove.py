@@ -45,13 +45,13 @@ def test_remove_target_file_does_not_exist(binary_path, generate_locales_mpq_tes
 
     output_lines = set(result.stdout.splitlines())
     expected_stdout_output = {
-        "[-] Removing file for locale 0: does-not-exist.txt",
+        "[-] Removing file: does-not-exist.txt",
     }
     assert output_lines == expected_stdout_output, f"Unexpected output: {output_lines}"
 
     output_lines = set(result.stderr.splitlines())
     expected_stderr_output = {
-        "[!] Failed: File doesn't exist for locale 0: does-not-exist.txt",
+        "[!] Failed: File doesn't exist: does-not-exist.txt",
     }
     assert output_lines == expected_stderr_output, f"Unexpected output: {output_lines}"
 
@@ -79,7 +79,7 @@ def test_remove_file_from_mpq_archive(binary_path, generate_locales_mpq_test_fil
 
     output_lines = set(result.stdout.splitlines())
     expected_output = {
-        "[-] Removing file for locale 0: cats.txt",
+        "[-] Removing file: cats.txt",
     }
     assert output_lines == expected_output, f"Unexpected output: {output_lines}"
 
@@ -106,6 +106,7 @@ def test_remove_file_with_locale_from_mpq_archive(binary_path, generate_locales_
         "enUS  cats.txt",
         "deDE  cats.txt",
         "esES  cats.txt",
+        "041D  cats.txt",
     }
     verify_archive_content(binary_path, target_file, expected_output)
 
@@ -121,6 +122,7 @@ def test_remove_file_with_locale_from_mpq_archive(binary_path, generate_locales_
     expected_output = {
         "deDE  cats.txt",
         "esES  cats.txt",
+        "041D  cats.txt",
     }
     verify_archive_content(binary_path, target_file, expected_output)
 
@@ -135,6 +137,7 @@ def test_remove_file_with_locale_from_mpq_archive(binary_path, generate_locales_
 
     expected_output = {
         "deDE  cats.txt",
+        "041D  cats.txt",
     }
     verify_archive_content(binary_path, target_file, expected_output)
 

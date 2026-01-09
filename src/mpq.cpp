@@ -200,13 +200,13 @@ int AddFile(
     if (SFileOpenFileEx(hArchive, archiveFilePath.c_str(), SFILE_OPEN_FROM_MPQ, &hFile)) {
         int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
         if (fileLocale == locale) {
-            std::cerr << "[!] File for locale " << locale << " already exists in MPQ archive: " << archiveFilePath
+            std::cerr << "[!] File" << PrettyPrintLocale(locale, " for locale ") << " already exists in MPQ archive: " << archiveFilePath
                       << " - Skipping..." << std::endl;
             return -1;
         }
     }
     SFileCloseFile(hFile);
-    std::cout << "[+] Adding file for locale " << locale << ": " << archiveFilePath << std::endl;
+    std::cout << "[+] Adding file" << PrettyPrintLocale(locale, " for locale ") << ": " << archiveFilePath << std::endl;
 
     // Verify that we are not exceeding maxFile size of the archive, and if we do, increase it
     int32_t numberOfFiles = GetFileInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
@@ -254,15 +254,15 @@ int AddFile(
 
 int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath, LCID locale) {
     SFileSetLocale(locale);
-    std::cout << "[-] Removing file for locale " << locale <<": " << archiveFilePath << std::endl;
+    std::cout << "[-] Removing file" << PrettyPrintLocale(locale, " for locale ") <<": " << archiveFilePath << std::endl;
 
     if (!SFileHasFile(hArchive, archiveFilePath.c_str())) {
-        std::cerr << "[!] Failed: File doesn't exist for locale " << locale << ": " << archiveFilePath << std::endl;
+        std::cerr << "[!] Failed: File doesn't exist" << PrettyPrintLocale(locale, " for locale ") << ": " << archiveFilePath << std::endl;
         return -1;
     }
 
     if (!SFileRemoveFile(hArchive, archiveFilePath.c_str(), 0)) {
-        std::cerr << "[!] Failed: File cannot be removed for locale " << locale << ": " << archiveFilePath << std::endl;
+        std::cerr << "[!] Failed: File cannot be removed" << PrettyPrintLocale(locale, " for locale ") << ": " << archiveFilePath << std::endl;
         return -1;
     }
 

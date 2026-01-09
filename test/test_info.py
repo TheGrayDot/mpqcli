@@ -19,8 +19,8 @@ def test_info_v1(binary_path):
 
     # Adjust the expected output for Windows due to different line endings
     if platform.system() == "Windows":
-        expected_output.remove("Archive size: 1380")
-        expected_output.add("Archive size: 1382")
+        expected_output.remove("Archive size: 1381")
+        expected_output.add("Archive size: 1383")
 
     result = subprocess.run(
         [str(binary_path), "info", str(test_file)],

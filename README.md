@@ -157,7 +157,7 @@ Add a local file to an already existing MPQ archive.
 ```
 $ echo "For The Horde" > fth.txt
 $ mpqcli add fth.txt wow-patch.mpq
-[+] Adding file for locale 0: fth.txt
+[+] Adding file: fth.txt
 ```
 
 Alternatively, you can add a file to a specific subdirectory using the `-p` or `--path` argument.
@@ -165,7 +165,7 @@ Alternatively, you can add a file to a specific subdirectory using the `-p` or `
 ```
 $ echo "For The Alliance" > fta.txt
 $ mpqcli add fta.txt wow-patch.mpq --path texts
-[+] Adding file for locale 0: texts\fta.txt
+[+] Adding file: texts\fta.txt
 ```
 
 ### Add files to an MPQ archive with a given locale
@@ -174,7 +174,7 @@ Use the `--locale` argument to specify the locale that the added file will have 
 
 ```
 $ mpqcli add allianz.txt wow-patch.mpq --locale deDE
-[+] Adding file for locale 1031: allianz.txt
+[+] Adding file for locale deDE: allianz.txt
 ```
 
 ### Add a file with game-specific properties
@@ -183,7 +183,7 @@ Target a specific game version by using the `-g` or `--game` argument. This will
 
 ```
 $ mpqcli add khwhat1.wav archive.mpq --game wc2   # In StarCraft and WarCraft II MPQs, wav files are compressed in ADPCM form
-[+] Adding file for locale 0: khwhat1.wav
+[+] Adding file: khwhat1.wav
 ```
 
 
@@ -193,7 +193,7 @@ Remove a file from an existing MPQ archive.
 
 ```
 $ mpqcli remove fth.txt wow-patch.mpq
-[-] Removing file for locale 0: fth.txt
+[-] Removing file: fth.txt
 ```
 
 ### Remove a file from an MPQ archive with a given locale
@@ -202,7 +202,7 @@ Use the `--locale` argument to specify the locale of the file to be removed.
 
 ```
 $ mpqcli remove alianza.txt wow-patch.mpq --locale esES
-[-] Removing file for locale 1034: alianza.txt
+[-] Removing file for locale esES: alianza.txt
 ```
 
 
