@@ -134,7 +134,7 @@ def generate_mpq_without_internal_listfile(binary_path):
     shutil.rmtree(locales_files_dir, ignore_errors=True)
     locales_files_dir.mkdir(parents=True, exist_ok=True)
 
-    mpq_file_name = data_dir / "mpq_without_internal_listfile2.mpq"
+    mpq_file_name = data_dir / "mpq_without_internal_listfile.mpq"
     mpq_file_name.unlink(missing_ok=True)
 
     content = [

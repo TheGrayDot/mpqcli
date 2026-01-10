@@ -314,7 +314,7 @@ def test_extract_file_from_mpq_with_no_locale_argument_and_no_default_locale(bin
 
     This test checks:
     - When no locale is given, and no file by that name exists for the default locale,
-    but one does for a different one, no file is extracted.
+      but one does for a different one, no file is extracted.
     """
     _ = generate_locales_mpq_test_files
     script_dir = Path(__file__).parent
@@ -334,7 +334,9 @@ def test_extract_file_from_mpq_with_no_locale_argument_and_no_default_locale(bin
 
     expected_stdout_output = set()
     expected_stderr_output = {
-        "[!] Failed: File doesn't exist: " + file_to_extract,
+        "[!] Failed: File doesn't exist for locale enUS: " + file_to_extract,
+        "",
+        "[!] Failed to extract all files.",
     }
 
     stdout_output_lines = set(result.stdout.splitlines())
@@ -342,7 +344,7 @@ def test_extract_file_from_mpq_with_no_locale_argument_and_no_default_locale(bin
 
     output_file = output_dir / file_to_extract
 
-    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
     assert stdout_output_lines == expected_stdout_output, f"Unexpected output: {stdout_output_lines}"
     assert stderr_output_lines == expected_stderr_output, f"Unexpected output: {stderr_output_lines}"
     assert not output_file.exists(), "Output directory was not created"
@@ -354,7 +356,7 @@ def test_extract_file_from_mpq_with_wrong_locale_argument_and_no_default_locale(
 
     This test checks:
     - When no locale is given, and no file by that name exists for the default locale,
-    but one does for a different one, no file is extracted.
+      but one does for a different one, no file is extracted.
     """
     _ = generate_locales_mpq_test_files
     script_dir = Path(__file__).parent
@@ -375,7 +377,9 @@ def test_extract_file_from_mpq_with_wrong_locale_argument_and_no_default_locale(
 
     expected_stdout_output = set()
     expected_stderr_output = {
-        "[!] Failed: File doesn't exist: " + file_to_extract,
+        "[!] Failed: File doesn't exist for locale " + locale + ": " + file_to_extract,
+        "",
+        "[!] Failed to extract all files.",
     }
 
     stdout_output_lines = set(result.stdout.splitlines())
@@ -383,20 +387,22 @@ def test_extract_file_from_mpq_with_wrong_locale_argument_and_no_default_locale(
 
     output_file = output_dir / file_to_extract
 
-    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
     assert stdout_output_lines == expected_stdout_output, f"Unexpected output: {stdout_output_lines}"
     assert stderr_output_lines == expected_stderr_output, f"Unexpected output: {stderr_output_lines}"
     assert not output_file.exists(), "Output directory was not created"
 
 
-def test_extract_all_files_from_mpq_without_providing_listfile(binary_path, generate_test_files):
+def test_extract_all_files_from_mpq_without_providing_listfile(binary_path, generate_mpq_without_internal_listfile):
     """
-    Test file extraction of all files from MPQ archive with no internal listfile, when no external one is provided
+    Test file extraction of all files from MPQ archive with no internal listfile,
+    when no external one is provided
 
     This test checks:
-    - That files from an MPQs with no internal listfile can still be extracted.
+    - That files from MPQs with no internal listfile can still be extracted.
+    - That files with different locales than the default are not extracted.
     """
-    _ = generate_test_files
+    _ = generate_mpq_without_internal_listfile
     script_dir = Path(__file__).parent
     test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
     output_dir = script_dir / "data" / "extracted_file"
@@ -406,8 +412,7 @@ def test_extract_all_files_from_mpq_without_providing_listfile(binary_path, gene
 
     expected_output = {
         "File00000000.xxx",
-        "File00000001.xxx",
-        "File00000002.xxx",
+        "File00000003.xxx",
     }
 
     result = subprocess.run(
@@ -428,30 +433,77 @@ def test_extract_all_files_from_mpq_without_providing_listfile(binary_path, gene
     # Create output_files set based on directory contents (not full path)
     output_files = set(fi.name for fi in output_file.glob("*"))
 
-    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
     assert output_file.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"
 
 
-def test_extract_single_file_from_mpq_without_providing_listfile(binary_path, generate_test_files):
+def test_extract_all_files_from_mpq_without_providing_listfile_and_with_given_locale(binary_path, generate_mpq_without_internal_listfile):
     """
-    Test file extraction for MPQ archive with no internal listfile and without providing an external one
+    Test file extraction of all files from MPQ archive with no internal listfile,
+    when no external one is provided
 
     This test checks:
-    - That files from an MPQs with no internal listfile can still be extracted.
+    - That files from MPQs with no internal listfile can still be extracted.
+    - That files with the default and the given locale are extracted.
     """
-    _ = generate_test_files
+    _ = generate_mpq_without_internal_listfile
     script_dir = Path(__file__).parent
     test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
     output_dir = script_dir / "data" / "extracted_file"
-    file_to_extract = "File00000001.xxx"
     if output_dir.exists():
         shutil.rmtree(output_dir)
 
 
     expected_output = {
-        "File00000001.xxx",
+        "File00000000.xxx",
+        "File00000002.xxx",
+        "File00000003.xxx",
+    }
+
+    result = subprocess.run(
+        [str(binary_path), "extract", "-o", str(output_dir), str(test_file), "--locale", "041D"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    output_lines = set(result.stdout.splitlines())
+
+    # Create expected_lines set based on expected output with prefix
+    expected_lines = {f"[*] Extracted: {line}" for line in expected_output}
+
+    # Create output_file path without suffix (default extract behavior is MPQ without extension)
+    output_file = output_dir.with_suffix("")
+
+    # Create output_files set based on directory contents (not full path)
+    output_files = set(fi.name for fi in output_file.glob("*"))
+
+    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
+    assert output_file.exists(), "Output directory was not created"
+    assert output_files == expected_output, f"Unexpected files: {output_files}"
+
+
+def test_extract_single_file_from_mpq_without_providing_listfile(binary_path, generate_mpq_without_internal_listfile):
+    """
+    Test file extraction for MPQ archive with no internal listfile and without providing an external one
+
+    This test checks:
+    - That files from MPQs with no internal listfile can still be extracted.
+    """
+    _ = generate_mpq_without_internal_listfile
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
+    output_dir = script_dir / "data" / "extracted_file"
+    file_to_extract = "File00000000.xxx"
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+
+
+    expected_output = {
+        "File00000000.xxx",
     }
 
     result = subprocess.run(
@@ -478,15 +530,64 @@ def test_extract_single_file_from_mpq_without_providing_listfile(binary_path, ge
     assert output_files == expected_output, f"Unexpected files: {output_files}"
 
 
-def test_extract_all_files_from_mpq_providing_partial_external_listfile(binary_path, generate_test_files):
+def test_extract_all_files_from_mpq_providing_partial_external_listfile(binary_path, generate_mpq_without_internal_listfile):
     """
     Test file extraction of all files from MPQ archive containing no internal listfile,
     when providing a partially complete external listfile
 
     This test checks:
-    - That files from an MPQs with no internal listfile can still be extracted.
+    - That files from MPQs with no internal listfile can still be extracted.
+    - That files with different locales than the default are not extracted.
     """
-    _ = generate_test_files
+    _ = generate_mpq_without_internal_listfile
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
+    output_dir = script_dir / "data" / "extracted_file"
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+    listfile = script_dir / "data" / "listfile.txt"
+    listfile.write_text("capybaras.txt")
+
+
+    expected_output = {
+        "(signature)",
+        "capybaras.txt",
+    }
+
+    result = subprocess.run(
+        [str(binary_path), "extract", "-o", str(output_dir), "-l", listfile, str(test_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    output_lines = set(result.stdout.splitlines())
+
+    # Create expected_lines set based on expected output with prefix
+    expected_lines = {f"[*] Extracted: {line}" for line in expected_output}
+
+    # Create output_file path without suffix (default extract behavior is MPQ without extension)
+    output_file = output_dir.with_suffix("")
+
+    # Create output_files set based on directory contents (not full path)
+    output_files = set(fi.name for fi in output_file.glob("*"))
+
+    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
+    assert output_file.exists(), "Output directory was not created"
+    assert output_files == expected_output, f"Unexpected files: {output_files}"
+
+
+def test_extract_all_files_from_mpq_providing_partial_external_listfile_and_with_given_locale(binary_path, generate_mpq_without_internal_listfile):
+    """
+    Test file extraction of all files from MPQ archive containing no internal listfile,
+    when providing a partially complete external listfile
+
+    This test checks:
+    - That files from MPQs with no internal listfile can still be extracted.
+    - That files with the default and the given locale are extracted.
+    """
+    _ = generate_mpq_without_internal_listfile
     script_dir = Path(__file__).parent
     test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
     output_dir = script_dir / "data" / "extracted_file"
@@ -503,7 +604,7 @@ def test_extract_all_files_from_mpq_providing_partial_external_listfile(binary_p
     }
 
     result = subprocess.run(
-        [str(binary_path), "extract", "-o", str(output_dir), "-l", listfile, str(test_file)],
+        [str(binary_path), "extract", "-o", str(output_dir), "-l", listfile, str(test_file), "--locale", "deDE"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
@@ -520,34 +621,34 @@ def test_extract_all_files_from_mpq_providing_partial_external_listfile(binary_p
     # Create output_files set based on directory contents (not full path)
     output_files = set(fi.name for fi in output_file.glob("*"))
 
-    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
     assert output_file.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"
 
 
-def test_extract_all_files_from_mpq_providing_complete_external_listfile(binary_path, generate_test_files):
+def test_extract_all_files_from_mpq_providing_complete_external_listfile(binary_path, generate_mpq_without_internal_listfile):
     """
     Test file extraction of all files from MPQ archive containing no internal listfile,
     when providing a complete external listfile
 
     This test checks:
-    - That files from an MPQs with no internal listfile can still be extracted.
+    - That files from MPQs with no internal listfile can still be extracted.
+    - That files with different locales than the default are not extracted.
     """
-    _ = generate_test_files
+    _ = generate_mpq_without_internal_listfile
     script_dir = Path(__file__).parent
     test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
     output_dir = script_dir / "data" / "extracted_file"
     if output_dir.exists():
         shutil.rmtree(output_dir)
     listfile = script_dir / "data" / "listfile.txt"
-    listfile.write_text("cats.txt\ndogs.txt")
+    listfile.write_text("cats.txt\ndogs.txt\ncapybaras.txt")
 
 
     expected_output = {
         "(signature)",
-        "dogs.txt",
-        "cats.txt",
+        "capybaras.txt",
     }
 
     result = subprocess.run(
@@ -568,7 +669,56 @@ def test_extract_all_files_from_mpq_providing_complete_external_listfile(binary_
     # Create output_files set based on directory contents (not full path)
     output_files = set(fi.name for fi in output_file.glob("*"))
 
-    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
+    assert output_file.exists(), "Output directory was not created"
+    assert output_files == expected_output, f"Unexpected files: {output_files}"
+
+
+def test_extract_all_files_from_mpq_providing_complete_external_listfile_and_with_given_locale(binary_path, generate_mpq_without_internal_listfile):
+    """
+    Test file extraction of all files from MPQ archive containing no internal listfile,
+    when providing a complete external listfile
+
+    This test checks:
+    - That files from an MPQs with no internal listfile can still be extracted.
+    - That files with the default and the given locale are extracted.
+    """
+    _ = generate_mpq_without_internal_listfile
+    script_dir = Path(__file__).parent
+    test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
+    output_dir = script_dir / "data" / "extracted_file"
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+    listfile = script_dir / "data" / "listfile.txt"
+    listfile.write_text("cats.txt\ndogs.txt\ncapybaras.txt")
+
+
+    expected_output = {
+        "(signature)",
+        "dogs.txt",
+        "capybaras.txt",
+    }
+
+    result = subprocess.run(
+        [str(binary_path), "extract", "-o", str(output_dir), "-l", listfile, str(test_file), "--locale", "041D"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    output_lines = set(result.stdout.splitlines())
+
+    # Create expected_lines set based on expected output with prefix
+    expected_lines = {f"[*] Extracted: {line}" for line in expected_output}
+
+    # Create output_file path without suffix (default extract behavior is MPQ without extension)
+    output_file = output_dir.with_suffix("")
+
+    # Create output_files set based on directory contents (not full path)
+    output_files = set(fi.name for fi in output_file.glob("*"))
+
+    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
     assert output_file.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"

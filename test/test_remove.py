@@ -51,24 +51,73 @@ def test_remove_target_file_does_not_exist(binary_path, generate_locales_mpq_tes
 
     output_lines = set(result.stderr.splitlines())
     expected_stderr_output = {
-        "[!] Failed: File doesn't exist: does-not-exist.txt",
+        "[!] Failed: File doesn't exist for locale enUS: does-not-exist.txt",
     }
     assert output_lines == expected_stderr_output, f"Unexpected output: {output_lines}"
 
-    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
 
 
-def test_remove_file_from_mpq_archive(binary_path, generate_locales_mpq_test_files):
+def test_remove_file_from_mpq_archive_with_wrong_locale_given(
+        binary_path,
+        generate_locales_mpq_test_files,
+        generate_mpq_without_internal_listfile,
+):
     """
-    Test MPQ file removal.
+    Test MPQ file removal, with the wrong locale given.
 
     This test checks:
-    - If the application correctly handles removing a file from an MPQ archive.
+    - When the user gives a locale that does not exist for the file,
+      the file is not deleted.
     """
     _ = generate_locales_mpq_test_files
+    _ = generate_mpq_without_internal_listfile
     script_dir = Path(__file__).parent
-    test_file = "cats.txt"
-    target_file = script_dir / "data" / "mpq_with_many_locales.mpq"
+
+    permutations = [
+        ("capybaras.txt", "mpq_without_internal_listfile.mpq"), # File exists only for the Default locale
+        ("cats.txt", "mpq_without_internal_listfile.mpq"),      # File exists only for the German locale
+        ("dogs.txt", "mpq_without_internal_listfile.mpq"),      # File exists only for the Swedish locale (which is not in locales.cpp)
+        ("cats.txt", "mpq_with_many_locales.mpq"),              # File exists for many locales
+    ]
+
+    for test_file, target_file_name in permutations:
+        target_file = script_dir / "data" / target_file_name
+
+        result = subprocess.run(
+            [str(binary_path), "remove", str(test_file), str(target_file), "--locale", "ptPT"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        output_lines = set(result.stdout.splitlines())
+        expected_output = {
+            "[-] Removing file for locale ptPT: " + test_file,
+        }
+        assert output_lines == expected_output, f"Unexpected output: {output_lines}"
+
+        output_lines = set(result.stderr.splitlines())
+        expected_stderr_output = {
+            "[!] Failed: File doesn't exist for locale ptPT: " + test_file,
+        }
+        assert output_lines == expected_stderr_output, f"Unexpected output: {output_lines}"
+
+        assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+
+
+def test_remove_default_locale_file_from_mpq_archive_unique_name(binary_path, generate_mpq_without_internal_listfile):
+    """
+    Test MPQ file removal, with no locale given.
+
+    This test checks:
+    - When there is only one file with the same name and default locale,
+      it should be deleted, when no locale is given by the user.
+    """
+    _ = generate_mpq_without_internal_listfile
+    script_dir = Path(__file__).parent
+    test_file = "capybaras.txt"
+    target_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
 
     result = subprocess.run(
         [str(binary_path), "remove", str(test_file), str(target_file)],
@@ -79,7 +128,7 @@ def test_remove_file_from_mpq_archive(binary_path, generate_locales_mpq_test_fil
 
     output_lines = set(result.stdout.splitlines())
     expected_output = {
-        "[-] Removing file: cats.txt",
+        "[-] Removing file: capybaras.txt",
     }
     assert output_lines == expected_output, f"Unexpected output: {output_lines}"
 
@@ -90,12 +139,13 @@ def test_remove_file_from_mpq_archive(binary_path, generate_locales_mpq_test_fil
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
 
 
-def test_remove_file_with_locale_from_mpq_archive(binary_path, generate_locales_mpq_test_files):
+def test_remove_files_from_mpq_archive_shared_name(binary_path, generate_locales_mpq_test_files):
     """
     Test MPQ file removal with locale.
 
     This test checks:
-    - If the application correctly handles removing a file with the given locale from an MPQ archive.
+    - If the application correctly handles removing a file with
+      the given locale from an MPQ archive.
     """
     _ = generate_locales_mpq_test_files
     script_dir = Path(__file__).parent
@@ -142,10 +192,82 @@ def test_remove_file_with_locale_from_mpq_archive(binary_path, generate_locales_
     verify_archive_content(binary_path, target_file, expected_output)
 
 
-def verify_archive_content(binary_path, target_file, expected_output):
-    # Verify that the archive has the expected content
     result = subprocess.run(
-        [str(binary_path), "list", "-d", str(target_file), "-p", "locale"],
+        [str(binary_path), "remove", str(test_file), str(target_file), "--locale", "041D"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+
+    expected_output = {
+        "deDE  cats.txt",
+    }
+    verify_archive_content(binary_path, target_file, expected_output)
+
+
+def test_remove_files_from_mpq_archive_unique_name(binary_path, generate_mpq_without_internal_listfile):
+    """
+    Test MPQ file removal with locale.
+
+    This test checks:
+    - If the application correctly handles removing a file with
+      the given locale from an MPQ archive.
+    """
+    _ = generate_mpq_without_internal_listfile
+    script_dir = Path(__file__).parent
+    test_file = "dogs.txt"
+    target_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
+    listfile = script_dir / "data" / "listfile.txt"
+    listfile.write_text("cats.txt\ndogs.txt\ncapybaras.txt")
+
+    expected_output = {
+        "enUS  capybaras.txt",
+        "deDE  cats.txt",
+        "041D  dogs.txt",
+    }
+    verify_archive_content(binary_path, target_file, expected_output, listfile)
+
+    # Removing without specifying locale means removing using locale 0 = enUS
+    result = subprocess.run(
+        [str(binary_path), "remove", str(test_file), str(target_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+
+    expected_output = {
+        "enUS  capybaras.txt",
+        "deDE  cats.txt",
+        "041D  dogs.txt",
+    }
+    verify_archive_content(binary_path, target_file, expected_output, listfile)
+
+
+    result = subprocess.run(
+        [str(binary_path), "remove", str(test_file), str(target_file), "--locale", "041D"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+
+    expected_output = {
+        "enUS  capybaras.txt",
+        "deDE  cats.txt",
+    }
+    verify_archive_content(binary_path, target_file, expected_output, listfile)
+
+
+def verify_archive_content(binary_path, target_file, expected_output, listfile = Path()):
+    # Verify that the archive has the expected content
+    cmd = [str(binary_path), "list", "-d", str(target_file), "-p", "locale"]
+    if listfile != Path():
+        cmd.extend(["--listfile", str(listfile)])
+
+    result = subprocess.run(
+        cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True

@@ -150,7 +150,7 @@ def test_list_mpq_without_providing_listfile(binary_path, generate_mpq_without_i
     """
     _ = generate_mpq_without_internal_listfile
     script_dir = Path(__file__).parent
-    test_file = script_dir / "data" / "mpq_without_internal_listfile2.mpq"
+    test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
 
     ## No flags
     expected_output = {
@@ -227,7 +227,7 @@ def test_list_mpq_providing_partial_external_listfile(binary_path, generate_mpq_
     """
     _ = generate_mpq_without_internal_listfile
     script_dir = Path(__file__).parent
-    test_file = script_dir / "data" / "mpq_without_internal_listfile2.mpq"
+    test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
     listfile = script_dir / "data" / "listfile.txt"
     listfile.write_text("cats.txt")
 
@@ -303,7 +303,7 @@ def test_list_mpq_providing_complete_external_listfile(binary_path, generate_mpq
     """
     _ = generate_mpq_without_internal_listfile
     script_dir = Path(__file__).parent
-    test_file = script_dir / "data" / "mpq_without_internal_listfile2.mpq"
+    test_file = script_dir / "data" / "mpq_without_internal_listfile.mpq"
     listfile = script_dir / "data" / "listfile.txt"
     listfile.write_text("cats.txt\ndogs.txt\ncapybaras.txt")
 

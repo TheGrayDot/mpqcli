@@ -31,6 +31,20 @@ int CloseMpqArchive(HANDLE hArchive) {
     return 1;
 }
 
+bool FileExistsInArchiveForLocale(const HANDLE hArchive, const std::string& filePath, const LCID locale) {
+    bool fileExists = false;
+    SFileSetLocale(locale);
+    HANDLE hFile;
+    if (SFileOpenFileEx(hArchive, filePath.c_str(), SFILE_OPEN_FROM_MPQ, &hFile)) {
+        const auto fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
+        if (fileLocale == locale) {
+            fileExists = true;
+        }
+    }
+    SFileCloseFile(hFile);
+    return fileExists;
+}
+
 int SignMpqArchive(HANDLE hArchive) {
     if (!SFileSignArchive(hArchive, SIGNATURE_TYPE_WEAK)) {
         std::cerr << "[!] Failed to sign MPQ archive." << std::endl;
@@ -52,29 +66,32 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& 
         return -1;
     }
 
+    int32_t result = 0;
     do {
-        int32_t result = ExtractFile(
+        result |= ExtractFile(
             hArchive,
             output,
             findData.cFileName,
             true,  // Keep folder structure
             preferredLocale
         );
-        if (result != 0) {
-            return result;
-        }
     } while (SFileFindNextFile(
         findHandle,
         &findData));
 
-    return 0;
+    return result;
 }
 
 int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure, LCID preferredLocale) {
     SFileSetLocale(preferredLocale);
     const char *szFileName = fileName.c_str();
-    if (!SFileHasFile(hArchive, szFileName)) {
-        std::cerr << "[!] Failed: File doesn't exist: " << szFileName << std::endl;
+    if (
+        !FileExistsInArchiveForLocale(hArchive, szFileName, preferredLocale) &&
+        !FileExistsInArchiveForLocale(hArchive, szFileName, defaultLocale)
+    ) {
+        std::cerr << "[!] Failed: File doesn't exist"
+            << PrettyPrintLocale(preferredLocale, " for locale ", true)
+            << ": " << szFileName << std::endl;
         return -1;
     }
 
@@ -194,18 +211,11 @@ int AddFile(
         return -1;
     }
 
-    // Check if file exists in MPQ archive
-    SFileSetLocale(locale);
-    HANDLE hFile;
-    if (SFileOpenFileEx(hArchive, archiveFilePath.c_str(), SFILE_OPEN_FROM_MPQ, &hFile)) {
-        int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
-        if (fileLocale == locale) {
-            std::cerr << "[!] File" << PrettyPrintLocale(locale, " for locale ") << " already exists in MPQ archive: " << archiveFilePath
-                      << " - Skipping..." << std::endl;
-            return -1;
-        }
+    if (FileExistsInArchiveForLocale(hArchive, archiveFilePath, locale)) {
+        std::cerr << "[!] File" << PrettyPrintLocale(locale, " for locale ") << " already exists in MPQ archive: "
+            << archiveFilePath << " - Skipping..." << std::endl;
+        return -1;
     }
-    SFileCloseFile(hFile);
     std::cout << "[+] Adding file" << PrettyPrintLocale(locale, " for locale ") << ": " << archiveFilePath << std::endl;
 
     // Verify that we are not exceeding maxFile size of the archive, and if we do, increase it
@@ -256,13 +266,17 @@ int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath, LCID locale)
     SFileSetLocale(locale);
     std::cout << "[-] Removing file" << PrettyPrintLocale(locale, " for locale ") <<": " << archiveFilePath << std::endl;
 
-    if (!SFileHasFile(hArchive, archiveFilePath.c_str())) {
-        std::cerr << "[!] Failed: File doesn't exist" << PrettyPrintLocale(locale, " for locale ") << ": " << archiveFilePath << std::endl;
+    if (!FileExistsInArchiveForLocale(hArchive, archiveFilePath, locale)) {
+        std::cerr << "[!] Failed: File doesn't exist"
+            << PrettyPrintLocale(locale, " for locale ", true)
+            << ": " << archiveFilePath << std::endl;
         return -1;
     }
 
     if (!SFileRemoveFile(hArchive, archiveFilePath.c_str(), 0)) {
-        std::cerr << "[!] Failed: File cannot be removed" << PrettyPrintLocale(locale, " for locale ") << ": " << archiveFilePath << std::endl;
+        std::cerr << "[!] Failed: File cannot be removed"
+            << PrettyPrintLocale(locale, " for locale ", true)
+            << ": " << archiveFilePath << std::endl;
         return -1;
     }
 
@@ -460,8 +474,13 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
 
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize, LCID preferredLocale) {
     SFileSetLocale(preferredLocale);
-    if (!SFileHasFile(hArchive, szFileName)) {
-        std::cerr << "[!] Failed: File doesn't exist: " << szFileName << std::endl;
+    if (
+        !FileExistsInArchiveForLocale(hArchive, szFileName, preferredLocale) &&
+        !FileExistsInArchiveForLocale(hArchive, szFileName, defaultLocale)
+    ) {
+        std::cerr << "[!] Failed: File doesn't exist"
+            << PrettyPrintLocale(preferredLocale, " for locale ", true)
+            << ": " << szFileName << std::endl;
         return NULL;
     }
 
