@@ -359,8 +359,9 @@ int main(int argc, char **argv) {
         }
 
         LCID locale = LangToLocale(baseLocale);
-        RemoveFile(hArchive, baseFile, locale);
+        int result = RemoveFile(hArchive, baseFile, locale);
         CloseMpqArchive(hArchive);
+        return result;
     }
 
     // Handle subcommand: List
@@ -397,11 +398,18 @@ int main(int argc, char **argv) {
             std::cout << "[!] Warning: The locale '" << baseLocale << "' is unknown. Will use default locale instead." << std::endl;
         }
 
+        int result;
         if (baseFile != "default") {
-            ExtractFile(hArchive, baseOutput, baseFile, extractKeepFolderStructure, locale);
+            result = ExtractFile(hArchive, baseOutput, baseFile, extractKeepFolderStructure, locale);
         } else {
-            ExtractFiles(hArchive, baseOutput, baseListfileName, locale);
+            result = ExtractFiles(hArchive, baseOutput, baseListfileName, locale);
         }
+        CloseMpqArchive(hArchive);
+
+        if (result != 0) {
+            std::cerr << std::endl << "[!] Failed to extract all files." << std::endl;
+        }
+        return result;
     }
 
     // Handle subcommand: Read
