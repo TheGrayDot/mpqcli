@@ -284,25 +284,24 @@ int main(int argc, char **argv) {
 
         // Create the MPQ archive and add files
         HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, gameRules);
-        if (hArchive) {
-            LCID locale = LangToLocale(baseLocale);
-
-            // Apply AddFileSettings overrides if provided
-            CompressionSettingsOverrides addOverrides;
-            if (fileDwFlags >= 0) addOverrides.dwFlags = static_cast<DWORD>(fileDwFlags);
-            if (fileDwCompression >= 0) addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
-            if (fileDwCompressionNext >= 0) addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
-
-            AddFiles(hArchive, baseTarget, locale, gameRules, addOverrides);
-
-            if (createSignArchive) {
-                SignMpqArchive(hArchive);
-            }
-            CloseMpqArchive(hArchive);
-        } else {
+        if (!hArchive) {
             std::cerr << "[!] Failed to create MPQ archive." << std::endl;
             return 1;
         }
+        LCID locale = LangToLocale(baseLocale);
+
+        // Apply AddFileSettings overrides if provided
+        CompressionSettingsOverrides addOverrides;
+        if (fileDwFlags >= 0) addOverrides.dwFlags = static_cast<DWORD>(fileDwFlags);
+        if (fileDwCompression >= 0) addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
+        if (fileDwCompressionNext >= 0) addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
+
+        AddFiles(hArchive, baseTarget, locale, gameRules, addOverrides);
+
+        if (createSignArchive) {
+            SignMpqArchive(hArchive);
+        }
+        CloseMpqArchive(hArchive);
     }
 
     // Handle subcommand: Add
