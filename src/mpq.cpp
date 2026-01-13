@@ -63,7 +63,7 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& 
     if (findHandle == NULL) {
         std::cerr << "[!] Failed to find first file in MPQ archive." << std::endl;
         SFileCloseArchive(hArchive);
-        return -1;
+        return 1;
     }
 
     int32_t result = 0;
@@ -92,13 +92,13 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
         std::cerr << "[!] Failed: File doesn't exist"
             << PrettyPrintLocale(preferredLocale, " for locale ", true)
             << ": " << szFileName << std::endl;
-        return -1;
+        return 1;
     }
 
     HANDLE hFile;
     if (!SFileOpenFileEx(hArchive, szFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
         std::cerr << "[!] Failed: File cannot be opened: " << szFileName << std::endl;
-        return -1;
+        return 1;
     }
 
     // Change forward slashes on non-Windows systems
@@ -126,7 +126,7 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
     } else {
         int32_t error = SErrGetLastError();
         std::cerr << "[!] Failed: " << "(" << error << ") " << szFileName << std::endl;
-        return error;
+        return 1;
     }
 
     return 0;
@@ -270,14 +270,14 @@ int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath, LCID locale)
         std::cerr << "[!] Failed: File doesn't exist"
             << PrettyPrintLocale(locale, " for locale ", true)
             << ": " << archiveFilePath << std::endl;
-        return -1;
+        return 1;
     }
 
     if (!SFileRemoveFile(hArchive, archiveFilePath.c_str(), 0)) {
         std::cerr << "[!] Failed: File cannot be removed"
             << PrettyPrintLocale(locale, " for locale ", true)
             << ": " << archiveFilePath << std::endl;
-        return -1;
+        return 1;
     }
 
     return 0;
