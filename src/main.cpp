@@ -355,7 +355,10 @@ int main(int argc, char **argv) {
         }
 
         uint32_t verifyResult = VerifyMpqArchive(hArchive);
-        if (verifyResult == ERROR_WEAK_SIGNATURE_OK || verifyResult == ERROR_STRONG_SIGNATURE_OK) {
+        if (verifyResult == ERROR_WEAK_SIGNATURE_OK ||
+            verifyResult == ERROR_STRONG_SIGNATURE_OK ||
+            verifyResult == ERROR_WEAK_SIGNATURE_ERROR ||
+            verifyResult == ERROR_STRONG_SIGNATURE_ERROR) {
             if (verifyPrintSignature) {
                 // If printing the signature, don't print success message
                 // because the user might want to pipe/redirect the signature data
@@ -364,7 +367,7 @@ int main(int argc, char **argv) {
                 // Just print verification success
                 std::cout << "[*] Verify success" << std::endl;
             }
-            
+
             // Return 0, because verification passed
             return 0;
         }
