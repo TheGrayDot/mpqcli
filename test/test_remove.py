@@ -55,7 +55,7 @@ def test_remove_target_file_does_not_exist(binary_path, generate_locales_mpq_tes
     }
     assert output_lines == expected_stderr_output, f"Unexpected output: {output_lines}"
 
-    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
 
 
 def test_remove_file_from_mpq_archive_with_wrong_locale_given(
@@ -103,7 +103,7 @@ def test_remove_file_from_mpq_archive_with_wrong_locale_given(
         }
         assert output_lines == expected_stderr_output, f"Unexpected output: {output_lines}"
 
-        assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+        assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
 
 
 def test_remove_default_locale_file_from_mpq_archive_unique_name(binary_path, generate_mpq_without_internal_listfile):
@@ -235,7 +235,7 @@ def test_remove_files_from_mpq_archive_unique_name(binary_path, generate_mpq_wit
         stderr=subprocess.PIPE,
         text=True
     )
-    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
 
     expected_output = {
         "enUS  capybaras.txt",

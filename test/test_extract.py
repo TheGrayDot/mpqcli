@@ -344,7 +344,7 @@ def test_extract_file_from_mpq_with_no_locale_argument_and_no_default_locale(bin
 
     output_file = output_dir / file_to_extract
 
-    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
     assert stdout_output_lines == expected_stdout_output, f"Unexpected output: {stdout_output_lines}"
     assert stderr_output_lines == expected_stderr_output, f"Unexpected output: {stderr_output_lines}"
     assert not output_file.exists(), "Output directory was not created"
@@ -387,7 +387,7 @@ def test_extract_file_from_mpq_with_wrong_locale_argument_and_no_default_locale(
 
     output_file = output_dir / file_to_extract
 
-    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
     assert stdout_output_lines == expected_stdout_output, f"Unexpected output: {stdout_output_lines}"
     assert stderr_output_lines == expected_stderr_output, f"Unexpected output: {stderr_output_lines}"
     assert not output_file.exists(), "Output directory was not created"
@@ -433,7 +433,7 @@ def test_extract_all_files_from_mpq_without_providing_listfile(binary_path, gene
     # Create output_files set based on directory contents (not full path)
     output_files = set(fi.name for fi in output_file.glob("*"))
 
-    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
     assert output_file.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"
@@ -480,7 +480,7 @@ def test_extract_all_files_from_mpq_without_providing_listfile_and_with_given_lo
     # Create output_files set based on directory contents (not full path)
     output_files = set(fi.name for fi in output_file.glob("*"))
 
-    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
     assert output_file.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"
@@ -572,7 +572,7 @@ def test_extract_all_files_from_mpq_providing_partial_external_listfile(binary_p
     # Create output_files set based on directory contents (not full path)
     output_files = set(fi.name for fi in output_file.glob("*"))
 
-    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
     assert output_file.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"
@@ -621,7 +621,7 @@ def test_extract_all_files_from_mpq_providing_partial_external_listfile_and_with
     # Create output_files set based on directory contents (not full path)
     output_files = set(fi.name for fi in output_file.glob("*"))
 
-    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
     assert output_file.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"
@@ -669,7 +669,7 @@ def test_extract_all_files_from_mpq_providing_complete_external_listfile(binary_
     # Create output_files set based on directory contents (not full path)
     output_files = set(fi.name for fi in output_file.glob("*"))
 
-    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
     assert output_file.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"
@@ -718,7 +718,7 @@ def test_extract_all_files_from_mpq_providing_complete_external_listfile_and_wit
     # Create output_files set based on directory contents (not full path)
     output_files = set(fi.name for fi in output_file.glob("*"))
 
-    assert result.returncode == 255, f"mpqcli failed with error: {result.stderr}"
+    assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
     assert output_file.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"
