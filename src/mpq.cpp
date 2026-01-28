@@ -286,6 +286,8 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
             // Default properties, if the user didn't specify any
             "file-size", "locale", "file-time",
         };
+    } else {
+        listDetailed = true; // If the user specified properties, we need to print the detailed output
     }
 
     // "Special" files are base files used by MPQ file format

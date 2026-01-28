@@ -109,38 +109,6 @@ def test_list_mpq_with_specified_details(binary_path):
     assert output_lines == expected_output, f"Unexpected output: {output_lines}"
 
 
-def test_list_mpq_with_specified_details_but_no_detailed_flag(binary_path):
-    """
-    Test MPQ file listing.
-
-    This test checks:
-    - That providing parameters to be listed does nothing if the -d/--detailed flag is not provided.
-    """
-    script_dir = Path(__file__).parent
-    test_file = script_dir / "data" / "mpq_with_output_v1.mpq"
-
-    expected_output = {
-        "cats.txt",
-        "dogs.txt",
-        "bytes",
-        "(listfile)",
-        "(attributes)",
-    }
-
-    result = subprocess.run(
-        [str(binary_path), "list", "-a", str(test_file),
-         "-p", "hash-index", "-p", "flags", "-p", "encryption-key-raw", "-p", "encryption-key"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-
-    output_lines = set(result.stdout.splitlines())
-    assert len(result.stdout.splitlines()) == len(expected_output)
-    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
-    assert output_lines == expected_output, f"Unexpected output: {output_lines}"
-
-
 def test_list_mpq_with_weak_signature(binary_path):
     """
     Test MPQ file listing of MPQ with weak signature.
