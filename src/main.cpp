@@ -195,6 +195,7 @@ int main(int argc, char **argv) {
             return 1;
         }
         PrintMpqInfo(hArchive, infoProperty);
+        CloseMpqArchive(hArchive);
     }
 
     // Handle subcommand: Create
@@ -280,6 +281,7 @@ int main(int argc, char **argv) {
             return 1;
         }
         ListFiles(hArchive, baseListfileName, listAll, listDetailed, listProperties);
+        CloseMpqArchive(hArchive);
     }
 
     // Handle subcommand: Extract
@@ -327,7 +329,7 @@ int main(int argc, char **argv) {
 
         uint32_t fileSize;
         char* fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize, locale);
-        if (fileContent == NULL) {
+        if (fileContent == nullptr) {
             return 1;
         }
 
@@ -346,6 +348,7 @@ int main(int argc, char **argv) {
             return 1;
         }
 
+        int result = 0;
         uint32_t verifyResult = VerifyMpqArchive(hArchive);
         if (verifyResult == ERROR_WEAK_SIGNATURE_OK ||
             verifyResult == ERROR_STRONG_SIGNATURE_OK ||
@@ -360,13 +363,14 @@ int main(int argc, char **argv) {
                 std::cout << "[*] Verify success" << std::endl;
             }
 
-            // Return 0, because verification passed
-            return 0;
+            result = 0;
+        } else {
+            // Any other verify result is no signature, or error verifying
+            std::cout << "[!] Verify failed" << std::endl;
+            result = 1;
         }
-
-        // Any other verify result is no signature, or error verifying
-        std::cout << "[!] Verify failed" << std::endl;
-        return 1;
+        CloseMpqArchive(hArchive);
+        return result;
     }
 
     return 0;
