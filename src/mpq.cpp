@@ -169,13 +169,14 @@ int AddFiles(HANDLE hArchive, const std::string& target, LCID locale) {
             // Normalise path for MPQ
             std::string archiveFilePath = WindowsifyFilePath(inputFilePath.u8string());
 
-            AddFile(hArchive, entry.path().u8string(), archiveFilePath, locale);
+            AddFile(hArchive, entry.path().u8string(), archiveFilePath, locale, false);
         }
     }
     return 0;
 }
 
-int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, LCID locale) {
+int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, LCID locale, bool overwrite) {
+
     // Return if file doesn't exist on disk
     if (!fs::exists(localFile)) {
         std::cerr << "[!] File doesn't exist on disk: " << localFile << std::endl;
@@ -187,10 +188,13 @@ int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archi
     HANDLE hFile;
     if (SFileOpenFileEx(hArchive, archiveFilePath.c_str(), SFILE_OPEN_FROM_MPQ, &hFile)) {
         int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
-        if (fileLocale == locale) {
+        if (fileLocale == locale && !overwrite) {
             std::cerr << "[!] File for locale " << locale << " already exists in MPQ archive: " << archiveFilePath
                       << " - Skipping..." << std::endl;
             return -1;
+        } else if (fileLocale == locale) {
+            std::cout << "[+] File for locale " << locale << " already exists in MPQ archive: " << archiveFilePath
+                      << " - Overwriting..." << std::endl;
         }
     }
     SFileCloseFile(hFile);
@@ -213,6 +217,10 @@ int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archi
     // Set file attributes in the MPQ archive (compression and encryption)
     DWORD dwFlags = MPQ_FILE_COMPRESS | MPQ_FILE_ENCRYPTED;
     DWORD dwCompression = MPQ_COMPRESSION_ZLIB;
+
+    if (overwrite) {
+        dwFlags += MPQ_FILE_REPLACEEXISTING;
+    }
 
     bool addedFile = SFileAddFileEx(
         hArchive,
