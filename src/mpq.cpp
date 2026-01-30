@@ -11,6 +11,7 @@
 #include "mpq.h"
 #include "helpers.h"
 #include "locales.h"
+#include "gamerules.h"
 
 namespace fs = std::filesystem;
 
@@ -28,6 +29,20 @@ int CloseMpqArchive(HANDLE hArchive) {
         return 0;
     }
     return 1;
+}
+
+bool FileExistsInArchiveForLocale(const HANDLE hArchive, const std::string& filePath, const LCID locale) {
+    bool fileExists = false;
+    SFileSetLocale(locale);
+    HANDLE hFile;
+    if (SFileOpenFileEx(hArchive, filePath.c_str(), SFILE_OPEN_FROM_MPQ, &hFile)) {
+        const auto fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
+        if (fileLocale == locale) {
+            fileExists = true;
+        }
+    }
+    SFileCloseFile(hFile);
+    return fileExists;
 }
 
 int SignMpqArchive(HANDLE hArchive) {
@@ -48,39 +63,42 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& 
     if (findHandle == NULL) {
         std::cerr << "[!] Failed to find first file in MPQ archive." << std::endl;
         SFileCloseArchive(hArchive);
-        return -1;
+        return 1;
     }
 
+    int32_t result = 0;
     do {
-        int32_t result = ExtractFile(
+        result |= ExtractFile(
             hArchive,
             output,
             findData.cFileName,
             true,  // Keep folder structure
             preferredLocale
         );
-        if (result != 0) {
-            return result;
-        }
     } while (SFileFindNextFile(
         findHandle,
         &findData));
 
-    return 0;
+    return result;
 }
 
 int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& fileName, bool keepFolderStructure, LCID preferredLocale) {
     SFileSetLocale(preferredLocale);
     const char *szFileName = fileName.c_str();
-    if (!SFileHasFile(hArchive, szFileName)) {
-        std::cerr << "[!] Failed: File doesn't exist: " << szFileName << std::endl;
-        return -1;
+    if (
+        !FileExistsInArchiveForLocale(hArchive, szFileName, preferredLocale) &&
+        !FileExistsInArchiveForLocale(hArchive, szFileName, defaultLocale)
+    ) {
+        std::cerr << "[!] Failed: File doesn't exist"
+            << PrettyPrintLocale(preferredLocale, " for locale ", true)
+            << ": " << szFileName << std::endl;
+        return 1;
     }
 
     HANDLE hFile;
     if (!SFileOpenFileEx(hArchive, szFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
         std::cerr << "[!] Failed: File cannot be opened: " << szFileName << std::endl;
-        return -1;
+        return 1;
     }
 
     // Change forward slashes on non-Windows systems
@@ -108,41 +126,44 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
     } else {
         int32_t error = SErrGetLastError();
         std::cerr << "[!] Failed: " << "(" << error << ") " << szFileName << std::endl;
-        return error;
+        return 1;
     }
 
     return 0;
 }
 
-HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_t mpqVersion) {
+HANDLE CreateMpqArchive(
+    const std::string &outputArchiveName,
+    const int32_t fileCount,
+    const GameRules& gameRules
+) {
     // Check if file already exists
     if (fs::exists(outputArchiveName)) {
         std::cerr << "[!] File already exists: " << outputArchiveName << " Exiting..." << std::endl;
         return NULL;
     }
 
-    // Configure flags for MPQ file, this includes:
-    // If we store attributes such as filetime
-    // The MPQ archive version
-    int32_t dwCreateFlags = 0;
-
-    if (mpqVersion == 1) {
-        dwCreateFlags += MPQ_CREATE_ARCHIVE_V1;
-    } else if (mpqVersion == 2) {
-        dwCreateFlags += MPQ_CREATE_ARCHIVE_V2;
-    } else {
-        dwCreateFlags += MPQ_CREATE_ARCHIVE_V1;
-    };
-
-    // Always include attributes
-    // This is needed for filetime, locale, CRC32 and MD5
-    dwCreateFlags += MPQ_CREATE_ATTRIBUTES;
-
     HANDLE hMpq;
-    bool result = SFileCreateArchive(
+
+    // Use game-specific create settings
+    const MpqCreateSettings& settings = gameRules.GetCreateSettings();
+
+    SFILE_CREATE_MPQ createInfo = {};
+    // All logic for defaults and dependencies is handled in GameRules::OverrideCreateSettings
+    createInfo.cbSize = sizeof(SFILE_CREATE_MPQ);
+    createInfo.dwMpqVersion = settings.mpqVersion;
+    createInfo.dwStreamFlags = settings.streamFlags;
+    createInfo.dwFileFlags1 = settings.fileFlags1;
+    createInfo.dwFileFlags2 = settings.fileFlags2;
+    createInfo.dwFileFlags3 = settings.fileFlags3;
+    createInfo.dwAttrFlags = settings.attrFlags;
+    createInfo.dwSectorSize = settings.sectorSize;
+    createInfo.dwRawChunkSize = settings.rawChunkSize;
+    createInfo.dwMaxFileCount = fileCount;
+
+    const bool result = SFileCreateArchive2(
         outputArchiveName.c_str(),
-        dwCreateFlags,
-        fileCount,
+        &createInfo,
         &hMpq
     );
 
@@ -156,12 +177,12 @@ HANDLE CreateMpqArchive(std::string outputArchiveName, int32_t fileCount, int32_
     return hMpq;
 }
 
-int AddFiles(HANDLE hArchive, const std::string& target, LCID locale) {
+int AddFiles(HANDLE hArchive, const std::string& inputPath, LCID locale, const GameRules& gameRules, const CompressionSettingsOverrides& overrides) {
     // We need to "clean" the target path to ensure it is a valid directory
     // and to strip any directory structure from the files we add
-    fs::path targetPath = fs::path(target);
+    fs::path targetPath = fs::path(inputPath);
 
-    for (const auto &entry : fs::recursive_directory_iterator(target)) {
+    for (const auto &entry : fs::recursive_directory_iterator(inputPath)) {
         if (fs::is_regular_file(entry.path())) {
             // Strip the target path from the file name
             fs::path inputFilePath = fs::relative(entry, targetPath);
@@ -169,32 +190,33 @@ int AddFiles(HANDLE hArchive, const std::string& target, LCID locale) {
             // Normalise path for MPQ
             std::string archiveFilePath = WindowsifyFilePath(inputFilePath.u8string());
 
-            AddFile(hArchive, entry.path().u8string(), archiveFilePath, locale);
+            AddFile(hArchive, entry.path().u8string(), archiveFilePath, locale, gameRules, overrides);
         }
     }
     return 0;
 }
 
-int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archiveFilePath, LCID locale) {
+int AddFile(
+    HANDLE hArchive,
+    const fs::path& localFile,
+    const std::string& archiveFilePath,
+    const LCID locale,
+    const GameRules& gameRules,
+    const CompressionSettingsOverrides& overrides
+) {
+
     // Return if file doesn't exist on disk
     if (!fs::exists(localFile)) {
         std::cerr << "[!] File doesn't exist on disk: " << localFile << std::endl;
         return -1;
     }
 
-    // Check if file exists in MPQ archive
-    SFileSetLocale(locale);
-    HANDLE hFile;
-    if (SFileOpenFileEx(hArchive, archiveFilePath.c_str(), SFILE_OPEN_FROM_MPQ, &hFile)) {
-        int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
-        if (fileLocale == locale) {
-            std::cerr << "[!] File for locale " << locale << " already exists in MPQ archive: " << archiveFilePath
-                      << " - Skipping..." << std::endl;
-            return -1;
-        }
+    if (FileExistsInArchiveForLocale(hArchive, archiveFilePath, locale)) {
+        std::cerr << "[!] File" << PrettyPrintLocale(locale, " for locale ") << " already exists in MPQ archive: "
+            << archiveFilePath << " - Skipping..." << std::endl;
+        return -1;
     }
-    SFileCloseFile(hFile);
-    std::cout << "[+] Adding file for locale " << locale << ": " << archiveFilePath << std::endl;
+    std::cout << "[+] Adding file" << PrettyPrintLocale(locale, " for locale ") << ": " << archiveFilePath << std::endl;
 
     // Verify that we are not exceeding maxFile size of the archive, and if we do, increase it
     int32_t numberOfFiles = GetFileInfo<int32_t>(hArchive, SFileMpqNumberOfFiles);
@@ -210,9 +232,17 @@ int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archi
         }
     }
 
-    // Set file attributes in the MPQ archive (compression and encryption)
-    DWORD dwFlags = MPQ_FILE_COMPRESS | MPQ_FILE_ENCRYPTED;
-    DWORD dwCompression = MPQ_COMPRESSION_ZLIB;
+    // Get file size for rule matching
+    const auto fileSize = static_cast<DWORD>(fs::file_size(localFile));
+
+    // Get game-specific rules
+    auto [flags, compressionFirst, compressionNext] =
+        gameRules.GetCompressionSettings(archiveFilePath, fileSize);
+
+    // Apply overrides where specified, otherwise use game rules
+    DWORD dwFlags = overrides.dwFlags.value_or(flags);
+    DWORD dwCompression = overrides.dwCompression.value_or(compressionFirst);
+    DWORD dwCompressionNext = overrides.dwCompressionNext.value_or(compressionNext);
 
     bool addedFile = SFileAddFileEx(
         hArchive,
@@ -220,7 +250,7 @@ int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archi
         archiveFilePath.c_str(),
         dwFlags,
         dwCompression,
-        MPQ_COMPRESSION_NEXT_SAME
+        dwCompressionNext
     );
 
     if (!addedFile) {
@@ -234,16 +264,20 @@ int AddFile(HANDLE hArchive, const fs::path& localFile, const std::string& archi
 
 int RemoveFile(HANDLE hArchive, const std::string& archiveFilePath, LCID locale) {
     SFileSetLocale(locale);
-    std::cout << "[-] Removing file for locale " << locale <<": " << archiveFilePath << std::endl;
+    std::cout << "[-] Removing file" << PrettyPrintLocale(locale, " for locale ") <<": " << archiveFilePath << std::endl;
 
-    if (!SFileHasFile(hArchive, archiveFilePath.c_str())) {
-        std::cerr << "[!] Failed: File doesn't exist for locale " << locale << ": " << archiveFilePath << std::endl;
-        return -1;
+    if (!FileExistsInArchiveForLocale(hArchive, archiveFilePath, locale)) {
+        std::cerr << "[!] Failed: File doesn't exist"
+            << PrettyPrintLocale(locale, " for locale ", true)
+            << ": " << archiveFilePath << std::endl;
+        return 1;
     }
 
     if (!SFileRemoveFile(hArchive, archiveFilePath.c_str(), 0)) {
-        std::cerr << "[!] Failed: File cannot be removed for locale " << locale << ": " << archiveFilePath << std::endl;
-        return -1;
+        std::cerr << "[!] Failed: File cannot be removed"
+            << PrettyPrintLocale(locale, " for locale ", true)
+            << ": " << archiveFilePath << std::endl;
+        return 1;
     }
 
     return 0;
@@ -440,8 +474,13 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
 
 char* ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize, LCID preferredLocale) {
     SFileSetLocale(preferredLocale);
-    if (!SFileHasFile(hArchive, szFileName)) {
-        std::cerr << "[!] Failed: File doesn't exist: " << szFileName << std::endl;
+    if (
+        !FileExistsInArchiveForLocale(hArchive, szFileName, preferredLocale) &&
+        !FileExistsInArchiveForLocale(hArchive, szFileName, defaultLocale)
+    ) {
+        std::cerr << "[!] Failed: File doesn't exist"
+            << PrettyPrintLocale(preferredLocale, " for locale ", true)
+            << ": " << szFileName << std::endl;
         return NULL;
     }
 

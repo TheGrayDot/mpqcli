@@ -190,7 +190,7 @@ def test_read_file_from_mpq_with_no_locale_argument_and_no_default_locale(binary
 
     expected_stdout_output = set()
     expected_stderr_output = {
-        "[!] Failed: File doesn't exist: " + file_to_read,
+        "[!] Failed: File doesn't exist for locale enUS: " + file_to_read,
     }
 
     stdout_output_lines = set(result.stdout.splitlines())
@@ -225,7 +225,7 @@ def test_read_file_from_mpq_with_wrong_locale_argument_and_no_default_locale(bin
 
     expected_stdout_output = set()
     expected_stderr_output = {
-        "[!] Failed: File doesn't exist: " + file_to_read,
+        "[!] Failed: File doesn't exist for locale deDE: " + file_to_read,
         }
 
     stdout_output_lines = set(result.stdout.splitlines())
