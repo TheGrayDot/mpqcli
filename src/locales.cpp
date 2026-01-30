@@ -2,6 +2,8 @@
 #include <fstream>
 #include <vector>
 #include <map>
+#include <sstream>
+#include <iomanip>
 
 #include "locales.h"
 
@@ -28,14 +30,15 @@ namespace {
             {0x412, "koKR"},  // Korean
             {0x413, "nlNL"},  // Dutch
             {0x415, "plPL"},  // Polish
-            {0x416, "ptPT"},  // Portuguese (Portugal)
+            {0x416, "ptBR"},  // Portuguese (Brazil)
             {0x419, "ruRU"},  // Russian
             {0x804, "zhCN"},  // Chinese (Simplified)
             {0x809, "enGB"},  // English (UK)
-            {0x80A, "esMX"}   // Spanish (Mexico)
+            {0x80A, "esMX"},  // Spanish (Mexico)
+            {0x816, "ptPT"},  // Portuguese (Portugal)
     };
 
-    // Create a reverse map for language to locale lookups
+    // Create a reverse map for language-to-locale lookups
     const std::map<std::string, uint16_t> langToLocaleMap = []() {
         std::map<std::string, uint16_t> reverseMap;
         for (const auto& [locale, lang] : localeToLangMap) {
@@ -45,16 +48,56 @@ namespace {
         }
         return reverseMap;
     }();
+
+    std::string FormatLocaleAsHex(const LCID locale) {
+        std::stringstream ss;
+        ss << std::hex << std::uppercase << locale;
+        const std::string hexStr = ss.str();
+        // Prepend 0s if needed
+        return std::string(4 - hexStr.length(), '0') + hexStr;
+    }
+}
+
+// Check if a string is a 4-character hexadecimal number and parse it
+// Returns the parsed LCID if valid, otherwise returns defaultLocale (0)
+LCID ParseHexLocale(const std::string& str) {
+    if (str.length() != 4) {
+        return defaultLocale;
+    }
+
+    // Check if all characters are hexadecimal
+    for (char c : str) {
+        if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'))) {
+            return defaultLocale;
+        }
+    }
+
+    // Parse the hexadecimal string
+    std::stringstream ss;
+    ss << std::hex << str;
+    LCID locale;
+    ss >> locale;
+    return locale;
 }
 
 std::string LocaleToLang(uint16_t locale) {
     auto it = localeToLangMap.find(locale);
-    return it != localeToLangMap.end() ? it->second : "";
+    return it != localeToLangMap.end() ? it->second : FormatLocaleAsHex(locale);
 }
 
 LCID LangToLocale(const std::string& lang) {
     auto it = langToLocaleMap.find(lang);
-    return it != langToLocaleMap.end() ? it->second : defaultLocale;
+    if (it != langToLocaleMap.end()) {
+        return it->second;
+    }
+
+    // Try parsing as a hexadecimal LCID
+    LCID hexLocale = ParseHexLocale(lang);
+    if (hexLocale != defaultLocale) {
+        return hexLocale;
+    }
+
+    return defaultLocale;
 }
 
 
@@ -68,4 +111,12 @@ std::vector<std::string> GetAllLocales() {
     // Sort the locales for consistent output
     std::sort(locales.begin(), locales.end());
     return locales;
+}
+
+std::string PrettyPrintLocale(const LCID locale, const std::string &prefix, bool alwaysPrint) {
+    if (locale == defaultLocale && !alwaysPrint) {
+        return "";
+    }
+    const auto lang = LocaleToLang(locale);
+    return prefix + lang;
 }
