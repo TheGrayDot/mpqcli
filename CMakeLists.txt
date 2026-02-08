@@ -41,6 +41,20 @@ Did you forget to execute the following commands?
    git submodule update")
 endif()
 
+# Workaround for Stormlib on musl 1.2.5+ which removed *64 symbols
+# musl is always 64-bit clean, so map *64 functions to regular versions
+if(NOT DEFINED __GLIBC__)
+    add_compile_definitions(
+        stat64=stat
+        fstat64=fstat
+        lstat64=lstat
+        lseek64=lseek
+        ftruncate64=ftruncate
+        off64_t=off_t
+        O_LARGEFILE=0
+    )
+endif()
+
 add_subdirectory(extern/StormLib)
 
 # Handle CLI11 dependency
