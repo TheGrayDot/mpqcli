@@ -41,9 +41,20 @@ Did you forget to execute the following commands?
    git submodule update")
 endif()
 
-# Workaround for Stormlib on musl 1.2.5+ which removed *64 symbols
+# Workaround for StormLib on musl 1.2.5+ which removed *64 symbols
 # musl is always 64-bit clean, so map *64 functions to regular versions
-if(NOT DEFINED __GLIBC__)
+# Detect glibc by checking for __GLIBC__, then invert to detect musl
+include(CheckCSourceCompiles)
+check_c_source_compiles("
+    #include <features.h>
+    #ifndef __GLIBC__
+    #error \"Not glibc\"
+    #endif
+    int main() { return 0; }
+" IS_GLIBC)
+
+if(NOT IS_GLIBC)
+    message(STATUS "Detected non-glibc (likely musl), applying *64 compatibility defines")
     add_compile_definitions(
         stat64=stat
         fstat64=fstat
@@ -53,6 +64,8 @@ if(NOT DEFINED __GLIBC__)
         off64_t=off_t
         O_LARGEFILE=0
     )
+else()
+    message(STATUS "Detected glibc, using native *64 functions")
 endif()
 
 add_subdirectory(extern/StormLib)
