@@ -9,8 +9,7 @@
 #include "helpers.h"
 #include "locales.h"
 #include "mpqcli.h"
-
-namespace fs = std::filesystem;
+#include "gamerules.h"
 
 int main(int argc, char **argv) {
     CLI::App app{
@@ -29,6 +28,7 @@ int main(int argc, char **argv) {
     std::string baseLocale = "default"; // create, add, remove, extract, read
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
+    std::string baseGameProfile = "default";  // create, add
     // CLI: info
     std::string infoProperty = "default";
     // CLI: list
@@ -37,7 +37,18 @@ int main(int argc, char **argv) {
     bool extractKeepFolderStructure = false;
     // CLI: create
     bool createSignArchive = false;
-    int32_t createMpqVersion = 1;
+    int32_t createMpqVersion = -1;
+    int64_t createStreamFlags = -1;
+    int64_t createSectorSize = -1;
+    int64_t createRawChunkSize = -1;
+    int64_t createFileFlags1 = -1;
+    int64_t createFileFlags2 = -1;
+    int64_t createFileFlags3 = -1;
+    int64_t createAttrFlags = -1;
+    // CLI: add and create (compression overrides for files being added)
+    int64_t fileDwFlags = -1;
+    int64_t fileDwCompression = -1;
+    int64_t fileDwCompressionNext = -1;
     // CLI: list
     bool listDetailed = false;
     bool listAll = false;
@@ -90,10 +101,23 @@ int main(int argc, char **argv) {
         ->check(CLI::ExistingDirectory);
     create->add_option("-o,--output", baseOutput, "Output MPQ archive");
     create->add_flag("-s,--sign", createSignArchive, "Sign the MPQ archive (default false)");
-    create->add_option("-v,--version", createMpqVersion, "Set the MPQ archive version (default 1)")
-        ->check(CLI::Range(1, 2));
     create->add_option("--locale", baseLocale, "Locale to use for added files")
         ->check(LocaleValid);
+    create->add_option("-g,--game", baseGameProfile, "Game profile for MPQ creation. Valid options:\n" + GameRules::GetAvailableProfiles())
+        ->check(GameProfileValid);
+    // MPQ creation settings overrides
+    create->add_option("--version", createMpqVersion, "Override the MPQ archive version")->check(CLI::Range(1, 4))->group("Game setting overrides");
+    create->add_option("--stream-flags", createStreamFlags, "Override stream flags")->group("Game setting overrides");
+    create->add_option("--sector-size", createSectorSize, "Override sector size")->group("Game setting overrides");
+    create->add_option("--raw-chunk-size", createRawChunkSize, "Override raw chunk size for MPQ v4")->group("Game setting overrides");
+    create->add_option("--file-flags1", createFileFlags1, "Override file flags for (listfile)")->group("Game setting overrides");
+    create->add_option("--file-flags2", createFileFlags2, "Override file flags for (attributes)")->group("Game setting overrides");
+    create->add_option("--file-flags3", createFileFlags3, "Override file flags for (signature)")->group("Game setting overrides");
+    create->add_option("--attr-flags", createAttrFlags, "Override attribute flags (CRC32, FILETIME, MD5)")->group("Game setting overrides");
+    // Compression settings overrides for files being added
+    create->add_option("--flags", fileDwFlags, "Override MPQ file flags for added files")->group("Game setting overrides");
+    create->add_option("--compression", fileDwCompression, "Override compression for first sector of added files")->group("Game setting overrides");
+    create->add_option("--compression-next", fileDwCompressionNext, "Override compression for subsequent sectors of added files")->group("Game setting overrides");
 
     // Subcommand: Add
     CLI::App *add = app.add_subcommand("add", "Add a file to an existing MPQ archive");
@@ -106,6 +130,12 @@ int main(int argc, char **argv) {
     add->add_option("-p,--path", basePath, "Path within MPQ archive");
     add->add_option("--locale", baseLocale, "Locale to use for added file")
         ->check(LocaleValid);
+    add->add_option("-g,--game", baseGameProfile, "Game profile for compression rules. Valid options:\n" + GameRules::GetAvailableProfiles())
+        ->check(GameProfileValid);
+    // Compression settings overrides
+    add->add_option("--flags", fileDwFlags, "Override MPQ file flags")->group("Game setting overrides");
+    add->add_option("--compression", fileDwCompression, "Override compression for first sector")->group("Game setting overrides");
+    add->add_option("--compression-next", fileDwCompressionNext, "Override compression for subsequent sectors")->group("Game setting overrides");
 
     // Subcommand: Remove
     CLI::App *remove = app.add_subcommand("remove", "Remove file from an existing MPQ archive");
@@ -209,25 +239,70 @@ int main(int argc, char **argv) {
         }
         std::string outputFile = outputFilePath.u8string();
 
-        std::cout << "[*] Output file: " << outputFile << std::endl;
+        GameProfile profile;
+        if (baseGameProfile != "default") {
+            profile = GameRules::StringToProfile(baseGameProfile);
+        } else {
+            profile = GameRules::GetDefaultProfile();
+        }
+        GameRules gameRules(profile);
+
+        std::cout << "[*] Game profile: " << baseGameProfile << ", Output file: " << outputFile << std::endl;
+
+        if (createMpqVersion > 0) {
+            createMpqVersion--; // We label versions 1-4, but StormLib uses 0-3
+        }
+        // Apply MpqCreateSettings overrides if provided
+        MpqCreateSettingsOverrides overrides;
+        if (createMpqVersion >= 0) {
+            overrides.mpqVersion = static_cast<DWORD>(createMpqVersion);
+        }
+        if (createStreamFlags >= 0) {
+            overrides.streamFlags = static_cast<DWORD>(createStreamFlags);
+        }
+        if (createFileFlags1 >= 0) {
+            overrides.fileFlags1 = static_cast<DWORD>(createFileFlags1);
+        }
+        if (createFileFlags2 >= 0) {
+            overrides.fileFlags2 = static_cast<DWORD>(createFileFlags2);
+        }
+        if (createFileFlags3 >= 0) {
+            overrides.fileFlags3 = static_cast<DWORD>(createFileFlags3);
+        }
+        if (createAttrFlags >= 0) {
+            overrides.attrFlags = static_cast<DWORD>(createAttrFlags);
+        }
+        if (createSectorSize >= 0) {
+            overrides.sectorSize = static_cast<DWORD>(createSectorSize);
+        }
+        if (createRawChunkSize >= 0) {
+            overrides.rawChunkSize = static_cast<DWORD>(createRawChunkSize);
+        }
+        gameRules.OverrideCreateSettings(overrides);
 
         // Determine the number of files we are going to add
         int32_t fileCount = CalculateMpqMaxFileValue(baseTarget);
 
         // Create the MPQ archive and add files
-        HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, createMpqVersion);
-        if (hArchive) {
-            LCID locale = LangToLocale(baseLocale);
-            AddFiles(hArchive, baseTarget, locale);
-
-            if (createSignArchive) {
-                SignMpqArchive(hArchive);
-            }
-            CloseMpqArchive(hArchive);
-        } else {
+        HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, gameRules);
+        if (!hArchive) {
             std::cerr << "[!] Failed to create MPQ archive." << std::endl;
             return 1;
         }
+        LCID locale = LangToLocale(baseLocale);
+
+        // Apply AddFileSettings overrides if provided
+        CompressionSettingsOverrides addOverrides;
+        if (fileDwFlags >= 0) addOverrides.dwFlags = static_cast<DWORD>(fileDwFlags);
+        if (fileDwCompression >= 0) addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
+        if (fileDwCompressionNext >= 0) addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
+
+        AddFiles(hArchive, baseTarget, locale, gameRules, addOverrides);
+
+        if (createSignArchive) {
+            SignMpqArchive(hArchive);
+        }
+        CloseMpqArchive(hArchive);
     }
 
     // Handle subcommand: Add
@@ -255,7 +330,22 @@ int main(int argc, char **argv) {
 
         LCID locale = LangToLocale(baseLocale);
 
-        AddFile(hArchive, baseFile, archivePath, locale);
+        GameProfile profile;
+        if (baseGameProfile != "default") {
+            profile = GameRules::StringToProfile(baseGameProfile);
+            std::cout << "[*] Using game profile: " << baseGameProfile << std::endl;
+        } else {
+            profile = GameRules::GetDefaultProfile();
+        }
+        GameRules gameRules(profile);
+
+        // Apply AddFileSettings overrides if provided
+        CompressionSettingsOverrides addOverrides;
+        if (fileDwFlags >= 0) addOverrides.dwFlags = static_cast<DWORD>(fileDwFlags);
+        if (fileDwCompression >= 0) addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
+        if (fileDwCompressionNext >= 0) addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
+
+        AddFile(hArchive, baseFile, archivePath, locale, gameRules, addOverrides);
         CloseMpqArchive(hArchive);
     }
 

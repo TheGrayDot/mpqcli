@@ -11,11 +11,12 @@ if (MSVC)
 endif()
 
 # Create the main executable
-add_executable(mpqcli 
-    main.cpp 
-    mpq.cpp 
+add_executable(mpqcli
+    main.cpp
+    mpq.cpp
     helpers.cpp
     locales.cpp
+    gamerules.cpp
 )
 
 # Add dependencies
