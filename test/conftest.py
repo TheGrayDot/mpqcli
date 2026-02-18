@@ -1,3 +1,4 @@
+import shutil
 from datetime import datetime
 import os
 import platform
@@ -69,6 +70,7 @@ def generate_locales_mpq_test_files(binary_path):
     data_dir.mkdir(parents=True, exist_ok=True)
 
     locales_files_dir = data_dir / "locale_files"
+    shutil.rmtree(locales_files_dir, ignore_errors=True)
     locales_files_dir.mkdir(parents=True, exist_ok=True)
 
     mpq_many_locales_file_name = data_dir / "mpq_with_many_locales.mpq"
@@ -78,9 +80,10 @@ def generate_locales_mpq_test_files(binary_path):
     mpq_one_locale_file_name.unlink(missing_ok=True)
 
     locale_files = {
-        "": "This is a file about cats.", # Default locale
-        "deDE": "Dies ist eine Datei über Katzen.",
-        "esES": "Este es un archivo sobre gatos.",
+        "": "This is a file about cats.",           # Default locale
+        "041D": "Detta är en fil om katter.",       # Swedish locale (not part of locales.cpp)
+        "deDE": "Dies ist eine Datei über Katzen.", # German locale
+        "esES": "Este es un archivo sobre gatos.",  # Spanish locale
     }
 
     # Put all items into mpq_many_locales_file_name with their locale
@@ -118,6 +121,50 @@ def generate_locales_mpq_test_files(binary_path):
         text=True
     )
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+
+
+@pytest.fixture(scope="function")
+def generate_mpq_without_internal_listfile(binary_path):
+    script_dir = Path(__file__).parent
+
+    data_dir = script_dir / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    locales_files_dir = data_dir / "locale_files"
+    shutil.rmtree(locales_files_dir, ignore_errors=True)
+    locales_files_dir.mkdir(parents=True, exist_ok=True)
+
+    mpq_file_name = data_dir / "mpq_without_internal_listfile2.mpq"
+    mpq_file_name.unlink(missing_ok=True)
+
+    content = [
+        ("capybaras.txt", "", "This is a file about capybaras."), # Default locale
+        ("cats.txt", "deDE", "Dies ist eine Datei über Katzen."), # German locale
+        ("dogs.txt", "041D", "Detta är en fil om hundar."),       # Swedish locale (not part of locales.cpp)
+    ]
+
+    # Put all items into mpq_many_locales_file_name with their locale
+    for text_file_name, locale, text_content in content:
+        file_path = locales_files_dir / text_file_name
+        file_path.write_text(text_content, newline="\n")
+
+        if locale == "": # Default locale - create a new MPQ file
+            result = subprocess.run(
+                [str(binary_path), "create", "-o", str(mpq_file_name), str(locales_files_dir), "--file-flags1", "0"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+
+        else: # Explicit locale - add to existing MPQ file
+            result = subprocess.run(
+                [str(binary_path), "add", str(file_path), str(mpq_file_name), "--locale", locale],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
 
 
 @pytest.fixture(scope="session")
