@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.9.7 - 2026-02-23
+
+### Added
+
+- Game profile support for `create` and `add` subcommands via `-g/--game` option
+- Game profiles for Diablo, StarCraft, Warcraft, WoW, and more
+- Game setting override options for `create` subcommand
+- Compression override options for `add` subcommand
+- Support for unfamiliar/unknown locales via raw hex LCID
+- Additional built-in locales: `ptBR`, `esMX`, `ptPT`
+
+### Fixed
+
+- Subcommands now properly verify locale before operating on files
+- Error messages now include locale context in `remove`, `extract`, and `read`
+- MPQ archives are now properly closed across all subcommands
+- Non-zero exit codes returned on failure in `extract` and `remove`
+- `list` subcommand now shows long output when properties are requested
+
+### Changed
+
+- Improved locale printing and display throughout
+
 ## 0.9.6 - 2025-12-23
 
 ### Added
