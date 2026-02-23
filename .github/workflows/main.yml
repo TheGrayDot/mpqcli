@@ -1,0 +1,27 @@
+name: Main
+
+on:
+  push:
+    branches:
+      - "main"
+
+concurrency:
+  group: prerelease
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+  test:
+    uses: ./.github/workflows/test.yml
+    needs: build
+  prerelease:
+    uses: ./.github/workflows/prerelease.yml
+    needs: 
+      - build
+      - test
+    secrets: inherit

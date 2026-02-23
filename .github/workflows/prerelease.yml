@@ -1,4 +1,4 @@
-name: Release
+name: Prerelease
 
 on:
   workflow_call
@@ -8,7 +8,7 @@ permissions:
   packages: write
 
 jobs:
-  release_binaries:
+  prerelease_binaries:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -39,29 +39,31 @@ jobs:
         with:
           name: mpqcli-windows-amd64.exe
 
-      - name: Extract latest changelog section
-        id: changelog
+      - name: Delete existing dev release
         run: |
-          CHANGELOG_CONTENT=$(awk '/^## /{i++} i==1{print}' CHANGELOG.md | tail -n +2)
-          echo "content<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          gh release delete dev --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Release package
+      - name: Create prerelease
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: dev
+          name: Dev (Pre-release)
+          prerelease: true
           files: |
             mpqcli-linux-amd64-glibc
             mpqcli-linux-amd64-musl
             mpqcli-linux-arm64-glibc
             mpqcli-linux-arm64-musl
             mpqcli-windows-amd64.exe
-          body: ${{ steps.changelog.outputs.content }}
+          body: |
+            **Commit:** ${{ github.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  release_docker:
-    needs: release_binaries
+  prerelease_docker:
+    needs: prerelease_binaries
     runs-on: ubuntu-24.04
     steps:
       - name: Download Docker image artifact
@@ -73,17 +75,11 @@ jobs:
         run: |
           docker load -i mpqcli-docker.tar
 
-      - name: Extract version without "v"
-        id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
-
-      - name: Tag Docker image with version
+      - name: Tag Docker image as dev
         run: |
-          docker tag mpqcli ghcr.io/thegraydot/mpqcli:${{ env.VERSION }}
-          docker tag mpqcli ghcr.io/thegraydot/mpqcli:latest
+          docker tag mpqcli ghcr.io/thegraydot/mpqcli:dev
 
       - name: Push Docker image to GitHub Container Registry
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker push ghcr.io/thegraydot/mpqcli:${{ env.VERSION }}
-          docker push ghcr.io/thegraydot/mpqcli:latest
+          docker push ghcr.io/thegraydot/mpqcli:dev
