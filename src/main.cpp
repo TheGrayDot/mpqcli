@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
     std::string baseFile = "default";  // add, remove, extract, read
     std::string basePath = "default"; // add
     std::string baseLocale = "default"; // create, add, remove, extract, read
+    std::string baseNameInArchive = "default"; // add, create
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     std::string baseGameProfile = "default";  // create, add
@@ -95,10 +96,11 @@ int main(int argc, char **argv) {
         ->check(CLI::IsMember(validInfoProperties));
 
     // Subcommand: Create
-    CLI::App *create = app.add_subcommand("create", "Create an MPQ archive from target directory");
-    create->add_option("target", baseTarget, "Target directory")
+    CLI::App *create = app.add_subcommand("create", "Create an MPQ archive from target file or directory");
+    create->add_option("target", baseTarget, "Directory or file to put in MPQ archive")
         ->required()
-        ->check(CLI::ExistingDirectory);
+        ->check(CLI::ExistingPath);
+    create->add_option("-n,--name-in-archive", baseNameInArchive, "Filename inside MPQ archive");
     create->add_option("-o,--output", baseOutput, "Output MPQ archive");
     create->add_flag("-s,--sign", createSignArchive, "Sign the MPQ archive (default false)");
     create->add_option("--locale", baseLocale, "Locale to use for added files")
@@ -230,6 +232,10 @@ int main(int argc, char **argv) {
 
     // Handle subcommand: Create
     if (app.got_subcommand(create)) {
+        if (!fs::is_regular_file(baseTarget) && baseNameInArchive != "default") {
+            std::cerr << "[!] Cannot specify --name-in-archive when adding a directory." << std::endl;
+            return 1;
+        }
         fs::path outputFilePath;
         if (baseOutput != "default") {
             outputFilePath = fs::absolute(baseOutput);
@@ -285,24 +291,36 @@ int main(int argc, char **argv) {
 
         // Create the MPQ archive and add files
         HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, gameRules);
-        if (!hArchive) {
+        if (hArchive) {
+            LCID locale = LangToLocale(baseLocale);
+
+            // Apply AddFileSettings overrides if provided
+            CompressionSettingsOverrides addOverrides;
+            if (fileDwFlags >= 0) addOverrides.dwFlags = static_cast<DWORD>(fileDwFlags);
+            if (fileDwCompression >= 0) addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
+            if (fileDwCompressionNext >= 0) addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
+
+            if (fs::is_regular_file(baseTarget)) {
+                // Default: use the filename as path, saves file to root of MPQ
+                fs::path filePath = fs::path(baseTarget);
+                std::string archivePath = filePath.filename().u8string();
+                if (baseNameInArchive != "default") { // Optional: specified filename inside archive
+                    filePath = fs::path(baseNameInArchive);
+                    archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
+                }
+
+                AddFile(hArchive, baseTarget, archivePath, locale, gameRules, addOverrides);
+            } else {
+                AddFiles(hArchive, baseTarget, locale, gameRules, addOverrides);
+            }
+            if (createSignArchive) {
+                SignMpqArchive(hArchive);
+            }
+            CloseMpqArchive(hArchive);
+        } else {
             std::cerr << "[!] Failed to create MPQ archive." << std::endl;
             return 1;
         }
-        LCID locale = LangToLocale(baseLocale);
-
-        // Apply AddFileSettings overrides if provided
-        CompressionSettingsOverrides addOverrides;
-        if (fileDwFlags >= 0) addOverrides.dwFlags = static_cast<DWORD>(fileDwFlags);
-        if (fileDwCompression >= 0) addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
-        if (fileDwCompressionNext >= 0) addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
-
-        AddFiles(hArchive, baseTarget, locale, gameRules, addOverrides);
-
-        if (createSignArchive) {
-            SignMpqArchive(hArchive);
-        }
-        CloseMpqArchive(hArchive);
     }
 
     // Handle subcommand: Add
