@@ -190,7 +190,7 @@ int AddFiles(HANDLE hArchive, const std::string& inputPath, LCID locale, const G
             // Normalise path for MPQ
             std::string archiveFilePath = WindowsifyFilePath(inputFilePath.u8string());
 
-            AddFile(hArchive, entry.path().u8string(), archiveFilePath, locale, gameRules, overrides);
+            AddFile(hArchive, entry.path().u8string(), archiveFilePath, locale, gameRules, overrides, false);
         }
     }
     return 0;
@@ -202,7 +202,8 @@ int AddFile(
     const std::string& archiveFilePath,
     const LCID locale,
     const GameRules& gameRules,
-    const CompressionSettingsOverrides& overrides
+    const CompressionSettingsOverrides& overrides,
+    bool overwrite
 ) {
 
     // Return if file doesn't exist on disk
@@ -211,10 +212,20 @@ int AddFile(
         return -1;
     }
 
-    if (FileExistsInArchiveForLocale(hArchive, archiveFilePath, locale)) {
-        std::cerr << "[!] File" << PrettyPrintLocale(locale, " for locale ") << " already exists in MPQ archive: "
-            << archiveFilePath << " - Skipping..." << std::endl;
-        return -1;
+    // Check if file exists in MPQ archive
+    SFileSetLocale(locale);
+    HANDLE hFile;
+    if (SFileOpenFileEx(hArchive, archiveFilePath.c_str(), SFILE_OPEN_FROM_MPQ, &hFile)) {
+        int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
+        SFileCloseFile(hFile);
+        if (fileLocale == locale && !overwrite) {
+            std::cerr << "[!] File" << PrettyPrintLocale(locale, " for locale ") << " already exists in MPQ archive: "
+                << archiveFilePath << " - Skipping..." << std::endl;
+            return -1;
+        } else if (fileLocale == locale) {
+            std::cout << "[+] File" << PrettyPrintLocale(locale, " for locale ") << " already exists in MPQ archive: "
+                << archiveFilePath << " - Overwriting..." << std::endl;
+        }
     }
     std::cout << "[+] Adding file" << PrettyPrintLocale(locale, " for locale ") << ": " << archiveFilePath << std::endl;
 
@@ -243,6 +254,10 @@ int AddFile(
     DWORD dwFlags = overrides.dwFlags.value_or(flags);
     DWORD dwCompression = overrides.dwCompression.value_or(compressionFirst);
     DWORD dwCompressionNext = overrides.dwCompressionNext.value_or(compressionNext);
+
+    if (overwrite) {
+        dwFlags += MPQ_FILE_REPLACEEXISTING;
+    }
 
     bool addedFile = SFileAddFileEx(
         hArchive,

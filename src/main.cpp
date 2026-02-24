@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cstdint>
 #include <filesystem>
 
 #include <CLI/CLI.hpp>
@@ -24,15 +23,16 @@ int main(int argc, char **argv) {
     // These are reused in multiple subcommands
     std::string baseTarget = "default";  // all subcommands
     std::string baseFile = "default";  // add, remove, extract, read
-    std::string basePath = "default"; // add
     std::string baseLocale = "default"; // create, add, remove, extract, read
+    std::string baseNameInArchive = "default"; // add, create
     std::string baseOutput = "default";  // create, extract
     std::string baseListfileName = "default";  // list, extract
     std::string baseGameProfile = "default";  // create, add
     // CLI: info
     std::string infoProperty = "default";
-    // CLI: list
-    std::vector<std::string> listProperties;
+    // CLI: add
+    std::string baseDirInArchive = "default"; // add
+    bool addOverwrite = false;
     // CLI: extract
     bool extractKeepFolderStructure = false;
     // CLI: create
@@ -52,6 +52,7 @@ int main(int argc, char **argv) {
     // CLI: list
     bool listDetailed = false;
     bool listAll = false;
+    std::vector<std::string> listProperties;
     // CLI: verify
     bool verifyPrintSignature = false;
 
@@ -127,7 +128,9 @@ int main(int argc, char **argv) {
     add->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
-    add->add_option("-p,--path", basePath, "Path within MPQ archive");
+    add->add_option("--dir-in-archive", baseDirInArchive, "Directory to put file inside within MPQ archive");
+    add->add_option("-n,--name-in-archive", baseNameInArchive, "Filename inside MPQ archive");
+    add->add_flag("-w,--overwrite", addOverwrite, "Overwrite file if it already is in MPQ archive");
     add->add_option("--locale", baseLocale, "Locale to use for added file")
         ->check(LocaleValid);
     add->add_option("-g,--game", baseGameProfile, "Game profile for compression rules. Valid options:\n" + GameRules::GetAvailableProfiles())
@@ -317,15 +320,19 @@ int main(int argc, char **argv) {
         // Path to file on disk
         fs::path filePath = fs::path(baseFile);
 
-        // Default: use the filename as path, saves file to root of MPQ
-        std::string archivePath = filePath.filename().u8string();
+        std::string archivePath = filePath.filename().u8string(); // Default: use the filename as path, saves file to root of MPQ
+        if (baseNameInArchive != "default" && baseDirInArchive != "default") {
+            // Return error since providing both arguments makes no sense and is a user error
+            std::cerr << "[!] Cannot specify both --name-in-archive and --dir-in-archive." << std::endl;
+            return 1;
 
-        // Optional: specified path inside archive
-        if (basePath != "default") {
-            fs::path archiveFullPath = fs::path(basePath) / filePath.filename();
+        } else if (baseNameInArchive != "default") { // Optional: specified filename inside archive
+            filePath = fs::path(baseNameInArchive);
+            archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
 
-            // Normalise path for MPQ
-            archivePath = WindowsifyFilePath(archiveFullPath.u8string());
+        } else if (baseDirInArchive != "default") { // Optional: specified directory inside archive
+            filePath = fs::path(baseDirInArchive) / archivePath;
+            archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
         }
 
         LCID locale = LangToLocale(baseLocale);
@@ -345,7 +352,7 @@ int main(int argc, char **argv) {
         if (fileDwCompression >= 0) addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
         if (fileDwCompressionNext >= 0) addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
 
-        AddFile(hArchive, baseFile, archivePath, locale, gameRules, addOverrides);
+        AddFile(hArchive, baseFile, archivePath, locale, gameRules, addOverrides, addOverwrite);
         CloseMpqArchive(hArchive);
     }
 
