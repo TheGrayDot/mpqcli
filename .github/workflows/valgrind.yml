@@ -32,29 +32,16 @@ jobs:
             -f Dockerfile.valgrind \
             .
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-      - name: Install test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r test/requirements.txt
-
       - name: Run Valgrind on test suite
         id: valgrind_tests
         run: |
-          # Create output directory
-          mkdir -p valgrind_logs
-
-          # Run tests with Valgrind using Docker
+          # Run tests with Valgrind using the script inside Docker
+          # The script wraps mpqcli with Valgrind and runs pytest
           docker run --rm \
-            -v $(pwd)/test:/mpqcli/test:ro \
-            -v $(pwd)/valgrind_logs:/mpqcli/valgrind_logs:rw \
-            -e MPQCLI_BINARY=/mpqcli/build/bin/mpqcli \
+            -v $(pwd):/workspace:rw \
+            -w /workspace \
             mpqcli-valgrind \
-            bash -c "cd /mpqcli && python3 -m pytest test -v --tb=short || true"
+            bash -c "./scripts/run_valgrind_tests.sh"
 
           echo "Test execution completed"
 
@@ -82,9 +69,8 @@ jobs:
           # Create summary
           echo "## Valgrind Memory Leak Analysis" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Subcommands Tested" >> $GITHUB_STEP_SUMMARY
+          echo "### All Subcommands Tested via pytest suite:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Tested via pytest suite:**" >> $GITHUB_STEP_SUMMARY
           echo "- \`create\` - Create MPQ archives" >> $GITHUB_STEP_SUMMARY
           echo "- \`add\` - Add files to archives" >> $GITHUB_STEP_SUMMARY
           echo "- \`remove\` - Remove files from archives" >> $GITHUB_STEP_SUMMARY
@@ -93,8 +79,8 @@ jobs:
           echo "- \`read\` - Read files from archives" >> $GITHUB_STEP_SUMMARY
           echo "- \`verify\` - Verify archive signatures" >> $GITHUB_STEP_SUMMARY
           echo "- \`info\` - Display archive information" >> $GITHUB_STEP_SUMMARY
-          echo "- \`about\` - Display mpqcli information" >> $GITHUB_STEP_SUMMARY
-          echo "- \`version\` - Display mpqcli version" >> $GITHUB_STEP_SUMMARY
+          echo "- \`about\` - Display program information" >> $GITHUB_STEP_SUMMARY
+          echo "- \`version\` - Display program version" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
