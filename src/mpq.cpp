@@ -40,8 +40,8 @@ bool FileExistsInArchiveForLocale(const HANDLE hArchive, const std::string& file
         if (fileLocale == locale) {
             fileExists = true;
         }
+        SFileCloseFile(hFile);
     }
-    SFileCloseFile(hFile);
     return fileExists;
 }
 
@@ -79,6 +79,7 @@ int ExtractFiles(HANDLE hArchive, const std::string& output, const std::string& 
         findHandle,
         &findData));
 
+    SFileFindClose(findHandle);
     return result;
 }
 
@@ -92,12 +93,6 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
         std::cerr << "[!] Failed: File doesn't exist"
             << PrettyPrintLocale(preferredLocale, " for locale ", true)
             << ": " << szFileName << std::endl;
-        return 1;
-    }
-
-    HANDLE hFile;
-    if (!SFileOpenFileEx(hArchive, szFileName, SFILE_OPEN_FROM_MPQ, &hFile)) {
-        std::cerr << "[!] Failed: File cannot be opened: " << szFileName << std::endl;
         return 1;
     }
 
@@ -352,7 +347,7 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
             // Multiple files can be stored with identical filenames under different locales.
             // Loop over all locales and print the file details for each locale.
             DWORD maxLocales = 32; // This will be updated in the call to SFileEnumLocales
-            LCID * fileLocales = (LCID *)malloc(maxLocales * sizeof(LCID));
+            const auto fileLocales = static_cast<LCID *>(malloc(maxLocales * sizeof(LCID)));
 
             if (fileLocales == NULL) {
                 std::cerr << "[!] Unable to allocate memory for locales for file: " << findData.cFileName << std::endl;
@@ -370,6 +365,7 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
 
             } else if (result == ERROR_INVALID_HANDLE || result == ERROR_NOT_SUPPORTED) {
                 std::cerr << "[!] Internal error for file: " << findData.cFileName << std::endl;
+                free(fileLocales);
                 continue;
 
             } else if (result == ERROR_INSUFFICIENT_BUFFER) {
@@ -469,6 +465,7 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
 
     } while (SFileFindNextFile(findHandle, &findData));
 
+    SFileFindClose(findHandle);
     return 0;
 }
 
