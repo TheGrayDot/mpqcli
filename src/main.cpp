@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
     // These are reused in multiple subcommands
     std::string baseTarget = "default";  // all subcommands
     std::string baseFile = "default";  // add, remove, extract, read
+    std::string basePath = "default";  // add, create
     std::string baseLocale = "default"; // create, add, remove, extract, read
     std::string baseNameInArchive = "default"; // add, create
     std::string baseOutput = "default";  // create, extract
@@ -128,8 +129,9 @@ int main(int argc, char **argv) {
     add->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
-    add->add_option("--dir-in-archive", baseDirInArchive, "Directory to put file inside within MPQ archive");
-    add->add_option("-n,--name-in-archive", baseNameInArchive, "Filename inside MPQ archive");
+    add->add_option("-p,--path", basePath, "Full path (directory and filename) of the file within MPQ archive");
+    add->add_option("-d,--directory-in-archive", baseDirInArchive, "Directory to put file inside within MPQ archive");
+    add->add_option("-f,--filename-in-archive", baseNameInArchive, "Filename inside MPQ archive");
     add->add_flag("-w,--overwrite", addOverwrite, "Overwrite file if it already is in MPQ archive");
     add->add_option("--locale", baseLocale, "Locale to use for added file")
         ->check(LocaleValid);
@@ -321,17 +323,23 @@ int main(int argc, char **argv) {
         fs::path filePath = fs::path(baseFile);
 
         std::string archivePath = filePath.filename().u8string(); // Default: use the filename as path, saves file to root of MPQ
-        if (baseNameInArchive != "default" && baseDirInArchive != "default") {
-            // Return error since providing both arguments makes no sense and is a user error
-            std::cerr << "[!] Cannot specify both --name-in-archive and --dir-in-archive." << std::endl;
+        if (basePath != "default" && baseDirInArchive != "default" || basePath != "default" && baseNameInArchive != "default") {
+            // Return error since providing path together --name-in-archive or --directory-in-archive makes no sense and is a user error
+            std::cerr << "[!] Cannot specify --path together with --name-in-archive or --directory-in-archive." << std::endl;
             return 1;
 
-        } else if (baseNameInArchive != "default") { // Optional: specified filename inside archive
-            filePath = fs::path(baseNameInArchive);
+        } else if (basePath != "default") { // Optional: specified whole path inside archive
+            filePath = fs::path(basePath);
             archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
 
-        } else if (baseDirInArchive != "default") { // Optional: specified directory inside archive
-            filePath = fs::path(baseDirInArchive) / archivePath;
+        } else if (baseDirInArchive != "default" || baseNameInArchive != "default") { // Optional: specified filename inside archive
+            if (baseDirInArchive == "default") {
+                baseDirInArchive = "";
+            }
+            if (baseNameInArchive == "default") {
+                baseNameInArchive = archivePath;
+            }
+            filePath = fs::path(baseDirInArchive) / fs::path(baseNameInArchive);
             archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
         }
 
