@@ -47,19 +47,19 @@ docker_glibc_run: ## Run the glibc Docker image
 
 # TEST
 test_create_venv: ## Create Python venv and install test dependencies
-	python3 -m venv ./venv
-	. ./venv/bin/activate && \
+	python3 -m venv ./.venv
+	. ./.venv/bin/activate && \
 	pip3 install -r test/requirements.txt
 
 test_mpqcli: ## Run pytest test suite
-	. ./venv/bin/activate && \
+	. ./.venv/bin/activate && \
 	python3 -m pytest test -s
 
 test_clean: ## Remove test data directory
 	rm -rf test/data
 
 test_lint: ## Run ruff linter on test directory
-	. ./venv/bin/activate && \
+	. ./.venv/bin/activate && \
 	ruff check ./test
 
 # CLEAN
