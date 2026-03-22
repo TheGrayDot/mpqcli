@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
     list->add_option("-l,--listfile", baseListfileName, "File listing content of an MPQ archive")
         ->check(CLI::ExistingFile);
     list->add_flag("-d,--detailed", listDetailed, "File listing with additional columns (default false)");
-    list->add_flag("-a,--all", listAll, "File listing including hidden files (default true)");
+    list->add_flag("-a,--all", listAll, "File listing including hidden files (default false)");
     list->add_option("-p,--property", listProperties, "Prints only specific property values")
         ->check(CLI::IsMember(validFileListProperties));
 
