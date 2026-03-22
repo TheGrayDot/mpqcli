@@ -1,0 +1,76 @@
+name: Bug Report
+description: Report a bug or unexpected behaviour in mpqcli.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill in as much detail as possible. The more context you provide, the faster the bug can be investigated.
+
+  - type: input
+    id: version
+    attributes:
+      label: mpqcli version
+      description: Run `mpqcli version` and paste the output here.
+      placeholder: "0.9.8"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Host OS
+      options:
+        - Linux
+        - Windows
+        - WSL (Windows Subsystem for Linux)
+        - macOS
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Installation method
+      options:
+        - Prebuilt binary
+        - Docker
+        - Built from source
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: mpqcli command
+      description: The exact command you ran.
+      placeholder: "mpqcli list wow-patch.mpq"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour / error output
+      description: What actually happened? Paste any error messages or unexpected output here.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else that might be relevant (e.g. MPQ archive source, file sizes, related issues).
+    validations:
+      required: false
