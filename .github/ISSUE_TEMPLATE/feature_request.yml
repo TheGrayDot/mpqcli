@@ -1,0 +1,28 @@
+name: Feature Request
+description: Suggest a new feature or improvement for mpqcli.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this feature solve, or what is currently missing?
+      placeholder: "When I run mpqcli ..., I cannot ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the feature or change you would like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Any other context, examples, or references that might be useful.
+    validations:
+      required: false

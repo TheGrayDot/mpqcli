@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.8 - 2026-03-22
+
+### Added
+
+- The `create` subcommand now supports a single file
+- The `add` and `create` subcommands have additional arguments for specifiying the file location in the MPQ archive (`name-in-archive` and `dir-in-archive`)
+- The `add` subcommand can now overwrite existing files if requested (`overwrite`)
+
+### Fixed
+
+- Several memory leaks
+
+### Thanks
+
+- Thanks to @sjoblomj for adding more features and fixes in this release
+
 ## 0.9.7 - 2026-02-23
 
 ### Added
@@ -22,6 +38,10 @@
 ### Changed
 
 - Improved locale printing and display throughout
+
+### Thanks
+
+- A big thank you to @sjoblomj for adding so many features in this release
 
 ## 0.9.6 - 2025-12-23
 

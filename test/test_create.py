@@ -192,8 +192,8 @@ def test_create_mpq_from_file(binary_path, generate_test_files):
     )
 
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
-    assert target_file.exists(), f"MPQ file was not created)"
-    assert target_file.stat().st_size > 0, f"MPQ file is empty)"
+    assert target_file.exists(), "MPQ file was not created"
+    assert target_file.stat().st_size > 0, "MPQ file is empty"
 
     verify_archive_file_content(binary_path, target_file, {"enUS  test.txt"})
 
@@ -225,8 +225,8 @@ def test_create_mpq_from_file_with_nameinarchive_parameter(binary_path, generate
     )
 
     assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
-    assert target_file.exists(), f"MPQ file was not created)"
-    assert target_file.stat().st_size > 0, f"MPQ file is empty)"
+    assert target_file.exists(), "MPQ file was not created"
+    assert target_file.stat().st_size > 0, "MPQ file is empty"
 
     verify_archive_file_content(binary_path, target_file, {"enUS  messages\\important.txt"})
 
@@ -254,7 +254,7 @@ def test_create_mpq_from_directory_with_nameinarchive_parameter(binary_path, gen
     )
 
     assert result.returncode == 1, f"mpqcli failed with error: {result.stderr}"
-    assert not target_file.exists(), f"MPQ file was created)"
+    assert not target_file.exists(), "MPQ file was created"
 
 
 def test_create_mpq_with_illegal_locale(binary_path, generate_test_files):
