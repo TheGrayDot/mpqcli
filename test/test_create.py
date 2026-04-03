@@ -574,6 +574,48 @@ def test_create_mpq_no_sign_flag_has_no_signature(binary_path, generate_test_fil
     output_file.unlink(missing_ok=True)
 
 
+def test_create_mpq_directory_with_trailing_slash(binary_path, generate_test_files):
+    """
+    Test MPQ archive creation when the target directory has a trailing slash.
+
+    Regression test for: mpqcli create dir/ producing "dir/.mpq" instead of "dir.mpq".
+
+    This test checks:
+    - The archive is named after the directory, not "<dir>/.mpq".
+    - The archive is created successfully and is non-empty.
+    """
+    _ = generate_test_files
+    script_dir = Path(__file__).parent
+    # Construct the path string with an explicit trailing slash
+    target_dir_str = str(script_dir / "data" / "files") + "/"
+
+    expected_output = script_dir / "data" / "files.mpq"
+    malformed_output = script_dir / "data" / "files" / ".mpq"
+
+    # Clean up from any previous run
+    expected_output.unlink(missing_ok=True)
+    malformed_output.unlink(missing_ok=True)
+
+    result = subprocess.run(
+        [str(binary_path), "create", target_dir_str],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert expected_output.exists(), (
+        f"Expected archive '{expected_output}' was not created. "
+        f"Malformed path exists: {malformed_output.exists()}"
+    )
+    assert expected_output.stat().st_size > 0, "MPQ file is empty"
+    assert not malformed_output.exists(), (
+        f"Malformed archive path '{malformed_output}' was created — trailing slash bug is present"
+    )
+
+    expected_output.unlink(missing_ok=True)
+
+
 def test_create_mpq_skips_special_files(binary_path, tmp_path):
     """
     Test that special MPQ files in the source directory are skipped during archive creation.

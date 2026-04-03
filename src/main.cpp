@@ -245,6 +245,11 @@ int main(int argc, char **argv) {
             outputFilePath = fs::absolute(baseOutput);
         } else {
             outputFilePath = fs::path(baseTarget);
+            // If the path ends with a separator (e.g. "dir/"), strip the
+            // trailing separator first so we get "dir.mpq"
+            if (outputFilePath.filename().empty()) {
+                outputFilePath = outputFilePath.parent_path();
+            }
             outputFilePath.replace_extension(".mpq");
         }
         std::string outputFile = outputFilePath.u8string();
