@@ -15,6 +15,12 @@
 
 namespace fs = std::filesystem;
 
+static const std::vector<std::string> kSpecialMpqFiles = {
+    "(listfile)",
+    "(signature)",
+    "(attributes)"
+};
+
 int OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags) {
     if (!SFileOpenArchive(filename.c_str(), 0, flags, hArchive)) {
         std::cerr << "[!] Failed to open: " << filename << std::endl;
@@ -185,6 +191,12 @@ int AddFiles(HANDLE hArchive, const std::string& inputPath, LCID locale, const G
             // Normalise path for MPQ
             std::string archiveFilePath = WindowsifyFilePath(inputFilePath.u8string());
 
+            // Skip special MPQ files that StormLib manages automatically
+            if (std::find(kSpecialMpqFiles.begin(), kSpecialMpqFiles.end(), archiveFilePath) != kSpecialMpqFiles.end()) {
+                std::cout << "[*] Skipping special MPQ file: " << archiveFilePath << std::endl;
+                continue;
+            }
+
             AddFile(hArchive, entry.path().u8string(), archiveFilePath, locale, gameRules, overrides, false);
         }
     }
@@ -334,19 +346,11 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
         listDetailed = true; // If the user specified properties, we need to print the detailed output
     }
 
-    // "Special" files are base files used by MPQ file format
-    // These are skipped, unless "-a" or "--all" are specified
-    std::vector<std::string> specialFiles = {
-        "(listfile)",
-        "(signature)",
-        "(attributes)"
-    };
-
     std::set<std::string> seenFileNames; // Used to prevent printing the same file name multiple times
     // Loop through all files in the MPQ archive
     do {
         // Skip special files unless user wants to list all (like ls -a)
-        if (!listAll && std::find(specialFiles.begin(), specialFiles.end(), findData.cFileName) != specialFiles.end()) {
+        if (!listAll && std::find(kSpecialMpqFiles.begin(), kSpecialMpqFiles.end(), findData.cFileName) != kSpecialMpqFiles.end()) {
             continue;
         }
 

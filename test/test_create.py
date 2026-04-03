@@ -574,6 +574,57 @@ def test_create_mpq_no_sign_flag_has_no_signature(binary_path, generate_test_fil
     output_file.unlink(missing_ok=True)
 
 
+def test_create_mpq_skips_special_files(binary_path, tmp_path):
+    """
+    Test that special MPQ files in the source directory are skipped during archive creation.
+
+    This test checks:
+    - That (listfile), (signature), and (attributes) are not added as regular files.
+    - That the signature type is None after creation (no false signature from (signature) file).
+    - That the special files do not appear in the archive file listing.
+    """
+    source_dir = tmp_path / "src"
+    source_dir.mkdir()
+    (source_dir / "readme.txt").write_text("hello")
+
+    # Plant all three special files in the source directory
+    for name in ["(listfile)", "(signature)", "(attributes)"]:
+        (source_dir / name).write_bytes(b"fake content")
+
+    output_file = tmp_path / "output.mpq"
+
+    result = subprocess.run(
+        [str(binary_path), "create", str(source_dir), "-o", str(output_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_file.exists(), "MPQ file was not created"
+
+    # Signature type must be None — (signature) must not have been ingested
+    info = subprocess.run(
+        [str(binary_path), "info", "-p", "signature-type", str(output_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    assert info.returncode == 0, f"mpqcli info failed with error: {info.stderr}"
+    assert info.stdout.strip() == "None", f"Expected signature type 'None', got: {info.stdout.strip()!r}"
+
+    # Special files must not appear in the regular file listing
+    listing = subprocess.run(
+        [str(binary_path), "list", str(output_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    assert listing.returncode == 0, f"mpqcli list failed with error: {listing.stderr}"
+    for name in ["(listfile)", "(signature)", "(attributes)"]:
+        assert name not in listing.stdout, f"Special file {name!r} unexpectedly found in archive listing"
+
+
 def verify_archive_file_content(binary_path, test_file, expected_output):
     result = subprocess.run(
         [str(binary_path), "list", str(test_file), "-d", "-p", "locale"],
