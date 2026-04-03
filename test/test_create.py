@@ -536,6 +536,44 @@ def test_deletion_marker_only_for_zero_size_files(binary_path):
         output_file.unlink(missing_ok=True)
 
 
+def test_create_mpq_no_sign_flag_has_no_signature(binary_path, generate_test_files):
+    """
+    Test that a newly created archive without --sign does not have a weak signature slot.
+
+    This test checks:
+    - If the MPQ archive is created successfully.
+    - If the signature type is None (no signature slot pre-allocated).
+    """
+    _ = generate_test_files
+    script_dir = Path(__file__).parent
+    target_dir = script_dir / "data" / "files"
+
+    output_file = script_dir / "data" / "mpq_no_sign.mpq"
+    output_file.unlink(missing_ok=True)
+
+    result = subprocess.run(
+        [str(binary_path), "create", str(target_dir), "-o", str(output_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_file.exists(), "MPQ file was not created"
+
+    info = subprocess.run(
+        [str(binary_path), "info", "-p", "signature-type", str(output_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert info.returncode == 0, f"mpqcli info failed with error: {info.stderr}"
+    assert info.stdout.strip() == "None", f"Expected signature type 'None', got: {info.stdout.strip()!r}"
+
+    output_file.unlink(missing_ok=True)
+
+
 def verify_archive_file_content(binary_path, test_file, expected_output):
     result = subprocess.run(
         [str(binary_path), "list", str(test_file), "-d", "-p", "locale"],
