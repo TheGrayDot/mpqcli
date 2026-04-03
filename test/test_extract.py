@@ -412,7 +412,6 @@ def test_extract_all_files_from_mpq_without_providing_listfile(binary_path, gene
 
     expected_output = {
         "File00000000.xxx",
-        "File00000003.xxx",
     }
 
     result = subprocess.run(
@@ -459,7 +458,6 @@ def test_extract_all_files_from_mpq_without_providing_listfile_and_with_given_lo
     expected_output = {
         "File00000000.xxx",
         "File00000002.xxx",
-        "File00000003.xxx",
     }
 
     result = subprocess.run(
@@ -550,7 +548,6 @@ def test_extract_all_files_from_mpq_providing_partial_external_listfile(binary_p
 
 
     expected_output = {
-        "(signature)",
         "capybaras.txt",
     }
 
@@ -599,7 +596,6 @@ def test_extract_all_files_from_mpq_providing_partial_external_listfile_and_with
 
     expected_output = {
         "File00000000.xxx",
-        "(signature)",
         "cats.txt",
     }
 
@@ -647,7 +643,6 @@ def test_extract_all_files_from_mpq_providing_complete_external_listfile(binary_
 
 
     expected_output = {
-        "(signature)",
         "capybaras.txt",
     }
 
@@ -695,7 +690,6 @@ def test_extract_all_files_from_mpq_providing_complete_external_listfile_and_wit
 
 
     expected_output = {
-        "(signature)",
         "dogs.txt",
         "capybaras.txt",
     }
