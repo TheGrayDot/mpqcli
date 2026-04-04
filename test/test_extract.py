@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -746,7 +747,7 @@ def test_extract_path_traversal_is_blocked(binary_path, generate_path_traversal_
         "[*] Extracted: (listfile)",
     }
     expected_stderr = {
-        "[!] Blocked: path traversal attempt detected: ../../sneaky.txt",
+        "[!] Blocked: path traversal attempt detected: " + os.path.normpath("../../sneaky.txt"),
         "",
         "[!] Failed to extract all files.",
     }
