@@ -119,6 +119,18 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
 
     // Ensure sub-directories for folder-nested files exist
     fs::path outputFilePathName = outputPathBase / fileNameString;
+
+    // Guard against path traversal attacks: resolve any ".." components and verify
+    // the output path is a descendant of the intended base directory
+    fs::path resolvedOutput = fs::weakly_canonical(outputFilePathName);
+    if (std::mismatch(outputPathBase.begin(), outputPathBase.end(),
+                      resolvedOutput.begin(), resolvedOutput.end()).first
+        != outputPathBase.end()) {
+        std::cerr << "[!] Blocked: path traversal attempt detected: "
+                  << fileNameString << std::endl;
+        return 1;
+    }
+
     std::string outputFileName{outputFilePathName.u8string()};
     std::filesystem::create_directories(outputFilePathName.parent_path());
 
