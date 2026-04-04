@@ -86,7 +86,7 @@ struct MpqCreateSettings {
           streamFlags(STREAM_PROVIDER_FLAT | BASE_PROVIDER_FILE),
           fileFlags1(MPQ_FILE_DEFAULT_INTERNAL),
           fileFlags2(0),
-          fileFlags3(MPQ_FILE_DEFAULT_INTERNAL),
+          fileFlags3(0),
           attrFlags(0),
           sectorSize(0x1000),
           rawChunkSize(0) {}

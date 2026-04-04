@@ -15,6 +15,12 @@
 
 namespace fs = std::filesystem;
 
+static const std::vector<std::string> kSpecialMpqFiles = {
+    "(listfile)",
+    "(signature)",
+    "(attributes)"
+};
+
 int OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags) {
     if (!SFileOpenArchive(filename.c_str(), 0, flags, hArchive)) {
         std::cerr << "[!] Failed to open: " << filename << std::endl;
@@ -113,6 +119,18 @@ int ExtractFile(HANDLE hArchive, const std::string& output, const std::string& f
 
     // Ensure sub-directories for folder-nested files exist
     fs::path outputFilePathName = outputPathBase / fileNameString;
+
+    // Guard against path traversal attacks: resolve any ".." components and verify
+    // the output path is a descendant of the intended base directory
+    fs::path resolvedOutput = fs::weakly_canonical(outputFilePathName);
+    if (std::mismatch(outputPathBase.begin(), outputPathBase.end(),
+                      resolvedOutput.begin(), resolvedOutput.end()).first
+        != outputPathBase.end()) {
+        std::cerr << "[!] Blocked: path traversal attempt detected: "
+                  << fileNameString << std::endl;
+        return 1;
+    }
+
     std::string outputFileName{outputFilePathName.u8string()};
     std::filesystem::create_directories(outputFilePathName.parent_path());
 
@@ -185,6 +203,12 @@ int AddFiles(HANDLE hArchive, const std::string& inputPath, LCID locale, const G
             // Normalise path for MPQ
             std::string archiveFilePath = WindowsifyFilePath(inputFilePath.u8string());
 
+            // Skip special MPQ files that StormLib manages automatically
+            if (std::find(kSpecialMpqFiles.begin(), kSpecialMpqFiles.end(), archiveFilePath) != kSpecialMpqFiles.end()) {
+                std::cout << "[*] Skipping special MPQ file: " << archiveFilePath << std::endl;
+                continue;
+            }
+
             AddFile(hArchive, entry.path().u8string(), archiveFilePath, locale, gameRules, overrides, false);
         }
     }
@@ -239,7 +263,13 @@ int AddFile(
     }
 
     // Get file size for rule matching
-    const auto fileSize = static_cast<DWORD>(fs::file_size(localFile));
+    const std::uintmax_t rawFileSize = fs::file_size(localFile);
+    if (rawFileSize > std::numeric_limits<DWORD>::max()) {
+        std::cerr << "[!] Warning: file exceeds 4GB, size-based compression rules may not apply correctly: "
+                  << localFile << std::endl;
+    }
+    const DWORD fileSize = static_cast<DWORD>(
+        std::min(rawFileSize, static_cast<std::uintmax_t>(std::numeric_limits<DWORD>::max())));
 
     // Get game-specific rules
     auto [flags, compressionFirst, compressionNext] =
@@ -334,19 +364,11 @@ int ListFiles(HANDLE hArchive, const std::string& listfileName, bool listAll, bo
         listDetailed = true; // If the user specified properties, we need to print the detailed output
     }
 
-    // "Special" files are base files used by MPQ file format
-    // These are skipped, unless "-a" or "--all" are specified
-    std::vector<std::string> specialFiles = {
-        "(listfile)",
-        "(signature)",
-        "(attributes)"
-    };
-
     std::set<std::string> seenFileNames; // Used to prevent printing the same file name multiple times
     // Loop through all files in the MPQ archive
     do {
         // Skip special files unless user wants to list all (like ls -a)
-        if (!listAll && std::find(specialFiles.begin(), specialFiles.end(), findData.cFileName) != specialFiles.end()) {
+        if (!listAll && std::find(kSpecialMpqFiles.begin(), kSpecialMpqFiles.end(), findData.cFileName) != kSpecialMpqFiles.end()) {
             continue;
         }
 

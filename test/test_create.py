@@ -536,6 +536,137 @@ def test_deletion_marker_only_for_zero_size_files(binary_path):
         output_file.unlink(missing_ok=True)
 
 
+def test_create_mpq_no_sign_flag_has_no_signature(binary_path, generate_test_files):
+    """
+    Test that a newly created archive without --sign does not have a weak signature slot.
+
+    This test checks:
+    - If the MPQ archive is created successfully.
+    - If the signature type is None (no signature slot pre-allocated).
+    """
+    _ = generate_test_files
+    script_dir = Path(__file__).parent
+    target_dir = script_dir / "data" / "files"
+
+    output_file = script_dir / "data" / "mpq_no_sign.mpq"
+    output_file.unlink(missing_ok=True)
+
+    result = subprocess.run(
+        [str(binary_path), "create", str(target_dir), "-o", str(output_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_file.exists(), "MPQ file was not created"
+
+    info = subprocess.run(
+        [str(binary_path), "info", "-p", "signature-type", str(output_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert info.returncode == 0, f"mpqcli info failed with error: {info.stderr}"
+    assert info.stdout.strip() == "None", f"Expected signature type 'None', got: {info.stdout.strip()!r}"
+
+    output_file.unlink(missing_ok=True)
+
+
+def test_create_mpq_directory_with_trailing_slash(binary_path, generate_test_files):
+    """
+    Test MPQ archive creation when the target directory has a trailing slash.
+
+    Regression test for: mpqcli create dir/ producing "dir/.mpq" instead of "dir.mpq".
+
+    This test checks:
+    - The archive is named after the directory, not "<dir>/.mpq".
+    - The archive is created successfully and is non-empty.
+    """
+    _ = generate_test_files
+    script_dir = Path(__file__).parent
+    # Construct the path string with an explicit trailing slash
+    target_dir_str = str(script_dir / "data" / "files") + "/"
+
+    expected_output = script_dir / "data" / "files.mpq"
+    malformed_output = script_dir / "data" / "files" / ".mpq"
+
+    # Clean up from any previous run
+    expected_output.unlink(missing_ok=True)
+    malformed_output.unlink(missing_ok=True)
+
+    result = subprocess.run(
+        [str(binary_path), "create", target_dir_str],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert expected_output.exists(), (
+        f"Expected archive '{expected_output}' was not created. "
+        f"Malformed path exists: {malformed_output.exists()}"
+    )
+    assert expected_output.stat().st_size > 0, "MPQ file is empty"
+    assert not malformed_output.exists(), (
+        f"Malformed archive path '{malformed_output}' was created — trailing slash bug is present"
+    )
+
+    expected_output.unlink(missing_ok=True)
+
+
+def test_create_mpq_skips_special_files(binary_path, tmp_path):
+    """
+    Test that special MPQ files in the source directory are skipped during archive creation.
+
+    This test checks:
+    - That (listfile), (signature), and (attributes) are not added as regular files.
+    - That the signature type is None after creation (no false signature from (signature) file).
+    - That the special files do not appear in the archive file listing.
+    """
+    source_dir = tmp_path / "src"
+    source_dir.mkdir()
+    (source_dir / "readme.txt").write_text("hello")
+
+    # Plant all three special files in the source directory
+    for name in ["(listfile)", "(signature)", "(attributes)"]:
+        (source_dir / name).write_bytes(b"fake content")
+
+    output_file = tmp_path / "output.mpq"
+
+    result = subprocess.run(
+        [str(binary_path), "create", str(source_dir), "-o", str(output_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+    assert output_file.exists(), "MPQ file was not created"
+
+    # Signature type must be None — (signature) must not have been ingested
+    info = subprocess.run(
+        [str(binary_path), "info", "-p", "signature-type", str(output_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    assert info.returncode == 0, f"mpqcli info failed with error: {info.stderr}"
+    assert info.stdout.strip() == "None", f"Expected signature type 'None', got: {info.stdout.strip()!r}"
+
+    # Special files must not appear in the regular file listing
+    listing = subprocess.run(
+        [str(binary_path), "list", str(output_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    assert listing.returncode == 0, f"mpqcli list failed with error: {listing.stderr}"
+    for name in ["(listfile)", "(signature)", "(attributes)"]:
+        assert name not in listing.stdout, f"Special file {name!r} unexpectedly found in archive listing"
+
+
 def verify_archive_file_content(binary_path, test_file, expected_output):
     result = subprocess.run(
         [str(binary_path), "list", str(test_file), "-d", "-p", "locale"],

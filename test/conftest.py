@@ -167,6 +167,44 @@ def generate_mpq_without_internal_listfile(binary_path):
             assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
 
 
+@pytest.fixture(scope="function")
+def generate_path_traversal_mpq(binary_path):
+    script_dir = Path(__file__).parent
+
+    data_dir = script_dir / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    traversal_files_dir = data_dir / "traversal_files"
+    shutil.rmtree(traversal_files_dir, ignore_errors=True)
+    traversal_files_dir.mkdir(parents=True, exist_ok=True)
+
+    mpq_file = data_dir / "mpq_with_path_traversal.mpq"
+    mpq_file.unlink(missing_ok=True)
+
+    safe_file = traversal_files_dir / "safe.txt"
+    safe_file.write_text("This is a safe file.\n", newline="\n")
+
+    # Create a base MPQ containing the safe file
+    result = subprocess.run(
+        [str(binary_path), "create", "-o", str(mpq_file), str(traversal_files_dir)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+
+    # Embed a second entry whose archive path traverses above the output directory
+    result = subprocess.run(
+        [str(binary_path), "add", str(safe_file), str(mpq_file), "-p", "../../sneaky.txt"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    assert result.returncode == 0, f"mpqcli failed with error: {result.stderr}"
+
+    yield mpq_file
+
+
 @pytest.fixture(scope="session")
 def download_test_files():
     script_dir = Path(__file__).parent

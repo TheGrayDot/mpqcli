@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -412,7 +413,6 @@ def test_extract_all_files_from_mpq_without_providing_listfile(binary_path, gene
 
     expected_output = {
         "File00000000.xxx",
-        "File00000003.xxx",
     }
 
     result = subprocess.run(
@@ -459,7 +459,6 @@ def test_extract_all_files_from_mpq_without_providing_listfile_and_with_given_lo
     expected_output = {
         "File00000000.xxx",
         "File00000002.xxx",
-        "File00000003.xxx",
     }
 
     result = subprocess.run(
@@ -550,7 +549,6 @@ def test_extract_all_files_from_mpq_providing_partial_external_listfile(binary_p
 
 
     expected_output = {
-        "(signature)",
         "capybaras.txt",
     }
 
@@ -599,7 +597,6 @@ def test_extract_all_files_from_mpq_providing_partial_external_listfile_and_with
 
     expected_output = {
         "File00000000.xxx",
-        "(signature)",
         "cats.txt",
     }
 
@@ -647,7 +644,6 @@ def test_extract_all_files_from_mpq_providing_complete_external_listfile(binary_
 
 
     expected_output = {
-        "(signature)",
         "capybaras.txt",
     }
 
@@ -695,7 +691,6 @@ def test_extract_all_files_from_mpq_providing_complete_external_listfile_and_wit
 
 
     expected_output = {
-        "(signature)",
         "dogs.txt",
         "capybaras.txt",
     }
@@ -722,3 +717,47 @@ def test_extract_all_files_from_mpq_providing_complete_external_listfile_and_wit
     assert output_lines == expected_lines, f"Unexpected output: {output_lines}"
     assert output_file.exists(), "Output directory was not created"
     assert output_files == expected_output, f"Unexpected files: {output_files}"
+
+
+def test_extract_path_traversal_is_blocked(binary_path, generate_path_traversal_mpq):
+    """
+    Test that extracting an MPQ containing a path traversal filename is blocked (zip-slip).
+
+    This test checks:
+    - That the traversal entry is not written outside the output directory.
+    - That the extraction of the traversal entry is reported as blocked on stderr.
+    - That safe files in the same archive are still extracted correctly.
+    - That the overall exit code is non-zero.
+    """
+    test_file = generate_path_traversal_mpq
+    script_dir = Path(__file__).parent
+    output_dir = script_dir / "data" / "extracted_traversal"
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+
+    result = subprocess.run(
+        [str(binary_path), "extract", "-o", str(output_dir), str(test_file)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    expected_stdout = {
+        "[*] Extracted: safe.txt",
+        "[*] Extracted: (listfile)",
+    }
+    expected_stderr = {
+        "[!] Blocked: path traversal attempt detected: " + os.path.normpath("../../sneaky.txt"),
+        "",
+        "[!] Failed to extract all files.",
+    }
+
+    stdout_lines = set(result.stdout.splitlines())
+    stderr_lines = set(result.stderr.splitlines())
+
+    assert result.returncode == 1, f"Expected non-zero exit for traversal attempt, got: {result.returncode}"
+    assert stdout_lines == expected_stdout, f"Unexpected stdout: {stdout_lines}"
+    assert stderr_lines == expected_stderr, f"Unexpected stderr: {stderr_lines}"
+
+    # Confirm no file escaped outside the intended output directory
+    assert not (output_dir.parent / "sneaky.txt").exists(), "Path traversal was not blocked: sneaky.txt escaped"

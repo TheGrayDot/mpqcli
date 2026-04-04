@@ -157,7 +157,6 @@ def test_list_mpq_without_providing_listfile(binary_path, generate_mpq_without_i
         "File00000000.xxx",
         "File00000001.xxx",
         "File00000002.xxx",
-        "File00000003.xxx",
     }
     result = subprocess.run(
         [str(binary_path), "list", str(test_file)],
@@ -175,7 +174,6 @@ def test_list_mpq_without_providing_listfile(binary_path, generate_mpq_without_i
         "File00000000.xxx",
         "File00000001.xxx",
         "File00000002.xxx",
-        "File00000003.xxx",
     }
     result = subprocess.run(
         [str(binary_path), "list", "-a", str(test_file)],
@@ -194,14 +192,12 @@ def test_list_mpq_without_providing_listfile(binary_path, generate_mpq_without_i
             "      31 enUS                      File00000000.xxx",
             "      33 deDE                      File00000001.xxx",
             "      27 041D                      File00000002.xxx",
-            "      72 enUS                      File00000003.xxx",
         }
     else:
         expected_output = {
             "      31 enUS                      File00000000.xxx",
             "      32 deDE                      File00000001.xxx",
             "      26 041D                      File00000002.xxx",
-            "      72 enUS                      File00000003.xxx",
         }
 
     result = subprocess.run(
@@ -253,7 +249,6 @@ def test_list_mpq_providing_partial_external_listfile(binary_path, generate_mpq_
         "File00000000.xxx",
         "File00000002.xxx",
         "cats.txt",
-        "(signature)",
     }
     result = subprocess.run(
         [str(binary_path), "list", "-a", str(test_file), "--listfile", str(listfile)],
@@ -272,14 +267,12 @@ def test_list_mpq_providing_partial_external_listfile(binary_path, generate_mpq_
             "      31 enUS                      File00000000.xxx",
             "      27 041D                      File00000002.xxx",
             "      33 deDE                      cats.txt",
-            "      72 enUS                      (signature)",
         }
     else:
         expected_output = {
             "      31 enUS                      File00000000.xxx",
             "      26 041D                      File00000002.xxx",
             "      32 deDE                      cats.txt",
-            "      72 enUS                      (signature)",
         }
     result = subprocess.run(
         [str(binary_path), "list", "-ad", str(test_file), "--listfile", str(listfile)],
@@ -329,7 +322,6 @@ def test_list_mpq_providing_complete_external_listfile(binary_path, generate_mpq
         "dogs.txt",
         "cats.txt",
         "capybaras.txt",
-        "(signature)",
     }
     result = subprocess.run(
         [str(binary_path), "list", "-a", str(test_file), "--listfile", str(listfile)],
@@ -348,14 +340,12 @@ def test_list_mpq_providing_complete_external_listfile(binary_path, generate_mpq
             "      31 enUS                      capybaras.txt",
             "      33 deDE                      cats.txt",
             "      27 041D                      dogs.txt",
-            "      72 enUS                      (signature)",
         }
     else:
         expected_output = {
             "      31 enUS                      capybaras.txt",
             "      32 deDE                      cats.txt",
             "      26 041D                      dogs.txt",
-            "      72 enUS                      (signature)",
         }
 
     result = subprocess.run(
