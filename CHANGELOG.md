@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.9 - 2026-04-05
+
+### Fixed
+
+- Potential path traversal attack in extract subcommand
+- Empty MPQ archive name when directory supplied with trailing slash
+- Bug where MPQ internal files were added with create command
+- Signature being added automatically when not requested
+- Potential DWORD overflow in `AddFiles`
+
 ## 0.9.8 - 2026-03-22
 
 ### Added
