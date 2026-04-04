@@ -263,7 +263,13 @@ int AddFile(
     }
 
     // Get file size for rule matching
-    const auto fileSize = static_cast<DWORD>(fs::file_size(localFile));
+    const std::uintmax_t rawFileSize = fs::file_size(localFile);
+    if (rawFileSize > std::numeric_limits<DWORD>::max()) {
+        std::cerr << "[!] Warning: file exceeds 4GB, size-based compression rules may not apply correctly: "
+                  << localFile << std::endl;
+    }
+    const DWORD fileSize = static_cast<DWORD>(
+        std::min(rawFileSize, static_cast<std::uintmax_t>(std::numeric_limits<DWORD>::max())));
 
     // Get game-specific rules
     auto [flags, compressionFirst, compressionNext] =
