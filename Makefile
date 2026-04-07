@@ -4,86 +4,133 @@ VERSION := $(shell awk '/project\(MPQCLI VERSION/ {gsub(/\)/, "", $$3); print $$
 README := README.md
 PACKAGE_URL := https://github.com/TheGrayDot/mpqcli/pkgs/container/mpqcli
 
+GCC_INSTALL_DIR := $(shell dirname "$(shell gcc -print-libgcc-file-name)")
+
 .PHONY: help \
-	build_linux build_windows build_clean \
+	build_linux build_windows build_clean build_lint_clean \
 	docker_musl_build docker_musl_run docker_glibc_build docker_glibc_run \
 	test_create_venv test_mpqcli test_clean test_lint \
+	lint_format lint_format_fix lint_cpp lint \
 	clean \
 	bump_stormlib bump_cli11 bump_submodules \
 	fetch_downloads tag_release
 
-help: ## Show this help menu
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} \
-	/^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+## Show this help menu
+help:
+	@awk 'BEGIN {FS = ":"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} \
+	/^## / {desc = substr($$0, 4); next} \
+	/^[a-zA-Z0-9_-]+:/ {if (desc) printf "  \033[36m%-22s\033[0m %s\n", $$1, desc; desc = ""; next} \
+	{desc = ""}' $(MAKEFILE_LIST)
 
 # BUILD
-build_linux: ## Build for Linux using cmake
+## Build for Linux using cmake
+build_linux:
 	cmake -B build \
 		-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		-DBUILD_MPQCLI=$(BUILD_MPQCLI)
 	cmake --build build
 
-build_windows: ## Build for Windows using cmake
+## Build for Windows using cmake
+build_windows:
 	cmake -B build \
 		-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		-DBUILD_MPQCLI=$(BUILD_MPQCLI)
 	cmake --build build --config $(CMAKE_BUILD_TYPE)
 
-build_clean: ## Remove cmake build directory
+## Remove cmake build directory
+build_clean:
 	rm -rf build
 
+## Generate compile_commands.json for clang-tidy
+build_lint: CMakeLists.txt src/CMakeLists.txt
+	cmake -B build_lint -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_MPQCLI=ON -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_CXX_FLAGS="--gcc-install-dir=$(GCC_INSTALL_DIR)"
+	@touch $@
+
+## Remove cmake lint build directory
+build_lint_clean:
+	rm -rf build_lint
+
 # DOCKER
-docker_musl_build: ## Build Docker image using musl
+## Build Docker image using musl
+docker_musl_build:
 	docker build -t mpqcli:$(VERSION) -f Dockerfile.musl .
 
-docker_musl_run: ## Run the musl Docker image
+## Run the musl Docker image
+docker_musl_run:
 	@docker run -it mpqcli:$(VERSION) version
 
-docker_glibc_build: ## Build Docker image using glibc
+## Build Docker image using glibc
+docker_glibc_build:
 	docker build -t mpqcli:$(VERSION) -f Dockerfile.glibc .
 
-docker_glibc_run: ## Run the glibc Docker image
+## Run the glibc Docker image
+docker_glibc_run:
 	@docker run -it mpqcli:$(VERSION) version
 
 # TEST
-test_create_venv: ## Create Python venv and install test dependencies
+## Create Python venv and install test dependencies
+test_create_venv:
 	python3 -m venv ./.venv
 	. ./.venv/bin/activate && \
 	pip3 install -r test/requirements.txt
 
-test_mpqcli: ## Run pytest test suite
+## Run pytest test suite
+test_mpqcli:
 	. ./.venv/bin/activate && \
 	python3 -m pytest test -s
 
-test_clean: ## Remove test data directory
+## Remove test data directory
+test_clean:
 	rm -rf test/data
 
-test_lint: ## Run ruff linter on test directory
+## Run ruff linter on test directory
+test_lint:
 	. ./.venv/bin/activate && \
 	ruff check ./test
 
+# LINT
+## Check C++ formatting with clang-format-18
+lint_format:
+	find src \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format-18 --dry-run --Werror
+
+## Auto-fix C++ formatting with clang-format-18
+lint_format_fix:
+	find src \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format-18 -i
+
+## Run clang-tidy-18 static analysis
+lint_cpp: build_lint
+	clang-tidy-18 --quiet -p build_lint --header-filter="$(CURDIR)/src/.*" src/*.cpp
+
+## Run all C++ linters
+lint: lint_format lint_cpp
+
 # CLEAN
-clean: build_clean test_clean ## Remove all build and test artifacts
+## Remove all build and test artifacts
+clean: build_clean build_lint_clean test_clean
 
 # SUBMODULES
-bump_stormlib: ## Bump StormLib submodule to latest remote
+## Bump StormLib submodule to latest remote
+bump_stormlib:
 	@read -rp "[*] Bump StormLib? (y/N) " yn; \
 	case $$yn in \
 		[yY] ) git submodule update --init --remote extern/StormLib;; \
 		* ) echo "[*] Skipping...";; \
 	esac
 
-bump_cli11: ## Bump CLI11 submodule to latest remote
+## Bump CLI11 submodule to latest remote
+bump_cli11:
 	@read -rp "[*] Bump CLI11? (y/N) " yn; \
 	case $$yn in \
 		[yY] ) git submodule update --init --remote extern/CLI11;; \
 		* ) echo "[*] Skipping...";; \
 	esac
 
-bump_submodules: bump_stormlib bump_cli11 ## Bump all submodules to latest remote
+## Bump all submodules to latest remote
+bump_submodules: bump_stormlib bump_cli11
 
 # RELEASE
-fetch_downloads: ## Fetch package downloads and update README.md badge
+## Fetch package downloads and update README.md badge
+fetch_downloads:
 	@DOWNLOADS=$$(curl -s "$(PACKAGE_URL)" \
 		| grep -A2 "Total downloads" \
 		| grep -o '<h3 title="[0-9]*">[0-9]*</h3>' \
@@ -93,7 +140,8 @@ fetch_downloads: ## Fetch package downloads and update README.md badge
 	sed -i "s/package_downloads-[0-9]*-green/package_downloads-$$DOWNLOADS-green/" $(README); \
 	echo "[*] Updated package downloads badge: $$DOWNLOADS"
 
-tag_release: ## Tag and push the current project version
+## Tag and push the current project version
+tag_release:
 	@echo "[*] Current version: v$(VERSION)"
 	@read -rp "[*] Tag and Release? (y/N) " yn; \
 	case $$yn in \

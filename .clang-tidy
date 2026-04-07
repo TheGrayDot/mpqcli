@@ -1,0 +1,17 @@
+Checks: >
+  clang-analyzer-core.*,
+  clang-analyzer-cplusplus.*,
+  clang-analyzer-deadcode.*,
+  modernize-use-nullptr,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
+  -bugprone-narrowing-conversions,
+  cppcoreguidelines-no-malloc,
+  cppcoreguidelines-owning-memory,
+  misc-unused-parameters,
+  performance-unnecessary-value-param,
+  readability-inconsistent-declaration-parameter-name,
+  readability-container-size-empty
+
+WarningsAsErrors: "*"
