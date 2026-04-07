@@ -1,11 +1,11 @@
 #include <algorithm>
+#include <ctime>
 #include <filesystem>
 #include <iostream>
-#include <ctime>
 
 #ifdef _WIN32
-#include <io.h>
 #include <fcntl.h>
+#include <io.h>
 #endif
 
 #include <StormLib.h>
@@ -33,12 +33,12 @@ std::string FileTimeToLsTime(int64_t fileTime) {
 
 std::string NormalizeFilePath(const fs::path &path) {
     std::string filePath = path.u8string();
-    #ifndef _WIN32
-        std::replace(filePath.begin(), filePath.end(), '\\', '/');
-        return filePath;
-    #else
-        return filePath;
-    #endif
+#ifndef _WIN32
+    std::replace(filePath.begin(), filePath.end(), '\\', '/');
+    return filePath;
+#else
+    return filePath;
+#endif
 }
 
 std::string WindowsifyFilePath(const fs::path &path) {
@@ -52,7 +52,7 @@ int32_t CalculateMpqMaxFileValue(const std::string &path) {
 
     // Determine the number of files in the target directory, recusively
     if (!fs::is_regular_file(path)) {
-        for (const auto &entry: fs::recursive_directory_iterator(path)) {
+        for (const auto &entry : fs::recursive_directory_iterator(path)) {
             if (fs::is_regular_file(entry.path())) {
                 ++fileCount;
             }
@@ -74,8 +74,7 @@ int32_t CalculateMpqMaxFileValue(const std::string &path) {
     return NextPowerOfTwo(fileCount);
 }
 
-int32_t NextPowerOfTwo(int32_t n)
-{
+int32_t NextPowerOfTwo(int32_t n) {
     n--;
     n |= n >> 1;
     n |= n >> 2;
@@ -85,7 +84,7 @@ int32_t NextPowerOfTwo(int32_t n)
     return n + 1;
 }
 
-void PrintAsBinary(const char* buffer, uint32_t size) {
+void PrintAsBinary(const char *buffer, uint32_t size) {
 #ifdef _WIN32
     _setmode(_fileno(stdout), _O_BINARY);
 #endif
