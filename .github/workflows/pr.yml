@@ -9,6 +9,8 @@ permissions:
 jobs:
   build:
     uses: ./.github/workflows/build.yml
+  lint:
+    uses: ./.github/workflows/lint.yml
   test:
     uses: ./.github/workflows/test.yml
     needs: build
