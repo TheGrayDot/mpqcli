@@ -8,10 +8,10 @@ Checks: >
   -bugprone-exception-escape,
   -bugprone-narrowing-conversions,
   cppcoreguidelines-no-malloc,
-  cppcoreguidelines-owning-memory,
-  misc-unused-parameters,
+  -cppcoreguidelines-owning-memory,
   performance-unnecessary-value-param,
   readability-inconsistent-declaration-parameter-name,
   readability-container-size-empty
-
 WarningsAsErrors: "*"
+HeaderFilterRegex: "src/.*"
+FormatStyle: file
