@@ -1,38 +1,38 @@
-#include <iostream>
 #include <filesystem>
+#include <iostream>
 
 #include <CLI/CLI.hpp>
 #include <StormLib.h>
 
-#include "mpq.h"
+#include "gamerules.h"
 #include "helpers.h"
 #include "locales.h"
+#include "mpq.h"
 #include "mpqcli.h"
-#include "gamerules.h"
+#include "validators.h"
 
 int main(int argc, char **argv) {
     CLI::App app{
         "A command line tool to create, add, remove, list, extract, read, and verify MPQ archives "
-        "using the StormLib library"
-    };
+        "using the StormLib library"};
 
     // Require at least one subcommand
     app.require_subcommand(1);
 
     // CLI: base
     // These are reused in multiple subcommands
-    std::string baseTarget = "default";  // all subcommands
-    std::string baseFile = "default";  // add, remove, extract, read
-    std::string basePath = "default";  // add, create
-    std::string baseLocale = "default"; // create, add, remove, extract, read
-    std::string baseNameInArchive = "default"; // add, create
-    std::string baseOutput = "default";  // create, extract
-    std::string baseListfileName = "default";  // list, extract
-    std::string baseGameProfile = "default";  // create, add
+    std::string baseTarget = "default";         // all subcommands
+    std::string baseFile = "default";           // add, remove, extract, read
+    std::string basePath = "default";           // add, create
+    std::string baseLocale = "default";         // create, add, remove, extract, read
+    std::string baseNameInArchive = "default";  // add, create
+    std::string baseOutput = "default";         // create, extract
+    std::string baseListfileName = "default";   // list, extract
+    std::string baseGameProfile = "default";    // create, add
     // CLI: info
     std::string infoProperty = "default";
     // CLI: add
-    std::string baseDirInArchive = "default"; // add
+    std::string baseDirInArchive = "default";  // add
     bool addOverwrite = false;
     // CLI: extract
     bool extractKeepFolderStructure = false;
@@ -57,30 +57,32 @@ int main(int argc, char **argv) {
     // CLI: verify
     bool verifyPrintSignature = false;
 
+    // clang-format off: preserve vertical alignment of string set initialisers
     std::set<std::string> validInfoProperties = {
-            "format-version",
-            "header-offset",
-            "header-size",
-            "archive-size",
-            "file-count",
-            "max-files",
-            "signature-type",
+        "format-version",
+        "header-offset",
+        "header-size",
+        "archive-size",
+        "file-count",
+        "max-files",
+        "signature-type",
     };
     std::set<std::string> validFileListProperties = {
-            "hash-index",
-            "name-hash1",
-            "name-hash2",
-            "name-hash3",
-            "locale",
-            "file-index",
-            "byte-offset",
-            "file-time",
-            "file-size",
-            "compressed-size",
-            "flags",
-            "encryption-key",
-            "encryption-key-raw",
+        "hash-index",
+        "name-hash1",
+        "name-hash2",
+        "name-hash3",
+        "locale",
+        "file-index",
+        "byte-offset",
+        "file-time",
+        "file-size",
+        "compressed-size",
+        "flags",
+        "encryption-key",
+        "encryption-key-raw",
     };
+    // clang-format on
 
     // Subcommand: Version
     CLI::App *version = app.add_subcommand("version", "Prints program version");
@@ -97,61 +99,85 @@ int main(int argc, char **argv) {
         ->check(CLI::IsMember(validInfoProperties));
 
     // Subcommand: Create
-    CLI::App *create = app.add_subcommand("create", "Create an MPQ archive from target file or directory");
+    CLI::App *create =
+        app.add_subcommand("create", "Create an MPQ archive from target file or directory");
     create->add_option("target", baseTarget, "Directory or file to put in MPQ archive")
         ->required()
         ->check(CLI::ExistingPath);
     create->add_option("-n,--name-in-archive", baseNameInArchive, "Filename inside MPQ archive");
     create->add_option("-o,--output", baseOutput, "Output MPQ archive");
     create->add_flag("-s,--sign", createSignArchive, "Sign the MPQ archive (default false)");
-    create->add_option("--locale", baseLocale, "Locale to use for added files")
-        ->check(LocaleValid);
-    create->add_option("-g,--game", baseGameProfile, "Game profile for MPQ creation. Valid options:\n" + GameRules::GetAvailableProfiles())
+    create->add_option("--locale", baseLocale, "Locale to use for added files")->check(LocaleValid);
+    create
+        ->add_option(
+            "-g,--game", baseGameProfile,
+            "Game profile for MPQ creation. Valid options:\n" + GameRules::GetAvailableProfiles())
         ->check(GameProfileValid);
     // MPQ creation settings overrides
-    create->add_option("--version", createMpqVersion, "Override the MPQ archive version")->check(CLI::Range(1, 4))->group("Game setting overrides");
-    create->add_option("--stream-flags", createStreamFlags, "Override stream flags")->group("Game setting overrides");
-    create->add_option("--sector-size", createSectorSize, "Override sector size")->group("Game setting overrides");
-    create->add_option("--raw-chunk-size", createRawChunkSize, "Override raw chunk size for MPQ v4")->group("Game setting overrides");
-    create->add_option("--file-flags1", createFileFlags1, "Override file flags for (listfile)")->group("Game setting overrides");
-    create->add_option("--file-flags2", createFileFlags2, "Override file flags for (attributes)")->group("Game setting overrides");
-    create->add_option("--file-flags3", createFileFlags3, "Override file flags for (signature)")->group("Game setting overrides");
-    create->add_option("--attr-flags", createAttrFlags, "Override attribute flags (CRC32, FILETIME, MD5)")->group("Game setting overrides");
+    create->add_option("--version", createMpqVersion, "Override the MPQ archive version")
+        ->check(CLI::Range(1, 4))
+        ->group("Game setting overrides");
+    create->add_option("--stream-flags", createStreamFlags, "Override stream flags")
+        ->group("Game setting overrides");
+    create->add_option("--sector-size", createSectorSize, "Override sector size")
+        ->group("Game setting overrides");
+    create->add_option("--raw-chunk-size", createRawChunkSize, "Override raw chunk size for MPQ v4")
+        ->group("Game setting overrides");
+    create->add_option("--file-flags1", createFileFlags1, "Override file flags for (listfile)")
+        ->group("Game setting overrides");
+    create->add_option("--file-flags2", createFileFlags2, "Override file flags for (attributes)")
+        ->group("Game setting overrides");
+    create->add_option("--file-flags3", createFileFlags3, "Override file flags for (signature)")
+        ->group("Game setting overrides");
+    create
+        ->add_option("--attr-flags", createAttrFlags,
+                     "Override attribute flags (CRC32, FILETIME, MD5)")
+        ->group("Game setting overrides");
     // Compression settings overrides for files being added
-    create->add_option("--flags", fileDwFlags, "Override MPQ file flags for added files")->group("Game setting overrides");
-    create->add_option("--compression", fileDwCompression, "Override compression for first sector of added files")->group("Game setting overrides");
-    create->add_option("--compression-next", fileDwCompressionNext, "Override compression for subsequent sectors of added files")->group("Game setting overrides");
+    create->add_option("--flags", fileDwFlags, "Override MPQ file flags for added files")
+        ->group("Game setting overrides");
+    create
+        ->add_option("--compression", fileDwCompression,
+                     "Override compression for first sector of added files")
+        ->group("Game setting overrides");
+    create
+        ->add_option("--compression-next", fileDwCompressionNext,
+                     "Override compression for subsequent sectors of added files")
+        ->group("Game setting overrides");
 
     // Subcommand: Add
     CLI::App *add = app.add_subcommand("add", "Add a file to an existing MPQ archive");
-    add->add_option("file", baseFile, "File to add")
-        ->required()
-        ->check(CLI::ExistingFile);
+    add->add_option("file", baseFile, "File to add")->required()->check(CLI::ExistingFile);
     add->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
-    add->add_option("-p,--path", basePath, "Full path (directory and filename) of the file within MPQ archive");
-    add->add_option("-d,--directory-in-archive", baseDirInArchive, "Directory to put file inside within MPQ archive");
+    add->add_option("-p,--path", basePath,
+                    "Full path (directory and filename) of the file within MPQ archive");
+    add->add_option("-d,--directory-in-archive", baseDirInArchive,
+                    "Directory to put file inside within MPQ archive");
     add->add_option("-f,--filename-in-archive", baseNameInArchive, "Filename inside MPQ archive");
     add->add_flag("-w,--overwrite", addOverwrite, "Overwrite file if it already is in MPQ archive");
-    add->add_option("--locale", baseLocale, "Locale to use for added file")
-        ->check(LocaleValid);
-    add->add_option("-g,--game", baseGameProfile, "Game profile for compression rules. Valid options:\n" + GameRules::GetAvailableProfiles())
+    add->add_option("--locale", baseLocale, "Locale to use for added file")->check(LocaleValid);
+    add->add_option("-g,--game", baseGameProfile,
+                    "Game profile for compression rules. Valid options:\n" +
+                        GameRules::GetAvailableProfiles())
         ->check(GameProfileValid);
     // Compression settings overrides
-    add->add_option("--flags", fileDwFlags, "Override MPQ file flags")->group("Game setting overrides");
-    add->add_option("--compression", fileDwCompression, "Override compression for first sector")->group("Game setting overrides");
-    add->add_option("--compression-next", fileDwCompressionNext, "Override compression for subsequent sectors")->group("Game setting overrides");
+    add->add_option("--flags", fileDwFlags, "Override MPQ file flags")
+        ->group("Game setting overrides");
+    add->add_option("--compression", fileDwCompression, "Override compression for first sector")
+        ->group("Game setting overrides");
+    add->add_option("--compression-next", fileDwCompressionNext,
+                    "Override compression for subsequent sectors")
+        ->group("Game setting overrides");
 
     // Subcommand: Remove
     CLI::App *remove = app.add_subcommand("remove", "Remove file from an existing MPQ archive");
-    remove->add_option("file", baseFile, "File to remove")
-        ->required();
+    remove->add_option("file", baseFile, "File to remove")->required();
     remove->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
-    remove->add_option("--locale", baseLocale, "Locale of file to remove")
-        ->check(LocaleValid);
+    remove->add_option("--locale", baseLocale, "Locale of file to remove")->check(LocaleValid);
 
     // Subcommand: List
     CLI::App *list = app.add_subcommand("list", "List files from the MPQ archive");
@@ -160,7 +186,8 @@ int main(int argc, char **argv) {
         ->check(CLI::ExistingFile);
     list->add_option("-l,--listfile", baseListfileName, "File listing content of an MPQ archive")
         ->check(CLI::ExistingFile);
-    list->add_flag("-d,--detailed", listDetailed, "File listing with additional columns (default false)");
+    list->add_flag("-d,--detailed", listDetailed,
+                   "File listing with additional columns (default false)");
     list->add_flag("-a,--all", listAll, "File listing including hidden files (default false)");
     list->add_option("-p,--property", listProperties, "Prints only specific property values")
         ->check(CLI::IsMember(validFileListProperties));
@@ -172,15 +199,15 @@ int main(int argc, char **argv) {
         ->check(CLI::ExistingFile);
     extract->add_option("-o,--output", baseOutput, "Output directory");
     extract->add_option("-f,--file", baseFile, "Target file to extract");
-    extract->add_flag("-k,--keep", extractKeepFolderStructure, "Keep folder structure (default false)");
+    extract->add_flag("-k,--keep", extractKeepFolderStructure,
+                      "Keep folder structure (default false)");
     extract->add_option("-l,--listfile", baseListfileName, "File listing content of an MPQ archive")
         ->check(CLI::ExistingFile);
     extract->add_option("--locale", baseLocale, "Preferred locale for extracted file");
 
     // Subcommand: Read
-    CLI::App* read = app.add_subcommand("read", "Read a file from an MPQ archive");
-    read->add_option("file", baseFile, "File to read")
-        ->required();
+    CLI::App *read = app.add_subcommand("read", "Read a file from an MPQ archive");
+    read->add_option("file", baseFile, "File to read")->required();
     read->add_option("target", baseTarget, "Target MPQ archive")
         ->required()
         ->check(CLI::ExistingFile);
@@ -207,7 +234,7 @@ int main(int argc, char **argv) {
     }
 
     // Handle subcommand: Version
-    if (app.got_subcommand(version)){
+    if (app.got_subcommand(version)) {
         std::cout << MPQCLI_VERSION << "-" << GIT_COMMIT_HASH << std::endl;
     }
 
@@ -237,7 +264,8 @@ int main(int argc, char **argv) {
     // Handle subcommand: Create
     if (app.got_subcommand(create)) {
         if (!fs::is_regular_file(baseTarget) && baseNameInArchive != "default") {
-            std::cerr << "[!] Cannot specify --name-in-archive when adding a directory." << std::endl;
+            std::cerr << "[!] Cannot specify --name-in-archive when adding a directory."
+                      << std::endl;
             return 1;
         }
         fs::path outputFilePath;
@@ -262,10 +290,11 @@ int main(int argc, char **argv) {
         }
         GameRules gameRules(profile);
 
-        std::cout << "[*] Game profile: " << baseGameProfile << ", Output file: " << outputFile << std::endl;
+        std::cout << "[*] Game profile: " << baseGameProfile << ", Output file: " << outputFile
+                  << std::endl;
 
         if (createMpqVersion > 0) {
-            createMpqVersion--; // We label versions 1-4, but StormLib uses 0-3
+            createMpqVersion--;  // We label versions 1-4, but StormLib uses 0-3
         }
         // Apply MpqCreateSettings overrides if provided
         MpqCreateSettingsOverrides overrides;
@@ -306,16 +335,19 @@ int main(int argc, char **argv) {
             // Apply AddFileSettings overrides if provided
             CompressionSettingsOverrides addOverrides;
             if (fileDwFlags >= 0) addOverrides.dwFlags = static_cast<DWORD>(fileDwFlags);
-            if (fileDwCompression >= 0) addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
-            if (fileDwCompressionNext >= 0) addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
+            if (fileDwCompression >= 0)
+                addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
+            if (fileDwCompressionNext >= 0)
+                addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
 
             if (fs::is_regular_file(baseTarget)) {
                 // Default: use the filename as path, saves file to root of MPQ
                 fs::path filePath = fs::path(baseTarget);
                 std::string archivePath = filePath.filename().u8string();
-                if (baseNameInArchive != "default") { // Optional: specified filename inside archive
+                if (baseNameInArchive !=
+                    "default") {  // Optional: specified filename inside archive
                     filePath = fs::path(baseNameInArchive);
-                    archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
+                    archivePath = WindowsifyFilePath(filePath);  // Normalise path for MPQ
                 }
 
                 AddFile(hArchive, baseTarget, archivePath, locale, gameRules, addOverrides);
@@ -344,17 +376,24 @@ int main(int argc, char **argv) {
         // Path to file on disk
         fs::path filePath = fs::path(baseFile);
 
-        std::string archivePath = filePath.filename().u8string(); // Default: use the filename as path, saves file to root of MPQ
-        if (basePath != "default" && baseDirInArchive != "default" || basePath != "default" && baseNameInArchive != "default") {
-            // Return error since providing --path together --name-in-archive or --directory-in-archive makes no sense and is a user error
-            std::cerr << "[!] Cannot specify --path together with --name-in-archive or --directory-in-archive." << std::endl;
+        std::string archivePath =
+            filePath.filename()
+                .u8string();  // Default: use the filename as path, saves file to root of MPQ
+        if (basePath != "default" && baseDirInArchive != "default" ||
+            basePath != "default" && baseNameInArchive != "default") {
+            // Return error since providing --path together --name-in-archive or
+            // --directory-in-archive makes no sense and is a user error
+            std::cerr << "[!] Cannot specify --path together with --name-in-archive or "
+                         "--directory-in-archive."
+                      << std::endl;
             return 1;
 
-        } else if (basePath != "default") { // Optional: specified whole path inside archive
+        } else if (basePath != "default") {  // Optional: specified whole path inside archive
             filePath = fs::path(basePath);
-            archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
+            archivePath = WindowsifyFilePath(filePath);  // Normalise path for MPQ
 
-        } else if (baseDirInArchive != "default" || baseNameInArchive != "default") { // Optional: specified filename inside archive
+        } else if (baseDirInArchive != "default" ||
+                   baseNameInArchive != "default") {  // Optional: specified filename inside archive
             if (baseDirInArchive == "default") {
                 baseDirInArchive = fs::path(baseFile).parent_path().u8string();
             }
@@ -362,7 +401,7 @@ int main(int argc, char **argv) {
                 baseNameInArchive = archivePath;
             }
             filePath = fs::path(baseDirInArchive) / fs::path(baseNameInArchive);
-            archivePath = WindowsifyFilePath(filePath); // Normalise path for MPQ
+            archivePath = WindowsifyFilePath(filePath);  // Normalise path for MPQ
         }
 
         LCID locale = LangToLocale(baseLocale);
@@ -379,8 +418,10 @@ int main(int argc, char **argv) {
         // Apply AddFileSettings overrides if provided
         CompressionSettingsOverrides addOverrides;
         if (fileDwFlags >= 0) addOverrides.dwFlags = static_cast<DWORD>(fileDwFlags);
-        if (fileDwCompression >= 0) addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
-        if (fileDwCompressionNext >= 0) addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
+        if (fileDwCompression >= 0)
+            addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
+        if (fileDwCompressionNext >= 0)
+            addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
 
         AddFile(hArchive, baseFile, archivePath, locale, gameRules, addOverrides, addOverwrite);
         CloseMpqArchive(hArchive);
@@ -432,12 +473,14 @@ int main(int argc, char **argv) {
 
         LCID locale = LangToLocale(baseLocale);
         if (baseLocale != "default" && locale == defaultLocale) {
-            std::cout << "[!] Warning: The locale '" << baseLocale << "' is unknown. Will use default locale instead." << std::endl;
+            std::cout << "[!] Warning: The locale '" << baseLocale
+                      << "' is unknown. Will use default locale instead." << std::endl;
         }
 
         int result;
         if (baseFile != "default") {
-            result = ExtractFile(hArchive, baseOutput, baseFile, extractKeepFolderStructure, locale);
+            result =
+                ExtractFile(hArchive, baseOutput, baseFile, extractKeepFolderStructure, locale);
         } else {
             result = ExtractFiles(hArchive, baseOutput, baseListfileName, locale);
         }
@@ -459,18 +502,18 @@ int main(int argc, char **argv) {
 
         LCID locale = LangToLocale(baseLocale);
         if (baseLocale != "default" && locale == defaultLocale) {
-            std::cout << "[!] Warning: The locale '" << baseLocale << "' is unknown. Will use default locale instead." << std::endl;
+            std::cout << "[!] Warning: The locale '" << baseLocale
+                      << "' is unknown. Will use default locale instead." << std::endl;
         }
 
         uint32_t fileSize;
-        char* fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize, locale);
-        if (fileContent == nullptr) {
+        auto fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize, locale);
+        if (!fileContent) {
             return 1;
         }
 
-        PrintAsBinary(fileContent, fileSize);
+        PrintAsBinary(fileContent.get(), fileSize);
 
-        delete[] fileContent;
         CloseMpqArchive(hArchive);
         return 0;
     }
@@ -485,8 +528,7 @@ int main(int argc, char **argv) {
 
         int result = 0;
         uint32_t verifyResult = VerifyMpqArchive(hArchive);
-        if (verifyResult == ERROR_WEAK_SIGNATURE_OK ||
-            verifyResult == ERROR_STRONG_SIGNATURE_OK ||
+        if (verifyResult == ERROR_WEAK_SIGNATURE_OK || verifyResult == ERROR_STRONG_SIGNATURE_OK ||
             verifyResult == ERROR_WEAK_SIGNATURE_ERROR ||
             verifyResult == ERROR_STRONG_SIGNATURE_ERROR) {
             if (verifyPrintSignature) {

@@ -1,4 +1,5 @@
 # CUSTOM
+/build_lint
 /test/data
 
 # C++

@@ -1,0 +1,20 @@
+BasedOnStyle: Google
+PointerAlignment: Right
+DerivePointerAlignment: false
+ColumnLimit: 100
+IndentWidth: 4
+AccessModifierOffset: -4
+IncludeBlocks: Regroup
+IncludeIsMainRegex: '([-_]test)?$'
+IncludeCategories:
+  - Regex: '^<(StormLib\.h|CLI/)'
+    Priority: 2
+  - Regex: '^<'
+    Priority: 1
+  - Regex: '^"'
+    Priority: 3
+ReflowComments: true
+BreakBeforeBraces: Attach
+Cpp11BracedListStyle: true
+AllowShortFunctionsOnASingleLine: InlineOnly
+SortIncludes: true

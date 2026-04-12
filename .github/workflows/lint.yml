@@ -1,0 +1,25 @@
+name: Lint
+
+on:
+  workflow_call
+
+jobs:
+  lint_cpp:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Install clang tools
+        run: make install_clang_tools
+
+      - name: Check formatting
+        run: make lint
+
+      - name: Generate compile_commands.json
+        run: make build_lint/compile_commands.json
+
+      - name: Run clang-tidy
+        run: make lint_cpp

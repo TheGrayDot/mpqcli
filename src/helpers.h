@@ -1,8 +1,8 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
-#include <string>
 #include <filesystem>
+#include <string>
 
 namespace fs = std::filesystem;
 
@@ -11,6 +11,6 @@ std::string NormalizeFilePath(const fs::path &path);
 std::string WindowsifyFilePath(const fs::path &path);
 int32_t CalculateMpqMaxFileValue(const std::string &path);
 int32_t NextPowerOfTwo(int32_t n);
-void PrintAsBinary(const char* buffer, uint32_t size);
+void PrintAsBinary(const char *buffer, uint32_t size);
 
 #endif
