@@ -1,3 +1,5 @@
+#include "helpers.h"
+
 #include <algorithm>
 #include <ctime>
 #include <filesystem>
@@ -9,8 +11,6 @@
 #endif
 
 #include <StormLib.h>
-
-#include "helpers.h"
 
 namespace fs = std::filesystem;
 

@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
     // CLI: verify
     bool verifyPrintSignature = false;
 
-    // clang-format off
+    // clang-format off: preserve vertical alignment of string set initialisers
     std::set<std::string> validInfoProperties = {
         "format-version",
         "header-offset",
