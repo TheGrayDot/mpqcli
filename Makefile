@@ -17,16 +17,16 @@ GCC_INSTALL_DIR := $(shell dirname "$(shell gcc -print-libgcc-file-name)")
 	bump_stormlib bump_cli11 bump_submodules \
 	fetch_downloads tag_release
 
-## Install clang lint dependencies
-setup:
-	sudo apt-get install -y clang-format-$(CLANG_VERSION) clang-tidy-$(CLANG_VERSION)
-
 ## Show this help menu
 help:
 	@awk 'BEGIN {FS = ":"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} \
 	/^## / {desc = substr($$0, 4); next} \
 	/^[a-zA-Z0-9_-]+:/ {if (desc) printf "  \033[36m%-22s\033[0m %s\n", $$1, desc; desc = ""; next} \
 	{desc = ""}' $(MAKEFILE_LIST)
+
+## Install clang lint dependencies
+install_clang_tools:
+	sudo apt-get install -y clang-format-$(CLANG_VERSION) clang-tidy-$(CLANG_VERSION)
 
 # BUILD
 ## Build for Linux using cmake
