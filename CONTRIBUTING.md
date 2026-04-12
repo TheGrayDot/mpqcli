@@ -8,6 +8,40 @@ If you are unsure whether a feature fits the project, or whether an existing too
 
 **mpqcli follows the Unix philosophy.** The tool is designed to do one thing well and to compose with other tools via pipes and redirection. If you find yourself wanting to add functionality that could be handled by a separate tool — for example, sorting the output of `list` — the right answer is usually to pipe the output to that tool rather than adding it here.
 
+## Prerequisites and Setup
+
+Clone the repository and initialise submodules:
+
+```
+git clone https://github.com/TheGrayDot/mpqcli.git
+cd mpqcli
+git submodule update --init --recursive
+```
+
+Install the clang lint tools:
+
+```
+make setup
+```
+
+## Makefile Reference
+
+Run `make help` to list all available targets. Common ones:
+
+| Target | Description |
+|---|---|
+| `make setup` | Install clang-format and clang-tidy via apt |
+| `make build_linux` | Build for Linux using cmake |
+| `make build_windows` | Build for Windows using cmake |
+| `make build_clean` | Remove the cmake build directory |
+| `make test_create_venv` | Create Python venv and install test dependencies (first-time only) |
+| `make test_mpqcli` | Run the pytest test suite |
+| `make lint` | Run all C++ linters (clang-format + clang-tidy) |
+| `make lint_format` | Check formatting only (dry run) |
+| `make lint_format_fix` | Auto-fix formatting in-place |
+| `make lint_cpp` | Run clang-tidy static analysis |
+| `make clean` | Remove all build and test artifacts |
+
 ## Requirements for a Pull Request
 
 ### 1. Builds on your platform
@@ -36,12 +70,54 @@ All tests must pass without errors.
 
 If your change adds or modifies user-facing functionality — such as a new subcommand flag or a change in output format — please include a corresponding test in the `test/` directory. The existing test files (`test_list.py`, `test_add.py`, etc.) are good references for the test style and fixtures used.
 
-### 4. Match the existing code style
+### 4. Linting must pass
 
-There is no enforced formatter. Write C++ that looks consistent with the surrounding code, and Python tests that follow the style of the existing test files.
+All C++ code is formatted with clang-format and analysed with clang-tidy. Run the full suite before submitting:
+
+```
+make lint
+```
+
+If there are formatting violations, auto-fix them with:
+
+```
+make lint_format_fix
+```
+
+Then re-run `make lint` to confirm everything passes.
+
+### 5. Match the existing code style
+
+C++ formatting is enforced by `.clang-format` (Google style base). Static analysis is enforced by `.clang-tidy`. Both configs live in the repo root. Python tests should follow the style of the existing test files.
+
+#### Suppression policy
+
+Suppressions are occasionally necessary for third-party code or intentional patterns. When suppressing a clang-tidy warning:
+
+- Use `// NOLINT(check-name)` with the specific check name — bare `// NOLINT` is not acceptable
+- Every suppression must have a comment explaining why it is justified
+
+```cpp
+// NOLINT(bugprone-easily-swappable-parameters): parameters validated by CLI11
+```
+
+#### Disabling clang-format locally
+
+Use `// clang-format off` / `// clang-format on` only when the default formatting genuinely hurts readability (e.g. column-aligned tables). Add a brief comment explaining the intent:
+
+```cpp
+// clang-format off: preserve column-aligned flag-to-char mappings for readability
+if (flags & MPQ_FILE_IMPLODE)   result += 'i';
+if (flags & MPQ_FILE_COMPRESS)  result += 'c';
+// clang-format on
+```
 
 ## Workflow Summary
 
 1. Fork the repository and create a branch for your change
-2. Make your changes and verify they build and all tests pass
-3. Open a pull request with a clear description of what was changed and why
+2. Run `git submodule update --init --recursive` after cloning
+3. Run `make install_clang_tools` to install lint dependencies
+4. Make your changes and verify they build: `make build_linux`
+5. Run `make lint` and fix any issues
+6. Run `make test_mpqcli` and confirm all tests pass
+7. Open a pull request with a clear description of what was changed and why
