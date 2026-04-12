@@ -59,11 +59,11 @@ int SignMpqArchive(HANDLE hArchive) {
     return 1;
 }
 
-int ExtractFiles(HANDLE hArchive, const std::string &output, const std::string &listfileName,
-                 LCID preferredLocale) {
+int ExtractFiles(HANDLE hArchive, const std::string &output,
+                 const std::optional<std::string> &listfileName, LCID preferredLocale) {
     SFileSetLocale(preferredLocale);
     // Check if the user provided a listfile input
-    const char *listfile = (listfileName == "default") ? nullptr : listfileName.c_str();
+    const char *listfile = listfileName.has_value() ? listfileName->c_str() : nullptr;
 
     SFILE_FIND_DATA findData;
     HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, listfile);
@@ -328,10 +328,10 @@ std::string GetFlagString(uint32_t flags) {
     return result;
 }
 
-int ListFiles(HANDLE hArchive, const std::string &listfileName, bool listAll, bool listDetailed,
-              std::vector<std::string> &propertiesToPrint) {
+int ListFiles(HANDLE hArchive, const std::optional<std::string> &listfileName, bool listAll,
+              bool listDetailed, std::vector<std::string> &propertiesToPrint) {
     // Check if the user provided a listfile input
-    const char *listfile = (listfileName == "default") ? nullptr : listfileName.c_str();
+    const char *listfile = listfileName.has_value() ? listfileName->c_str() : nullptr;
 
     SFILE_FIND_DATA findData;
     HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, listfile);
@@ -546,7 +546,7 @@ std::unique_ptr<char[]> ReadFile(HANDLE hArchive, const char *szFileName, unsign
     return fileContent;
 }
 
-void PrintMpqInfo(HANDLE hArchive, const std::string &infoProperty) {
+void PrintMpqInfo(HANDLE hArchive, const std::optional<std::string> &infoProperty) {
     // Map of property names to their corresponding actions
     std::map<std::string, std::function<void(bool)>> propertyActions = {
         {"format-version",
@@ -613,14 +613,14 @@ void PrintMpqInfo(HANDLE hArchive, const std::string &infoProperty) {
              }
          }}};
 
-    // If infoProperty is "default", print all properties with their names (key)
-    // Otherwise, print only the property value
-    if (infoProperty == "default") {
+    // If infoProperty is not set, print all properties with their names (key)
+    // Otherwise, print only the specified property value
+    if (!infoProperty.has_value()) {
         for (const auto &[key, action] : propertyActions) {
             action(true);  // Print property name and value
         }
     } else {
-        auto it = propertyActions.find(infoProperty);
+        auto it = propertyActions.find(infoProperty.value());
         if (it != propertyActions.end()) {
             it->second(false);  // Print only the value
         }

@@ -13,6 +13,7 @@ endif()
 # Create the main executable
 add_executable(mpqcli
     main.cpp
+    commands.cpp
     mpq.cpp
     helpers.cpp
     locales.cpp
