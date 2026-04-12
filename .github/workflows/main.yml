@@ -16,6 +16,9 @@ permissions:
 jobs:
   build:
     uses: ./.github/workflows/build.yml
+  lint:
+    uses: ./.github/workflows/lint.yml
+    needs: build
   test:
     uses: ./.github/workflows/test.yml
     needs: build
@@ -23,5 +26,6 @@ jobs:
     uses: ./.github/workflows/prerelease.yml
     needs: 
       - build
+      - lint
       - test
     secrets: inherit

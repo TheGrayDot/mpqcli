@@ -8,25 +8,18 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: true
 
       - name: Install clang tools
-        run: sudo apt-get install -y clang-format-18 clang-tidy-18
+        run: make install_clang_tools
 
       - name: Check formatting
-        run: find src \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format-18 --dry-run --Werror
+        run: make lint
 
       - name: Generate compile_commands.json
-        run: |
-          GCC_INSTALL_DIR=$(dirname "$(gcc -print-libgcc-file-name)")
-          cmake -B build_lint \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DBUILD_MPQCLI=ON \
-            -DCMAKE_CXX_COMPILER=clang++-18 \
-            -DCMAKE_CXX_FLAGS="--gcc-install-dir=${GCC_INSTALL_DIR}"
+        run: make build_lint/compile_commands.json
 
       - name: Run clang-tidy
-        run: clang-tidy-18 --quiet -p build_lint --header-filter="$(pwd)/src/.*" src/*.cpp
+        run: make lint_cpp
