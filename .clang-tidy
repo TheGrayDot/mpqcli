@@ -13,5 +13,4 @@ Checks: >
   readability-inconsistent-declaration-parameter-name,
   readability-container-size-empty
 WarningsAsErrors: "*"
-HeaderFilterRegex: "src/.*"
 FormatStyle: file
