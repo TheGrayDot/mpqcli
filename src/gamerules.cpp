@@ -229,22 +229,38 @@ GameProfile GameRules::StringToProfile(const std::string &profileName) {
 // Convert GameProfile enum to string
 std::string GameRules::ProfileToString(GameProfile profile) {
     switch (profile) {
-        case GameProfile::GENERIC: return "generic";
-        case GameProfile::DIABLO1: return "diablo1";
-        case GameProfile::LORDSOFMAGIC: return "lordsofmagic";
-        case GameProfile::WARCRAFT2: return "warcraft2";
-        case GameProfile::STARCRAFT1: return "starcraft1";
-        case GameProfile::DIABLO2: return "diablo2";
-        case GameProfile::WARCRAFT3: return "warcraft3";
-        case GameProfile::WARCRAFT3_MAP: return "warcraft3-map";
-        case GameProfile::WOW_1X: return "wow-vanilla";
-        case GameProfile::WOW_2X: return "wow-tbc";
-        case GameProfile::WOW_3X: return "wow-wotlk";
-        case GameProfile::WOW_4X: return "wow-cataclysm";
-        case GameProfile::WOW_5X: return "wow-mop";
-        case GameProfile::STARCRAFT2: return "starcraft2";
-        case GameProfile::DIABLO3: return "diablo3";
-        default: return "generic";
+        case GameProfile::GENERIC:
+            return "generic";
+        case GameProfile::DIABLO1:
+            return "diablo1";
+        case GameProfile::LORDSOFMAGIC:
+            return "lordsofmagic";
+        case GameProfile::WARCRAFT2:
+            return "warcraft2";
+        case GameProfile::STARCRAFT1:
+            return "starcraft1";
+        case GameProfile::DIABLO2:
+            return "diablo2";
+        case GameProfile::WARCRAFT3:
+            return "warcraft3";
+        case GameProfile::WARCRAFT3_MAP:
+            return "warcraft3-map";
+        case GameProfile::WOW_1X:
+            return "wow-vanilla";
+        case GameProfile::WOW_2X:
+            return "wow-tbc";
+        case GameProfile::WOW_3X:
+            return "wow-wotlk";
+        case GameProfile::WOW_4X:
+            return "wow-cataclysm";
+        case GameProfile::WOW_5X:
+            return "wow-mop";
+        case GameProfile::STARCRAFT2:
+            return "starcraft2";
+        case GameProfile::DIABLO3:
+            return "diablo3";
+        default:
+            return "generic";
     }
 }
 
