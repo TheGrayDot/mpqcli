@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
-#include <functional>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <set>
@@ -329,7 +329,7 @@ std::string GetFlagString(uint32_t flags) {
 }
 
 int ListFiles(HANDLE hArchive, const std::optional<std::string> &listfileName, bool listAll,
-              bool listDetailed, std::vector<std::string> &propertiesToPrint) {
+              bool listDetailed, const std::vector<std::string> &properties) {
     // Check if the user provided a listfile input
     const char *listfile = listfileName.has_value() ? listfileName->c_str() : nullptr;
 
@@ -341,17 +341,30 @@ int ListFiles(HANDLE hArchive, const std::optional<std::string> &listfileName, b
         return -1;
     }
 
-    if (propertiesToPrint.empty()) {
-        propertiesToPrint = {
-            // Default properties, if the user didn't specify any
-            "file-size",
-            "locale",
-            "file-time",
-        };
-    } else {
+    std::vector<std::string> propertiesToPrint =
+        properties.empty() ? std::vector<std::string>{"file-size", "locale", "file-time"}
+                           : properties;
+    if (!properties.empty()) {
         listDetailed =
             true;  // If the user specified properties, we need to print the detailed output
     }
+
+    // Map of property name to SFileInfoClass — defined once, outside the loop
+    static const std::map<std::string, SFileInfoClass> kPropertyInfoClass = {
+        {"hash-index", SFileInfoHashIndex},
+        {"name-hash1", SFileInfoNameHash1},
+        {"name-hash2", SFileInfoNameHash2},
+        {"name-hash3", SFileInfoNameHash3},
+        {"locale", SFileInfoLocale},
+        {"file-index", SFileInfoFileIndex},
+        {"byte-offset", SFileInfoByteOffset},
+        {"file-time", SFileInfoFileTime},
+        {"file-size", SFileInfoFileSize},
+        {"compressed-size", SFileInfoCompressedSize},
+        {"flags", SFileInfoFlags},
+        {"encryption-key", SFileInfoEncryptionKey},
+        {"encryption-key-raw", SFileInfoEncryptionKeyRaw},
+    };
 
     std::set<std::string>
         seenFileNames;  // Used to prevent printing the same file name multiple times
@@ -411,87 +424,39 @@ int ListFiles(HANDLE hArchive, const std::optional<std::string> &listfileName, b
                     continue;  // Skip to the next file
                 }
 
-                std::vector<std::pair<std::string, std::function<void()>>> propertyActions = {
-                    {"hash-index",
-                     [&]() {
-                         std::cout << std::setw(5)
-                                   << GetFileInfo<int32_t>(hFile, SFileInfoHashIndex) << " ";
-                     }},
-                    {"name-hash1",
-                     [&]() {
-                         std::cout << std::setfill('0') << std::hex << std::setw(8)
-                                   << GetFileInfo<int32_t>(hFile, SFileInfoNameHash1)
-                                   << std::setfill(' ') << std::dec << " ";
-                     }},
-                    {"name-hash2",
-                     [&]() {
-                         std::cout << std::setfill('0') << std::hex << std::setw(8)
-                                   << GetFileInfo<int32_t>(hFile, SFileInfoNameHash2)
-                                   << std::setfill(' ') << std::dec << " ";
-                     }},
-                    {"name-hash3",
-                     [&]() {
-                         std::cout << std::setfill('0') << std::hex << std::setw(16)
-                                   << GetFileInfo<int64_t>(hFile, SFileInfoNameHash3)
-                                   << std::setfill(' ') << std::dec << " ";
-                     }},
-                    {"locale",
-                     [&]() {
-                         int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
-                         std::string fileLocaleStr = LocaleToLang(fileLocale);
-                         std::cout << std::setw(4) << fileLocaleStr << " ";
-                     }},
-                    {"file-index",
-                     [&]() {
-                         std::cout << std::setw(5)
-                                   << GetFileInfo<int32_t>(hFile, SFileInfoFileIndex) << " ";
-                     }},
-                    {"byte-offset",
-                     [&]() {
-                         std::cout << std::hex << std::setw(8)
-                                   << GetFileInfo<int64_t>(hFile, SFileInfoByteOffset) << std::dec
-                                   << " ";
-                     }},
-                    {"file-time",
-                     [&]() {
-                         int64_t fileTime = GetFileInfo<int64_t>(hFile, SFileInfoFileTime);
-                         std::string fileTimeStr = FileTimeToLsTime(fileTime);
-                         std::cout << std::setw(19) << fileTimeStr << " ";
-                     }},
-                    {"file-size",
-                     [&]() {
-                         std::cout << std::setw(8) << GetFileInfo<int32_t>(hFile, SFileInfoFileSize)
-                                   << " ";
-                     }},
-                    {"compressed-size",
-                     [&]() {
-                         std::cout << std::setw(8)
-                                   << GetFileInfo<int32_t>(hFile, SFileInfoCompressedSize) << " ";
-                     }},
-                    {"flags",
-                     [&]() {
-                         int32_t flags = GetFileInfo<int32_t>(hFile, SFileInfoFlags);
-                         std::cout << std::setw(8) << GetFlagString(flags) << " ";
-                     }},
-                    {"encryption-key",
-                     [&]() {
-                         std::cout << std::setfill('0') << std::hex << std::setw(8)
-                                   << GetFileInfo<int64_t>(hFile, SFileInfoEncryptionKey)
-                                   << std::setfill(' ') << std::dec << " ";
-                     }},
-                    {"encryption-key-raw",
-                     [&]() {
-                         std::cout << std::setfill('0') << std::hex << std::setw(8)
-                                   << GetFileInfo<int64_t>(hFile, SFileInfoEncryptionKeyRaw)
-                                   << std::setfill(' ') << std::dec << " ";
-                     }},
-                };
-
                 for (const auto &prop : propertiesToPrint) {
-                    for (const auto &[key, action] : propertyActions) {
-                        if (prop == key) {
-                            action();  // Print property
-                        }
+                    auto it = kPropertyInfoClass.find(prop);
+                    if (it == kPropertyInfoClass.end()) continue;
+
+                    if (prop == "hash-index" || prop == "file-index") {
+                        std::cout << std::setw(5) << GetFileInfo<int32_t>(hFile, it->second) << " ";
+                    } else if (prop == "name-hash1" || prop == "name-hash2") {
+                        std::cout << std::setfill('0') << std::hex << std::setw(8)
+                                  << GetFileInfo<int32_t>(hFile, it->second) << std::setfill(' ')
+                                  << std::dec << " ";
+                    } else if (prop == "name-hash3") {
+                        std::cout << std::setfill('0') << std::hex << std::setw(16)
+                                  << GetFileInfo<int64_t>(hFile, it->second) << std::setfill(' ')
+                                  << std::dec << " ";
+                    } else if (prop == "locale") {
+                        std::cout << std::setw(4)
+                                  << LocaleToLang(GetFileInfo<int32_t>(hFile, it->second)) << " ";
+                    } else if (prop == "byte-offset") {
+                        std::cout << std::hex << std::setw(8)
+                                  << GetFileInfo<int64_t>(hFile, it->second) << std::dec << " ";
+                    } else if (prop == "file-time") {
+                        std::cout << std::setw(19)
+                                  << FileTimeToLsTime(GetFileInfo<int64_t>(hFile, it->second))
+                                  << " ";
+                    } else if (prop == "file-size" || prop == "compressed-size") {
+                        std::cout << std::setw(8) << GetFileInfo<int32_t>(hFile, it->second) << " ";
+                    } else if (prop == "flags") {
+                        std::cout << std::setw(8)
+                                  << GetFlagString(GetFileInfo<int32_t>(hFile, it->second)) << " ";
+                    } else if (prop == "encryption-key" || prop == "encryption-key-raw") {
+                        std::cout << std::setfill('0') << std::hex << std::setw(8)
+                                  << GetFileInfo<int64_t>(hFile, it->second) << std::setfill(' ')
+                                  << std::dec << " ";
                     }
                 }
 
@@ -625,17 +590,6 @@ void PrintMpqInfo(HANDLE hArchive, const std::optional<std::string> &infoPropert
             it->second(false);  // Print only the value
         }
     }
-}
-
-template <typename T>
-T GetFileInfo(HANDLE hFile, SFileInfoClass infoClass) {
-    T value{};
-    if (!SFileGetFileInfo(hFile, infoClass, &value, sizeof(T), nullptr)) {
-        int32_t error = SErrGetLastError();
-        // std::cerr << "[!] GetFileInfo failed (Error: " << error << ")" << std::endl;
-        return T{};  // Return default value for the type
-    }
-    return value;
 }
 
 uint32_t VerifyMpqArchive(HANDLE hArchive) {

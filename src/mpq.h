@@ -29,7 +29,7 @@ int AddFile(HANDLE hArchive, const fs::path &localFile, const std::string &archi
             bool overwrite = false);
 int RemoveFile(HANDLE hArchive, const std::string &archiveFilePath, LCID locale);
 int ListFiles(HANDLE hArchive, const std::optional<std::string> &listfileName, bool listAll,
-              bool listDetailed, std::vector<std::string> &propertiesToPrint);
+              bool listDetailed, const std::vector<std::string> &properties);
 std::unique_ptr<char[]> ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize,
                                  LCID preferredLocale);
 void PrintMpqInfo(HANDLE hArchive, const std::optional<std::string> &infoProperty);
@@ -37,6 +37,12 @@ uint32_t VerifyMpqArchive(HANDLE hArchive);
 int32_t PrintMpqSignature(HANDLE hArchive, const std::string &target);
 
 template <typename T>
-T GetFileInfo(HANDLE hFile, SFileInfoClass infoClass);
+T GetFileInfo(HANDLE hFile, SFileInfoClass infoClass) {
+    T value{};
+    if (!SFileGetFileInfo(hFile, infoClass, &value, sizeof(T), nullptr)) {
+        return T{};
+    }
+    return value;
+}
 
 #endif

@@ -220,10 +220,7 @@ int HandleList(const std::string &target, const std::optional<std::string> &list
         std::cerr << "[!] Failed to open MPQ archive." << std::endl;
         return 1;
     }
-    // ListFiles mutates propertiesToPrint; copy here to preserve const input (Phase 3 will fix
-    // this)
-    std::vector<std::string> propertiesToPrint = properties;
-    ListFiles(hArchive, listfileName, listAll, listDetailed, propertiesToPrint);
+    ListFiles(hArchive, listfileName, listAll, listDetailed, properties);
     CloseMpqArchive(hArchive);
     return 0;
 }
