@@ -48,17 +48,17 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Release package
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            mpqcli-linux-amd64-glibc
-            mpqcli-linux-amd64-musl
-            mpqcli-linux-arm64-glibc
-            mpqcli-linux-arm64-musl
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "${{ github.ref_name }}" \
+            --notes "${{ steps.changelog.outputs.content }}" \
+            mpqcli-linux-amd64-glibc \
+            mpqcli-linux-amd64-musl \
+            mpqcli-linux-arm64-glibc \
+            mpqcli-linux-arm64-musl \
             mpqcli-windows-amd64.exe
-          body: ${{ steps.changelog.outputs.content }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release_docker:
     needs: release_binaries
