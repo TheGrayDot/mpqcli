@@ -111,12 +111,14 @@ int ExtractFile(HANDLE hArchive, const std::string &output, const std::string &f
     fs::path outputPathBase = outputPathAbsolute.parent_path() / outputPathAbsolute.filename();
     std::filesystem::create_directories(fs::path(outputPathBase).parent_path());
 
-    // Ensure sub-directories for folder-nested files exist
+    // Ensure sub-directories for folder-nested files exist before calling canonical
     fs::path outputFilePathName = outputPathBase / fileNameString;
+    std::filesystem::create_directories(outputFilePathName.parent_path());
 
-    // Guard against path traversal attacks: resolve any ".." components and verify
-    // the output path is a descendant of the intended base directory
-    fs::path resolvedOutput = fs::weakly_canonical(outputFilePathName);
+    // Guard against path traversal attacks: resolve symlinks and ".." with canonical
+    // (requires path to exist, hence create_directories above)
+    fs::path resolvedOutput =
+        fs::canonical(outputFilePathName.parent_path()) / outputFilePathName.filename();
     if (std::mismatch(outputPathBase.begin(), outputPathBase.end(), resolvedOutput.begin(),
                       resolvedOutput.end())
             .first != outputPathBase.end()) {
@@ -125,8 +127,7 @@ int ExtractFile(HANDLE hArchive, const std::string &output, const std::string &f
         return 1;
     }
 
-    std::string outputFileName{outputFilePathName.u8string()};
-    std::filesystem::create_directories(outputFilePathName.parent_path());
+    std::string outputFileName{resolvedOutput.u8string()};
 
     if (SFileExtractFile(hArchive, szFileName, outputFileName.c_str(), 0)) {
         std::cout << "[*] Extracted: " << fileNameString << std::endl;

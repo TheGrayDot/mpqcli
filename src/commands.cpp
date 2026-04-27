@@ -239,7 +239,10 @@ int HandleExtract(const std::string &target, const std::optional<std::string> &o
     } else {
         effectiveOutput = output.value();
     }
-    fs::create_directory(effectiveOutput);
+    if (!fs::create_directory(effectiveOutput) && !fs::is_directory(effectiveOutput)) {
+        std::cerr << "[!] Failed to create output directory: " << effectiveOutput << std::endl;
+        return 1;
+    }
 
     HANDLE hArchive;
     if (!OpenMpqArchive(target, &hArchive, MPQ_OPEN_READ_ONLY)) {
