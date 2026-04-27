@@ -629,9 +629,14 @@ int32_t PrintMpqSignature(HANDLE hArchive, const std::string &target) {
             std::uintmax_t fileSize = fs::file_size(archivePath);
             int64_t signatureLength = fileSize - archiveOffset - archiveSize;
 
+            if (signatureLength <= 0) {
+                std::cerr << "[!] Invalid signature length: " << signatureLength << std::endl;
+                return -1;
+            }
+
             std::ifstream file_mpq(archivePath, std::ios::binary);
             file_mpq.seekg(archiveOffset + archiveSize, std::ios::beg);
-            signatureContent.resize(signatureLength);
+            signatureContent.resize(static_cast<size_t>(signatureLength));
             file_mpq.read(signatureContent.data(), signatureContent.size());
             file_mpq.close();
 
