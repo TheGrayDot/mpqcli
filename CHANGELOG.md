@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.10 - 2026-04-27
+
+### Fixed
+
+- Extract command now reports an error when the output directory cannot be created
+- Path traversal guard in extract uses fully resolved paths, closing a potential bypass
+- Crash when reading strong signatures from malformed or truncated archives
+
+### Updated
+
+- Docker glibc image updated to ubuntu:24.04
+
 ## 0.9.9 - 2026-04-05
 
 ### Fixed
