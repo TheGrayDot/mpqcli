@@ -12,14 +12,14 @@
 
 namespace fs = std::filesystem;
 
-int OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags);
-int CloseMpqArchive(HANDLE hArchive);
-int SignMpqArchive(HANDLE hArchive);
+bool OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags);
+bool CloseMpqArchive(HANDLE hArchive);
+bool SignMpqArchive(HANDLE hArchive);
 int ExtractFiles(HANDLE hArchive, const std::string &output,
                  const std::optional<std::string> &listfileName, LCID preferredLocale);
 int ExtractFile(HANDLE hArchive, const std::string &output, const std::string &fileName,
                 bool keepFolderStructure, LCID preferredLocale);
-HANDLE CreateMpqArchive(const std::string &outputArchiveName, int32_t fileCount,
+HANDLE CreateMpqArchive(const std::string &outputArchiveName, uint32_t fileCount,
                         const GameRules &gameRules);
 int AddFiles(HANDLE hArchive, const std::string &inputPath, LCID locale, const GameRules &gameRules,
              const CompressionSettingsOverrides &overrides = CompressionSettingsOverrides());

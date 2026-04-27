@@ -20,20 +20,20 @@ namespace fs = std::filesystem;
 static const std::vector<std::string> kSpecialMpqFiles = {"(listfile)", "(signature)",
                                                           "(attributes)"};
 
-int OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags) {
+bool OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags) {
     if (!SFileOpenArchive(filename.c_str(), 0, flags, hArchive)) {
         std::cerr << "[!] Failed to open: " << filename << std::endl;
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
 }
 
-int CloseMpqArchive(HANDLE hArchive) {
+bool CloseMpqArchive(HANDLE hArchive) {
     if (!SFileCloseArchive(hArchive)) {
         std::cerr << "[!] Failed to close MPQ archive." << std::endl;
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
 }
 
 bool FileExistsInArchiveForLocale(const HANDLE hArchive, const std::string &filePath,
@@ -51,12 +51,12 @@ bool FileExistsInArchiveForLocale(const HANDLE hArchive, const std::string &file
     return fileExists;
 }
 
-int SignMpqArchive(HANDLE hArchive) {
+bool SignMpqArchive(HANDLE hArchive) {
     if (!SFileSignArchive(hArchive, SIGNATURE_TYPE_WEAK)) {
         std::cerr << "[!] Failed to sign MPQ archive." << std::endl;
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
 }
 
 int ExtractFiles(HANDLE hArchive, const std::string &output,
@@ -139,7 +139,7 @@ int ExtractFile(HANDLE hArchive, const std::string &output, const std::string &f
     return 0;
 }
 
-HANDLE CreateMpqArchive(const std::string &outputArchiveName, const int32_t fileCount,
+HANDLE CreateMpqArchive(const std::string &outputArchiveName, const uint32_t fileCount,
                         const GameRules &gameRules) {
     // Check if file already exists
     if (fs::exists(outputArchiveName)) {
@@ -239,7 +239,7 @@ int AddFile(HANDLE hArchive, const fs::path &localFile, const std::string &archi
     int32_t maxFiles = GetFileInfo<int32_t>(hArchive, SFileMpqMaxFileCount);
 
     if (numberOfFiles + 1 > maxFiles) {
-        int32_t newMaxFiles = NextPowerOfTwo(numberOfFiles + 1);
+        uint32_t newMaxFiles = NextPowerOfTwo(static_cast<uint32_t>(numberOfFiles + 1));
         bool setMaxFileCount = SFileSetMaxFileCount(hArchive, newMaxFiles);
         if (!setMaxFileCount) {
             int32_t error = SErrGetLastError();

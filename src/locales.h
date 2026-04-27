@@ -7,7 +7,7 @@
 
 #include <StormLib.h>
 
-const LCID defaultLocale = 0;
+inline constexpr LCID defaultLocale = 0;
 
 std::string LocaleToLang(uint16_t locale);
 LCID LangToLocale(const std::string &lang);

@@ -95,7 +95,7 @@ int HandleCreate(const std::string &target, const std::optional<std::string> &na
     gameRules.OverrideCreateSettings(overrides);
 
     // Determine the number of files we are going to add
-    int32_t fileCount = CalculateMpqMaxFileValue(target);
+    uint32_t fileCount = CalculateMpqMaxFileValue(target);
 
     // Create the MPQ archive and add files
     HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, gameRules);

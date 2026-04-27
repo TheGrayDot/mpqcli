@@ -9,8 +9,8 @@ namespace fs = std::filesystem;
 std::string FileTimeToLsTime(int64_t fileTime);
 std::string NormalizeFilePath(const fs::path &path);
 std::string WindowsifyFilePath(const fs::path &path);
-int32_t CalculateMpqMaxFileValue(const std::string &path);
-int32_t NextPowerOfTwo(int32_t n);
+uint32_t CalculateMpqMaxFileValue(const std::string &path);
+uint32_t NextPowerOfTwo(uint32_t n);
 void PrintAsBinary(const char *buffer, uint32_t size);
 
 #endif
