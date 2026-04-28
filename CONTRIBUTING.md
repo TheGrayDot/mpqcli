@@ -6,7 +6,7 @@ Contributions are welcome. Please read the guidelines below before opening a pul
 
 If you are unsure whether a feature fits the project, or whether an existing tool could already be combined with `mpqcli` to achieve the same result, open an issue first. This avoids wasted effort and keeps the project focused.
 
-**mpqcli follows the Unix philosophy.** The tool is designed to do one thing well and to compose with other tools via pipes and redirection. If you find yourself wanting to add functionality that could be handled by a separate tool — for example, sorting the output of `list` — the right answer is usually to pipe the output to that tool rather than adding it here.
+**mpqcli follows the Unix philosophy.** The tool is designed to do one thing well and to compose with other tools via pipes and redirection. If you find yourself wanting to add functionality that could be handled by a separate tool - for example, sorting the output of `list` - the right answer is usually to pipe the output to that tool rather than adding it here.
 
 ## Prerequisites and Setup
 
@@ -68,7 +68,7 @@ All tests must pass without errors.
 
 ### 3. New features should include tests
 
-If your change adds or modifies user-facing functionality — such as a new subcommand flag or a change in output format — please include a corresponding test in the `test/` directory. The existing test files (`test_list.py`, `test_add.py`, etc.) are good references for the test style and fixtures used.
+If your change adds or modifies user-facing functionality - such as a new subcommand flag or a change in output format - please include a corresponding test in the `test/` directory. The existing test files (`test_list.py`, `test_add.py`, etc.) are good references for the test style and fixtures used.
 
 ### 4. Linting must pass
 
@@ -94,7 +94,7 @@ C++ formatting is enforced by `.clang-format` (Google style base). Static analys
 
 Suppressions are occasionally necessary for third-party code or intentional patterns. When suppressing a clang-tidy warning:
 
-- Use `// NOLINT(check-name)` with the specific check name — bare `// NOLINT` is not acceptable
+- Use `// NOLINT(check-name)` with the specific check name - bare `// NOLINT` is not acceptable
 - Every suppression must have a comment explaining why it is justified
 
 ```cpp
@@ -116,7 +116,7 @@ if (flags & MPQ_FILE_COMPRESS)  result += 'c';
 
 ### StormLib locale state is global and not thread-safe
 
-`SFileSetLocale` sets a process-wide locale variable (`g_lcFileLocale`) inside StormLib. All locale-sensitive operations in `mpq.cpp` — file open, add, remove, read, extract, and list — call `SFileSetLocale` immediately before the relevant StormLib call. There is no locale-explicit alternative in StormLib's public API (`SFileOpenFileEx`, `SFileAddFileEx`, etc. all read `g_lcFileLocale` internally).
+`SFileSetLocale` sets a process-wide locale variable (`g_lcFileLocale`) inside StormLib. All locale-sensitive operations in `mpq.cpp` - file open, add, remove, read, extract, and list - call `SFileSetLocale` immediately before the relevant StormLib call. There is no locale-explicit alternative in StormLib's public API (`SFileOpenFileEx`, `SFileAddFileEx`, etc. all read `g_lcFileLocale` internally).
 
 This means:
 
