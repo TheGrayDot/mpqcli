@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include <StormLib.h>
@@ -11,14 +12,14 @@
 
 namespace fs = std::filesystem;
 
-int OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags);
-int CloseMpqArchive(HANDLE hArchive);
-int SignMpqArchive(HANDLE hArchive);
-int ExtractFiles(HANDLE hArchive, const std::string &output, const std::string &listfileName,
-                 LCID preferredLocale);
+bool OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags);
+bool CloseMpqArchive(HANDLE hArchive);
+bool SignMpqArchive(HANDLE hArchive);
+int ExtractFiles(HANDLE hArchive, const std::string &output,
+                 const std::optional<std::string> &listfileName, LCID preferredLocale);
 int ExtractFile(HANDLE hArchive, const std::string &output, const std::string &fileName,
                 bool keepFolderStructure, LCID preferredLocale);
-HANDLE CreateMpqArchive(const std::string &outputArchiveName, int32_t fileCount,
+HANDLE CreateMpqArchive(const std::string &outputArchiveName, uint32_t fileCount,
                         const GameRules &gameRules);
 int AddFiles(HANDLE hArchive, const std::string &inputPath, LCID locale, const GameRules &gameRules,
              const CompressionSettingsOverrides &overrides = CompressionSettingsOverrides());
@@ -27,15 +28,21 @@ int AddFile(HANDLE hArchive, const fs::path &localFile, const std::string &archi
             const CompressionSettingsOverrides &overrides = CompressionSettingsOverrides(),
             bool overwrite = false);
 int RemoveFile(HANDLE hArchive, const std::string &archiveFilePath, LCID locale);
-int ListFiles(HANDLE hArchive, const std::string &listfileName, bool listAll, bool listDetailed,
-              std::vector<std::string> &propertiesToPrint);
+int ListFiles(HANDLE hArchive, const std::optional<std::string> &listfileName, bool listAll,
+              bool listDetailed, const std::vector<std::string> &properties);
 std::unique_ptr<char[]> ReadFile(HANDLE hArchive, const char *szFileName, unsigned int *fileSize,
                                  LCID preferredLocale);
-void PrintMpqInfo(HANDLE hArchive, const std::string &infoProperty);
+void PrintMpqInfo(HANDLE hArchive, const std::optional<std::string> &infoProperty);
 uint32_t VerifyMpqArchive(HANDLE hArchive);
 int32_t PrintMpqSignature(HANDLE hArchive, const std::string &target);
 
 template <typename T>
-T GetFileInfo(HANDLE hFile, SFileInfoClass infoClass);
+T GetFileInfo(HANDLE hFile, SFileInfoClass infoClass) {
+    T value{};
+    if (!SFileGetFileInfo(hFile, infoClass, &value, sizeof(T), nullptr)) {
+        return T{};
+    }
+    return value;
+}
 
 #endif

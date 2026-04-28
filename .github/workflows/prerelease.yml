@@ -46,21 +46,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create prerelease
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: dev
-          name: Dev (Pre-release)
-          prerelease: true
-          files: |
-            mpqcli-linux-amd64-glibc
-            mpqcli-linux-amd64-musl
-            mpqcli-linux-arm64-glibc
-            mpqcli-linux-arm64-musl
+        run: |
+          gh release create dev \
+            --title "Dev (Pre-release)" \
+            --prerelease \
+            --notes "**Commit:** ${{ github.sha }}" \
+            mpqcli-linux-amd64-glibc \
+            mpqcli-linux-amd64-musl \
+            mpqcli-linux-arm64-glibc \
+            mpqcli-linux-arm64-musl \
             mpqcli-windows-amd64.exe
-          body: |
-            **Commit:** ${{ github.sha }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   prerelease_docker:
     needs: prerelease_binaries

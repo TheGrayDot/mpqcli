@@ -12,12 +12,16 @@ permissions:
 jobs:
   build:
     uses: ./.github/workflows/build.yml
+  lint:
+    uses: ./.github/workflows/lint.yml
+    needs: build
   test:
     uses: ./.github/workflows/test.yml
     needs: build
   release:
     uses: ./.github/workflows/release.yml
-    needs: 
+    needs:
       - build
+      - lint
       - test
     secrets: inherit

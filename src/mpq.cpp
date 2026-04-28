@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <set>
@@ -20,20 +21,20 @@ namespace fs = std::filesystem;
 static const std::vector<std::string> kSpecialMpqFiles = {"(listfile)", "(signature)",
                                                           "(attributes)"};
 
-int OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags) {
+bool OpenMpqArchive(const std::string &filename, HANDLE *hArchive, int32_t flags) {
     if (!SFileOpenArchive(filename.c_str(), 0, flags, hArchive)) {
         std::cerr << "[!] Failed to open: " << filename << std::endl;
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
 }
 
-int CloseMpqArchive(HANDLE hArchive) {
+bool CloseMpqArchive(HANDLE hArchive) {
     if (!SFileCloseArchive(hArchive)) {
         std::cerr << "[!] Failed to close MPQ archive." << std::endl;
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
 }
 
 bool FileExistsInArchiveForLocale(const HANDLE hArchive, const std::string &filePath,
@@ -51,19 +52,19 @@ bool FileExistsInArchiveForLocale(const HANDLE hArchive, const std::string &file
     return fileExists;
 }
 
-int SignMpqArchive(HANDLE hArchive) {
+bool SignMpqArchive(HANDLE hArchive) {
     if (!SFileSignArchive(hArchive, SIGNATURE_TYPE_WEAK)) {
         std::cerr << "[!] Failed to sign MPQ archive." << std::endl;
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
 }
 
-int ExtractFiles(HANDLE hArchive, const std::string &output, const std::string &listfileName,
-                 LCID preferredLocale) {
+int ExtractFiles(HANDLE hArchive, const std::string &output,
+                 const std::optional<std::string> &listfileName, LCID preferredLocale) {
     SFileSetLocale(preferredLocale);
     // Check if the user provided a listfile input
-    const char *listfile = (listfileName == "default") ? nullptr : listfileName.c_str();
+    const char *listfile = listfileName.has_value() ? listfileName->c_str() : nullptr;
 
     SFILE_FIND_DATA findData;
     HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, listfile);
@@ -111,12 +112,14 @@ int ExtractFile(HANDLE hArchive, const std::string &output, const std::string &f
     fs::path outputPathBase = outputPathAbsolute.parent_path() / outputPathAbsolute.filename();
     std::filesystem::create_directories(fs::path(outputPathBase).parent_path());
 
-    // Ensure sub-directories for folder-nested files exist
+    // Ensure sub-directories for folder-nested files exist before calling canonical
     fs::path outputFilePathName = outputPathBase / fileNameString;
+    std::filesystem::create_directories(outputFilePathName.parent_path());
 
-    // Guard against path traversal attacks: resolve any ".." components and verify
-    // the output path is a descendant of the intended base directory
-    fs::path resolvedOutput = fs::weakly_canonical(outputFilePathName);
+    // Guard against path traversal attacks: resolve symlinks and ".." with canonical
+    // (requires path to exist, hence create_directories above)
+    fs::path resolvedOutput =
+        fs::canonical(outputFilePathName.parent_path()) / outputFilePathName.filename();
     if (std::mismatch(outputPathBase.begin(), outputPathBase.end(), resolvedOutput.begin(),
                       resolvedOutput.end())
             .first != outputPathBase.end()) {
@@ -125,8 +128,7 @@ int ExtractFile(HANDLE hArchive, const std::string &output, const std::string &f
         return 1;
     }
 
-    std::string outputFileName{outputFilePathName.u8string()};
-    std::filesystem::create_directories(outputFilePathName.parent_path());
+    std::string outputFileName{resolvedOutput.u8string()};
 
     if (SFileExtractFile(hArchive, szFileName, outputFileName.c_str(), 0)) {
         std::cout << "[*] Extracted: " << fileNameString << std::endl;
@@ -139,7 +141,7 @@ int ExtractFile(HANDLE hArchive, const std::string &output, const std::string &f
     return 0;
 }
 
-HANDLE CreateMpqArchive(const std::string &outputArchiveName, const int32_t fileCount,
+HANDLE CreateMpqArchive(const std::string &outputArchiveName, const uint32_t fileCount,
                         const GameRules &gameRules) {
     // Check if file already exists
     if (fs::exists(outputArchiveName)) {
@@ -239,7 +241,7 @@ int AddFile(HANDLE hArchive, const fs::path &localFile, const std::string &archi
     int32_t maxFiles = GetFileInfo<int32_t>(hArchive, SFileMpqMaxFileCount);
 
     if (numberOfFiles + 1 > maxFiles) {
-        int32_t newMaxFiles = NextPowerOfTwo(numberOfFiles + 1);
+        uint32_t newMaxFiles = NextPowerOfTwo(static_cast<uint32_t>(numberOfFiles + 1));
         bool setMaxFileCount = SFileSetMaxFileCount(hArchive, newMaxFiles);
         if (!setMaxFileCount) {
             int32_t error = SErrGetLastError();
@@ -328,10 +330,10 @@ std::string GetFlagString(uint32_t flags) {
     return result;
 }
 
-int ListFiles(HANDLE hArchive, const std::string &listfileName, bool listAll, bool listDetailed,
-              std::vector<std::string> &propertiesToPrint) {
+int ListFiles(HANDLE hArchive, const std::optional<std::string> &listfileName, bool listAll,
+              bool listDetailed, const std::vector<std::string> &properties) {
     // Check if the user provided a listfile input
-    const char *listfile = (listfileName == "default") ? nullptr : listfileName.c_str();
+    const char *listfile = listfileName.has_value() ? listfileName->c_str() : nullptr;
 
     SFILE_FIND_DATA findData;
     HANDLE findHandle = SFileFindFirstFile(hArchive, "*", &findData, listfile);
@@ -341,17 +343,30 @@ int ListFiles(HANDLE hArchive, const std::string &listfileName, bool listAll, bo
         return -1;
     }
 
-    if (propertiesToPrint.empty()) {
-        propertiesToPrint = {
-            // Default properties, if the user didn't specify any
-            "file-size",
-            "locale",
-            "file-time",
-        };
-    } else {
+    std::vector<std::string> propertiesToPrint =
+        properties.empty() ? std::vector<std::string>{"file-size", "locale", "file-time"}
+                           : properties;
+    if (!properties.empty()) {
         listDetailed =
             true;  // If the user specified properties, we need to print the detailed output
     }
+
+    // Map of property name to SFileInfoClass — defined once, outside the loop
+    static const std::map<std::string, SFileInfoClass> kPropertyInfoClass = {
+        {"hash-index", SFileInfoHashIndex},
+        {"name-hash1", SFileInfoNameHash1},
+        {"name-hash2", SFileInfoNameHash2},
+        {"name-hash3", SFileInfoNameHash3},
+        {"locale", SFileInfoLocale},
+        {"file-index", SFileInfoFileIndex},
+        {"byte-offset", SFileInfoByteOffset},
+        {"file-time", SFileInfoFileTime},
+        {"file-size", SFileInfoFileSize},
+        {"compressed-size", SFileInfoCompressedSize},
+        {"flags", SFileInfoFlags},
+        {"encryption-key", SFileInfoEncryptionKey},
+        {"encryption-key-raw", SFileInfoEncryptionKeyRaw},
+    };
 
     std::set<std::string>
         seenFileNames;  // Used to prevent printing the same file name multiple times
@@ -411,87 +426,39 @@ int ListFiles(HANDLE hArchive, const std::string &listfileName, bool listAll, bo
                     continue;  // Skip to the next file
                 }
 
-                std::vector<std::pair<std::string, std::function<void()>>> propertyActions = {
-                    {"hash-index",
-                     [&]() {
-                         std::cout << std::setw(5)
-                                   << GetFileInfo<int32_t>(hFile, SFileInfoHashIndex) << " ";
-                     }},
-                    {"name-hash1",
-                     [&]() {
-                         std::cout << std::setfill('0') << std::hex << std::setw(8)
-                                   << GetFileInfo<int32_t>(hFile, SFileInfoNameHash1)
-                                   << std::setfill(' ') << std::dec << " ";
-                     }},
-                    {"name-hash2",
-                     [&]() {
-                         std::cout << std::setfill('0') << std::hex << std::setw(8)
-                                   << GetFileInfo<int32_t>(hFile, SFileInfoNameHash2)
-                                   << std::setfill(' ') << std::dec << " ";
-                     }},
-                    {"name-hash3",
-                     [&]() {
-                         std::cout << std::setfill('0') << std::hex << std::setw(16)
-                                   << GetFileInfo<int64_t>(hFile, SFileInfoNameHash3)
-                                   << std::setfill(' ') << std::dec << " ";
-                     }},
-                    {"locale",
-                     [&]() {
-                         int32_t fileLocale = GetFileInfo<int32_t>(hFile, SFileInfoLocale);
-                         std::string fileLocaleStr = LocaleToLang(fileLocale);
-                         std::cout << std::setw(4) << fileLocaleStr << " ";
-                     }},
-                    {"file-index",
-                     [&]() {
-                         std::cout << std::setw(5)
-                                   << GetFileInfo<int32_t>(hFile, SFileInfoFileIndex) << " ";
-                     }},
-                    {"byte-offset",
-                     [&]() {
-                         std::cout << std::hex << std::setw(8)
-                                   << GetFileInfo<int64_t>(hFile, SFileInfoByteOffset) << std::dec
-                                   << " ";
-                     }},
-                    {"file-time",
-                     [&]() {
-                         int64_t fileTime = GetFileInfo<int64_t>(hFile, SFileInfoFileTime);
-                         std::string fileTimeStr = FileTimeToLsTime(fileTime);
-                         std::cout << std::setw(19) << fileTimeStr << " ";
-                     }},
-                    {"file-size",
-                     [&]() {
-                         std::cout << std::setw(8) << GetFileInfo<int32_t>(hFile, SFileInfoFileSize)
-                                   << " ";
-                     }},
-                    {"compressed-size",
-                     [&]() {
-                         std::cout << std::setw(8)
-                                   << GetFileInfo<int32_t>(hFile, SFileInfoCompressedSize) << " ";
-                     }},
-                    {"flags",
-                     [&]() {
-                         int32_t flags = GetFileInfo<int32_t>(hFile, SFileInfoFlags);
-                         std::cout << std::setw(8) << GetFlagString(flags) << " ";
-                     }},
-                    {"encryption-key",
-                     [&]() {
-                         std::cout << std::setfill('0') << std::hex << std::setw(8)
-                                   << GetFileInfo<int64_t>(hFile, SFileInfoEncryptionKey)
-                                   << std::setfill(' ') << std::dec << " ";
-                     }},
-                    {"encryption-key-raw",
-                     [&]() {
-                         std::cout << std::setfill('0') << std::hex << std::setw(8)
-                                   << GetFileInfo<int64_t>(hFile, SFileInfoEncryptionKeyRaw)
-                                   << std::setfill(' ') << std::dec << " ";
-                     }},
-                };
-
                 for (const auto &prop : propertiesToPrint) {
-                    for (const auto &[key, action] : propertyActions) {
-                        if (prop == key) {
-                            action();  // Print property
-                        }
+                    auto it = kPropertyInfoClass.find(prop);
+                    if (it == kPropertyInfoClass.end()) continue;
+
+                    if (prop == "hash-index" || prop == "file-index") {
+                        std::cout << std::setw(5) << GetFileInfo<int32_t>(hFile, it->second) << " ";
+                    } else if (prop == "name-hash1" || prop == "name-hash2") {
+                        std::cout << std::setfill('0') << std::hex << std::setw(8)
+                                  << GetFileInfo<int32_t>(hFile, it->second) << std::setfill(' ')
+                                  << std::dec << " ";
+                    } else if (prop == "name-hash3") {
+                        std::cout << std::setfill('0') << std::hex << std::setw(16)
+                                  << GetFileInfo<int64_t>(hFile, it->second) << std::setfill(' ')
+                                  << std::dec << " ";
+                    } else if (prop == "locale") {
+                        std::cout << std::setw(4)
+                                  << LocaleToLang(GetFileInfo<int32_t>(hFile, it->second)) << " ";
+                    } else if (prop == "byte-offset") {
+                        std::cout << std::hex << std::setw(8)
+                                  << GetFileInfo<int64_t>(hFile, it->second) << std::dec << " ";
+                    } else if (prop == "file-time") {
+                        std::cout << std::setw(19)
+                                  << FileTimeToLsTime(GetFileInfo<int64_t>(hFile, it->second))
+                                  << " ";
+                    } else if (prop == "file-size" || prop == "compressed-size") {
+                        std::cout << std::setw(8) << GetFileInfo<int32_t>(hFile, it->second) << " ";
+                    } else if (prop == "flags") {
+                        std::cout << std::setw(8)
+                                  << GetFlagString(GetFileInfo<int32_t>(hFile, it->second)) << " ";
+                    } else if (prop == "encryption-key" || prop == "encryption-key-raw") {
+                        std::cout << std::setfill('0') << std::hex << std::setw(8)
+                                  << GetFileInfo<int64_t>(hFile, it->second) << std::setfill(' ')
+                                  << std::dec << " ";
                     }
                 }
 
@@ -546,7 +513,7 @@ std::unique_ptr<char[]> ReadFile(HANDLE hArchive, const char *szFileName, unsign
     return fileContent;
 }
 
-void PrintMpqInfo(HANDLE hArchive, const std::string &infoProperty) {
+void PrintMpqInfo(HANDLE hArchive, const std::optional<std::string> &infoProperty) {
     // Map of property names to their corresponding actions
     std::map<std::string, std::function<void(bool)>> propertyActions = {
         {"format-version",
@@ -613,29 +580,18 @@ void PrintMpqInfo(HANDLE hArchive, const std::string &infoProperty) {
              }
          }}};
 
-    // If infoProperty is "default", print all properties with their names (key)
-    // Otherwise, print only the property value
-    if (infoProperty == "default") {
+    // If infoProperty is not set, print all properties with their names (key)
+    // Otherwise, print only the specified property value
+    if (!infoProperty.has_value()) {
         for (const auto &[key, action] : propertyActions) {
             action(true);  // Print property name and value
         }
     } else {
-        auto it = propertyActions.find(infoProperty);
+        auto it = propertyActions.find(infoProperty.value());
         if (it != propertyActions.end()) {
             it->second(false);  // Print only the value
         }
     }
-}
-
-template <typename T>
-T GetFileInfo(HANDLE hFile, SFileInfoClass infoClass) {
-    T value{};
-    if (!SFileGetFileInfo(hFile, infoClass, &value, sizeof(T), nullptr)) {
-        int32_t error = SErrGetLastError();
-        // std::cerr << "[!] GetFileInfo failed (Error: " << error << ")" << std::endl;
-        return T{};  // Return default value for the type
-    }
-    return value;
 }
 
 uint32_t VerifyMpqArchive(HANDLE hArchive) {
@@ -674,9 +630,14 @@ int32_t PrintMpqSignature(HANDLE hArchive, const std::string &target) {
             std::uintmax_t fileSize = fs::file_size(archivePath);
             int64_t signatureLength = fileSize - archiveOffset - archiveSize;
 
+            if (signatureLength <= 0) {
+                std::cerr << "[!] Invalid signature length: " << signatureLength << std::endl;
+                return -1;
+            }
+
             std::ifstream file_mpq(archivePath, std::ios::binary);
             file_mpq.seekg(archiveOffset + archiveSize, std::ios::beg);
-            signatureContent.resize(signatureLength);
+            signatureContent.resize(static_cast<size_t>(signatureLength));
             file_mpq.read(signatureContent.data(), signatureContent.size());
             file_mpq.close();
 

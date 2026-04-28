@@ -266,14 +266,19 @@ std::string GameRules::ProfileToString(GameProfile profile) {
 
 // Get list of canonical game profile names (for display purposes)
 std::vector<std::string> GameRules::GetCanonicalProfiles() {
-    // Iterate through all GameProfile enum values and get their canonical names
+    static const std::vector<GameProfile> kAllProfiles = {
+        GameProfile::GENERIC,    GameProfile::DIABLO1,       GameProfile::LORDSOFMAGIC,
+        GameProfile::STARCRAFT1, GameProfile::WARCRAFT2,     GameProfile::DIABLO2,
+        GameProfile::WARCRAFT3,  GameProfile::WARCRAFT3_MAP, GameProfile::WOW_1X,
+        GameProfile::WOW_2X,     GameProfile::WOW_3X,        GameProfile::WOW_4X,
+        GameProfile::WOW_5X,     GameProfile::STARCRAFT2,    GameProfile::DIABLO3,
+    };
+
     std::vector<std::string> profiles;
-
-    for (int i = static_cast<int>(GameProfile::GENERIC);
-         i <= static_cast<int>(GameProfile::DIABLO3); ++i) {
-        profiles.push_back(ProfileToString(static_cast<GameProfile>(i)));
+    profiles.reserve(kAllProfiles.size());
+    for (const auto &p : kAllProfiles) {
+        profiles.push_back(ProfileToString(p));
     }
-
     return profiles;
 }
 

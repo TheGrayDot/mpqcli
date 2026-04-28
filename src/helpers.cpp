@@ -47,8 +47,8 @@ std::string WindowsifyFilePath(const fs::path &path) {
     return filePath;
 }
 
-int32_t CalculateMpqMaxFileValue(const std::string &path) {
-    int32_t fileCount = 0;
+uint32_t CalculateMpqMaxFileValue(const std::string &path) {
+    uint32_t fileCount = 0;
 
     // Determine the number of files in the target directory, recusively
     if (!fs::is_regular_file(path)) {
@@ -74,7 +74,7 @@ int32_t CalculateMpqMaxFileValue(const std::string &path) {
     return NextPowerOfTwo(fileCount);
 }
 
-int32_t NextPowerOfTwo(int32_t n) {
+uint32_t NextPowerOfTwo(uint32_t n) {
     n--;
     n |= n >> 1;
     n |= n >> 2;

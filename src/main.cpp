@@ -1,14 +1,13 @@
-#include <filesystem>
 #include <iostream>
+#include <optional>
+#include <set>
+#include <string>
+#include <vector>
 
 #include <CLI/CLI.hpp>
-#include <StormLib.h>
 
+#include "commands.h"
 #include "gamerules.h"
-#include "helpers.h"
-#include "locales.h"
-#include "mpq.h"
-#include "mpqcli.h"
 #include "validators.h"
 
 int main(int argc, char **argv) {
@@ -21,18 +20,18 @@ int main(int argc, char **argv) {
 
     // CLI: base
     // These are reused in multiple subcommands
-    std::string baseTarget = "default";         // all subcommands
-    std::string baseFile = "default";           // add, remove, extract, read
-    std::string basePath = "default";           // add, create
-    std::string baseLocale = "default";         // create, add, remove, extract, read
-    std::string baseNameInArchive = "default";  // add, create
-    std::string baseOutput = "default";         // create, extract
-    std::string baseListfileName = "default";   // list, extract
-    std::string baseGameProfile = "default";    // create, add
+    std::string baseTarget;                        // all subcommands
+    std::string baseFile;                          // add, remove, extract, read
+    std::optional<std::string> basePath;           // add
+    std::optional<std::string> baseLocale;         // create, add, remove, extract, read
+    std::optional<std::string> baseNameInArchive;  // add, create
+    std::optional<std::string> baseOutput;         // create, extract
+    std::optional<std::string> baseListfileName;   // list, extract
+    std::optional<std::string> baseGameProfile;    // create, add
     // CLI: info
-    std::string infoProperty = "default";
+    std::optional<std::string> infoProperty;
     // CLI: add
-    std::string baseDirInArchive = "default";  // add
+    std::optional<std::string> baseDirInArchive;  // add
     bool addOverwrite = false;
     // CLI: extract
     bool extractKeepFolderStructure = false;
@@ -233,321 +232,53 @@ int main(int argc, char **argv) {
         return app.exit(e);
     }
 
-    // Handle subcommand: Version
     if (app.got_subcommand(version)) {
-        std::cout << MPQCLI_VERSION << "-" << GIT_COMMIT_HASH << std::endl;
+        return HandleVersion();
     }
 
-    // Handle subcommand: About
     if (app.got_subcommand(about)) {
-        std::cout << "Name: mpqcli" << std::endl;
-        std::cout << "Version: " << MPQCLI_VERSION << "-" << GIT_COMMIT_HASH << std::endl;
-        std::cout << "Author: Thomas Laurenson" << std::endl;
-        std::cout << "License: MIT" << std::endl;
-        std::cout << "GitHub: https://github.com/TheGrayDot/mpqcli" << std::endl;
-        std::cout << "Dependencies:" << std::endl;
-        std::cout << " - StormLib (https://github.com/ladislav-zezula/StormLib)" << std::endl;
-        std::cout << " - CLI11 (https://github.com/CLIUtils/CLI11)" << std::endl;
+        return HandleAbout();
     }
 
-    // Handle subcommand: Info
     if (app.got_subcommand(info)) {
-        HANDLE hArchive;
-        if (!OpenMpqArchive(baseTarget, &hArchive, MPQ_OPEN_READ_ONLY)) {
-            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
-            return 1;
-        }
-        PrintMpqInfo(hArchive, infoProperty);
-        CloseMpqArchive(hArchive);
+        return HandleInfo(baseTarget, infoProperty);
     }
 
-    // Handle subcommand: Create
     if (app.got_subcommand(create)) {
-        if (!fs::is_regular_file(baseTarget) && baseNameInArchive != "default") {
-            std::cerr << "[!] Cannot specify --name-in-archive when adding a directory."
-                      << std::endl;
-            return 1;
-        }
-        fs::path outputFilePath;
-        if (baseOutput != "default") {
-            outputFilePath = fs::absolute(baseOutput);
-        } else {
-            outputFilePath = fs::path(baseTarget);
-            // If the path ends with a separator (e.g. "dir/"), strip the
-            // trailing separator first so we get "dir.mpq"
-            if (outputFilePath.filename().empty()) {
-                outputFilePath = outputFilePath.parent_path();
-            }
-            outputFilePath.replace_extension(".mpq");
-        }
-        std::string outputFile = outputFilePath.u8string();
-
-        GameProfile profile;
-        if (baseGameProfile != "default") {
-            profile = GameRules::StringToProfile(baseGameProfile);
-        } else {
-            profile = GameRules::GetDefaultProfile();
-        }
-        GameRules gameRules(profile);
-
-        std::cout << "[*] Game profile: " << baseGameProfile << ", Output file: " << outputFile
-                  << std::endl;
-
-        if (createMpqVersion > 0) {
-            createMpqVersion--;  // We label versions 1-4, but StormLib uses 0-3
-        }
-        // Apply MpqCreateSettings overrides if provided
-        MpqCreateSettingsOverrides overrides;
-        if (createMpqVersion >= 0) {
-            overrides.mpqVersion = static_cast<DWORD>(createMpqVersion);
-        }
-        if (createStreamFlags >= 0) {
-            overrides.streamFlags = static_cast<DWORD>(createStreamFlags);
-        }
-        if (createFileFlags1 >= 0) {
-            overrides.fileFlags1 = static_cast<DWORD>(createFileFlags1);
-        }
-        if (createFileFlags2 >= 0) {
-            overrides.fileFlags2 = static_cast<DWORD>(createFileFlags2);
-        }
-        if (createFileFlags3 >= 0) {
-            overrides.fileFlags3 = static_cast<DWORD>(createFileFlags3);
-        }
-        if (createAttrFlags >= 0) {
-            overrides.attrFlags = static_cast<DWORD>(createAttrFlags);
-        }
-        if (createSectorSize >= 0) {
-            overrides.sectorSize = static_cast<DWORD>(createSectorSize);
-        }
-        if (createRawChunkSize >= 0) {
-            overrides.rawChunkSize = static_cast<DWORD>(createRawChunkSize);
-        }
-        gameRules.OverrideCreateSettings(overrides);
-
-        // Determine the number of files we are going to add
-        int32_t fileCount = CalculateMpqMaxFileValue(baseTarget);
-
-        // Create the MPQ archive and add files
-        HANDLE hArchive = CreateMpqArchive(outputFile, fileCount, gameRules);
-        if (hArchive) {
-            LCID locale = LangToLocale(baseLocale);
-
-            // Apply AddFileSettings overrides if provided
-            CompressionSettingsOverrides addOverrides;
-            if (fileDwFlags >= 0) addOverrides.dwFlags = static_cast<DWORD>(fileDwFlags);
-            if (fileDwCompression >= 0)
-                addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
-            if (fileDwCompressionNext >= 0)
-                addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
-
-            if (fs::is_regular_file(baseTarget)) {
-                // Default: use the filename as path, saves file to root of MPQ
-                fs::path filePath = fs::path(baseTarget);
-                std::string archivePath = filePath.filename().u8string();
-                if (baseNameInArchive !=
-                    "default") {  // Optional: specified filename inside archive
-                    filePath = fs::path(baseNameInArchive);
-                    archivePath = WindowsifyFilePath(filePath);  // Normalise path for MPQ
-                }
-
-                AddFile(hArchive, baseTarget, archivePath, locale, gameRules, addOverrides);
-            } else {
-                AddFiles(hArchive, baseTarget, locale, gameRules, addOverrides);
-            }
-            if (createSignArchive) {
-                SignMpqArchive(hArchive);
-            }
-            CloseMpqArchive(hArchive);
-        } else {
-            std::cerr << "[!] Failed to create MPQ archive." << std::endl;
-            return 1;
-        }
+        return HandleCreate(baseTarget, baseNameInArchive, baseOutput, createSignArchive,
+                            baseLocale, baseGameProfile, createMpqVersion, createStreamFlags,
+                            createSectorSize, createRawChunkSize, createFileFlags1,
+                            createFileFlags2, createFileFlags3, createAttrFlags, fileDwFlags,
+                            fileDwCompression, fileDwCompressionNext);
     }
 
-    // Handle subcommand: Add
     if (app.got_subcommand(add)) {
-        HANDLE hArchive;
-        // Open the MPQ archive for writing (this is why we set flag as 0)
-        if (!OpenMpqArchive(baseTarget, &hArchive, 0)) {
-            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
-            return 1;
-        }
-
-        // Path to file on disk
-        fs::path filePath = fs::path(baseFile);
-
-        std::string archivePath =
-            filePath.filename()
-                .u8string();  // Default: use the filename as path, saves file to root of MPQ
-        if (basePath != "default" && baseDirInArchive != "default" ||
-            basePath != "default" && baseNameInArchive != "default") {
-            // Return error since providing --path together --name-in-archive or
-            // --directory-in-archive makes no sense and is a user error
-            std::cerr << "[!] Cannot specify --path together with --name-in-archive or "
-                         "--directory-in-archive."
-                      << std::endl;
-            return 1;
-
-        } else if (basePath != "default") {  // Optional: specified whole path inside archive
-            filePath = fs::path(basePath);
-            archivePath = WindowsifyFilePath(filePath);  // Normalise path for MPQ
-
-        } else if (baseDirInArchive != "default" ||
-                   baseNameInArchive != "default") {  // Optional: specified filename inside archive
-            if (baseDirInArchive == "default") {
-                baseDirInArchive = fs::path(baseFile).parent_path().u8string();
-            }
-            if (baseNameInArchive == "default") {
-                baseNameInArchive = archivePath;
-            }
-            filePath = fs::path(baseDirInArchive) / fs::path(baseNameInArchive);
-            archivePath = WindowsifyFilePath(filePath);  // Normalise path for MPQ
-        }
-
-        LCID locale = LangToLocale(baseLocale);
-
-        GameProfile profile;
-        if (baseGameProfile != "default") {
-            profile = GameRules::StringToProfile(baseGameProfile);
-            std::cout << "[*] Using game profile: " << baseGameProfile << std::endl;
-        } else {
-            profile = GameRules::GetDefaultProfile();
-        }
-        GameRules gameRules(profile);
-
-        // Apply AddFileSettings overrides if provided
-        CompressionSettingsOverrides addOverrides;
-        if (fileDwFlags >= 0) addOverrides.dwFlags = static_cast<DWORD>(fileDwFlags);
-        if (fileDwCompression >= 0)
-            addOverrides.dwCompression = static_cast<DWORD>(fileDwCompression);
-        if (fileDwCompressionNext >= 0)
-            addOverrides.dwCompressionNext = static_cast<DWORD>(fileDwCompressionNext);
-
-        AddFile(hArchive, baseFile, archivePath, locale, gameRules, addOverrides, addOverwrite);
-        CloseMpqArchive(hArchive);
+        return HandleAdd(baseFile, baseTarget, basePath, baseDirInArchive, baseNameInArchive,
+                         addOverwrite, baseLocale, baseGameProfile, fileDwFlags, fileDwCompression,
+                         fileDwCompressionNext);
     }
 
-    // Handle subcommand: Remove
     if (app.got_subcommand(remove)) {
-        HANDLE hArchive;
-        // Open the MPQ archive for writing (this is why we set flag as 0)
-        if (!OpenMpqArchive(baseTarget, &hArchive, 0)) {
-            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
-            return 1;
-        }
-
-        LCID locale = LangToLocale(baseLocale);
-        int result = RemoveFile(hArchive, baseFile, locale);
-        CloseMpqArchive(hArchive);
-        return result;
+        return HandleRemove(baseFile, baseTarget, baseLocale);
     }
 
-    // Handle subcommand: List
     if (app.got_subcommand(list)) {
-        HANDLE hArchive;
-        if (!OpenMpqArchive(baseTarget, &hArchive, MPQ_OPEN_READ_ONLY)) {
-            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
-            return 1;
-        }
-        ListFiles(hArchive, baseListfileName, listAll, listDetailed, listProperties);
-        CloseMpqArchive(hArchive);
+        return HandleList(baseTarget, baseListfileName, listAll, listDetailed, listProperties);
     }
 
-    // Handle subcommand: Extract
     if (app.got_subcommand(extract)) {
-        // If no output directory specified, use MPQ path without extension
-        // If output directory specified, create it if it doesn't exist
-        if (baseOutput == "default") {
-            fs::path outputPathAbsolute = fs::canonical(baseTarget);
-            fs::path outputPath = outputPathAbsolute.parent_path() / outputPathAbsolute.stem();
-            std::string outputString{outputPath.u8string()};
-            baseOutput = outputString;
-        }
-        fs::create_directory(baseOutput);
-
-        HANDLE hArchive;
-        if (!OpenMpqArchive(baseTarget, &hArchive, MPQ_OPEN_READ_ONLY)) {
-            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
-            return 1;
-        }
-
-        LCID locale = LangToLocale(baseLocale);
-        if (baseLocale != "default" && locale == defaultLocale) {
-            std::cout << "[!] Warning: The locale '" << baseLocale
-                      << "' is unknown. Will use default locale instead." << std::endl;
-        }
-
-        int result;
-        if (baseFile != "default") {
-            result =
-                ExtractFile(hArchive, baseOutput, baseFile, extractKeepFolderStructure, locale);
-        } else {
-            result = ExtractFiles(hArchive, baseOutput, baseListfileName, locale);
-        }
-        CloseMpqArchive(hArchive);
-
-        if (result != 0) {
-            std::cerr << std::endl << "[!] Failed to extract all files." << std::endl;
-        }
-        return result;
+        std::optional<std::string> extractFile =
+            baseFile.empty() ? std::nullopt : std::make_optional(baseFile);
+        return HandleExtract(baseTarget, baseOutput, extractFile, extractKeepFolderStructure,
+                             baseListfileName, baseLocale);
     }
 
-    // Handle subcommand: Read
     if (app.got_subcommand(read)) {
-        HANDLE hArchive;
-        if (!OpenMpqArchive(baseTarget, &hArchive, MPQ_OPEN_READ_ONLY)) {
-            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
-            return 1;
-        }
-
-        LCID locale = LangToLocale(baseLocale);
-        if (baseLocale != "default" && locale == defaultLocale) {
-            std::cout << "[!] Warning: The locale '" << baseLocale
-                      << "' is unknown. Will use default locale instead." << std::endl;
-        }
-
-        uint32_t fileSize;
-        auto fileContent = ReadFile(hArchive, baseFile.c_str(), &fileSize, locale);
-        if (!fileContent) {
-            return 1;
-        }
-
-        PrintAsBinary(fileContent.get(), fileSize);
-
-        CloseMpqArchive(hArchive);
-        return 0;
+        return HandleRead(baseFile, baseTarget, baseLocale);
     }
 
-    // Handle subcommand: Verify
     if (app.got_subcommand(verify)) {
-        HANDLE hArchive;
-        if (!OpenMpqArchive(baseTarget, &hArchive, MPQ_OPEN_READ_ONLY)) {
-            std::cerr << "[!] Failed to open MPQ archive." << std::endl;
-            return 1;
-        }
-
-        int result = 0;
-        uint32_t verifyResult = VerifyMpqArchive(hArchive);
-        if (verifyResult == ERROR_WEAK_SIGNATURE_OK || verifyResult == ERROR_STRONG_SIGNATURE_OK ||
-            verifyResult == ERROR_WEAK_SIGNATURE_ERROR ||
-            verifyResult == ERROR_STRONG_SIGNATURE_ERROR) {
-            if (verifyPrintSignature) {
-                // If printing the signature, don't print success message
-                // because the user might want to pipe/redirect the signature data
-                PrintMpqSignature(hArchive, baseTarget);
-            } else {
-                // Just print verification success
-                std::cout << "[*] Verify success" << std::endl;
-            }
-
-            result = 0;
-        } else {
-            // Any other verify result is no signature, or error verifying
-            std::cout << "[!] Verify failed" << std::endl;
-            result = 1;
-        }
-        CloseMpqArchive(hArchive);
-        return result;
+        return HandleVerify(baseTarget, verifyPrintSignature);
     }
 
     return 0;
