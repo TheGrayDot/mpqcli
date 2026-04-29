@@ -1,7 +1,17 @@
 name: Pull Request
 
 on:
-  pull_request
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - ".clang-format"
+      - ".clang-tidy"
+      - "src/**"
+      - "extern/**"
+      - "test/**"
+      - "CMakeLists.txt"
+      - "Dockerfile.glibc"
+      - "Dockerfile.musl"
 
 permissions:
   contents: write
